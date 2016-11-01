@@ -1,0 +1,62 @@
+
+
+   ______           .____________                     _____
+\______   \ ____   __| _/   _____/ ____ _____ ________/ ____\
+ |       _// __ \ / __ |\_____  \ /    \__  \_  __ \   __\
+ |    |   \  ___// /_/ |/        \   |  \/ __ \|  | \/|  |
+ |____|_  /\___  >____ /_______  /___|  (____  /__|   |__|
+        \/     \/     \/       \/     \/     \/
+
+
+
+E D Williams - NCCGroup
+R Davy - NCCGroup
+
+Usage: Simple example usage: ./redsnarf.py -H 192.168.0.1 -u administrator -p Password01
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -H HOST, --host=HOST  Specify a hostname or range to grab hashes from
+  -u USERNAME, --username=USERNAME
+                        Enter a username
+  -p PASSWORD, --password=PASSWORD
+                        Enter a password or hash
+  -C CREDSFILE, --credsfile=CREDSFILE
+                        Spray multiple hashes at a target range
+  -c CREDPATH, --credpath=CREDPATH
+                        <Optional> Enter path to creddump7 default
+                        /opt/creddump7/
+  -o OUTPUTPATH, --outputpath=OUTPUTPATH
+                        <Optional> Enter output path default /tmp/
+  -m MERGEPF, --mergepf=MERGEPF
+                        <Optional> Enter output path and filename to merge
+                        multiple pwdump files default /tmp/merged.txt
+  -S SKIPLSACACHE, --skiplsacache=SKIPLSACACHE
+                        <Optional> Enter y to skip dumping lsa and cache and
+                        go straight to hashes!!
+  -d DROPSHELL, --dropshell=DROPSHELL
+                        <Optional> Enter y to Open up a shell on the remote
+                        machine
+  -l LSASS_DUMP, --lsass_dump=LSASS_DUMP
+                        <Optional> Dump lsass for offline use with mimikatz
+  -P POLICIESSCRIPTS_DUMP, --policiesscripts_dump=POLICIESSCRIPTS_DUMP
+                        <Optional> Enter y to Dump Policies and Scripts folder
+                        from a Domain Controller
+  -D DOMAIN_NAME, --domain_name=DOMAIN_NAME
+                        <Optional> Enter domain name
+  -g C_PASSWORD, --c_password=C_PASSWORD
+                        <Optional> Decrypt GPP Cpassword
+  -n NTDS_UTIL, --ntds_util=NTDS_UTIL
+                        <Optional> Extract NTDS.dit using NTDSUtil
+  -i DRSUAPI, --drsuapi=DRSUAPI
+                        <Optional> Extract NTDS.dit hashes using drsuapi
+                        method - accepts machine name as username
+  -M MASSMIMI_DUMP, --massmimi_dump=MASSMIMI_DUMP
+                        <Optional> Mimikatz Dump Credentaisl from the remote
+                        machine(s)
+  -s CLEAR_EVENT, --clear_event=CLEAR_EVENT
+                        <Optional> Clear event log - application, security,
+                        setup or system
+  -a SERVICE_ACCOUNTS, --service_accounts=SERVICE_ACCOUNTS
+                        <Optional> Enum service accounts, if any
