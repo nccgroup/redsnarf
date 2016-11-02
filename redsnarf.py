@@ -216,6 +216,7 @@ def run():
 	for target in IPNetwork(targets):
 		host=str(target)
 		s = socket (AF_INET, SOCK_STREAM)
+		s.settimeout(10)
 		result = s.connect_ex ((host, 445))
 		if result == 0:
 			print colored("[+]"+host+" responding to 445",'green')
