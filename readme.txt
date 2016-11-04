@@ -23,7 +23,7 @@ o	Credsfile will accept a mix of pwdump, fgdump and plain text username and pass
 •	Retrieval of Scripts and Policies folder from a Domain controller and parsing for 'password' and 'administrator';
 •	Ability to decrypt cpassword hashes;
 •	Ability to start a shell on a remote machine;
-•	The ability to clear the event logs (application, security, setup or system);
+•	The ability to clear the event logs (application, security, setup or system); (Internal Version Only)
 •	Results are saved on a per-host basis for analysis.
 
 RedSnarf Usage
