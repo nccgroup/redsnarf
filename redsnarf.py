@@ -26,7 +26,6 @@ from impacket.smbconnection import *
 
 yesanswers = ["yes", "y", "Y", "Yes", "YES"]
 noanswers = ["no", "NO", "n", "N"]
-events_logs = ["application","security","setup","system"]
 
 def banner():
 	print """
@@ -213,11 +212,8 @@ def syschecks():
 
 def run():
 	for target in IPNetwork(targets):
-
 		host=str(target)
-		
 		passwd=''
-
 		if passw[len(passw)-3:] ==':::':
 			lmhash, nthash ,s1,s2,s3 = passw.split(':')
 		else:
@@ -226,16 +222,12 @@ def run():
 
 		if nthash=='':
 			passwd=passw	
-
 		try: 
-
 			smbClient = SMBConnection(host, host, sess_port=int('445'),timeout=10) 
-
 			x=smbClient.login(user, passwd, domain_name, lmhash, nthash)
-			
 			if x==None or x==True:
 				if smbClient.getServerOS().find('Windows')!=-1 and smbClient.isGuestSession() ==0:
-					print colored("[+]"+host+" responding to 445",'green')
+					print colored("[+]"+host+" looks like a windows host and responding to 445",'green')
 					t = Thread(target=datadump, args=(user,passw,host,outputpath,smbClient.getServerOS()))
 					t.start()
 					t.join()
