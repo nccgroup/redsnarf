@@ -306,7 +306,7 @@ def main():
 		print colored ('\n[+] Check out '+mergepf+' for unique, sorted, merged hash list','yellow')
 
 banner()
-p = argparse.ArgumentParser("Simple example usage: ./%prog -H 192.168.0.1 -u administrator -p Password01", version="%prog 0.2")
+p = argparse.ArgumentParser("Simple example usage: ./redsnarf.py -H 192.168.0.1 -u administrator -p Password01", version="./redsnarf.py: 0.2")
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname or range to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="administrator",help="Enter a username")
 p.add_argument("-p", "--password", dest="password", default="Password01", help="Enter a password or hash")
