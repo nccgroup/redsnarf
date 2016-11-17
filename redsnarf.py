@@ -109,8 +109,8 @@ def datadump(user, passw, host, path, os_version):
 										os.system(creddump7path+p+".py "+path+host+"/system "+path+host+"/security true | tee "+path+host+"/"+p+"")
 								except OSError:
 									print colored("[-]Something went wrong extracting from "+p,'red')
-								if os.stat(path+host+"/cachedump").st_size == 0:
-									print colored("[-]No cached creds for: "+host,'yellow')
+							if os.stat(path+host+"/cachedump").st_size == 0:
+								print colored("[-]No cached creds for: "+host,'yellow')
 					else:
 						print colored("[-]os version not found",'red')        
 				except OSError:
