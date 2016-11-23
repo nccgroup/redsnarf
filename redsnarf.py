@@ -440,7 +440,7 @@ massmimi_dump=args.massmimi_dump
 service_accounts=args.service_accounts
 find_user=args.find_user
 ofind_user=args.ofind_user
-clear_event=args.clear_event
+
 
 
 if drsuapi in yesanswers:
