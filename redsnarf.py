@@ -410,7 +410,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("Simple example usage: ./%prog -H ip=192.168.0.1 -u administrator -p Password01", version="%prog 0.2d")
+p = argparse.ArgumentParser("%(prog)s -H ip=192.168.0.1 -u administrator -p Password01", version="%prog 0.2d", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="administrator",help="Enter a username")
 p.add_argument("-p", "--password", dest="password", default="Password01", help="Enter a password or hash")
@@ -432,10 +432,10 @@ p.add_argument("-F", "--find_user", dest="find_user", default="n", help="<Option
 p.add_argument("-f", "--ofind_user", dest="ofind_user", default="n", help="<Optional> Find user - Offline")
 p.add_argument("-L", "--lat", dest="lat", default="n", help="<Optional> Write batch file for turning on/off Local Account Token Filter Policy")
 p.add_argument("-x", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
-p.add_argument("-R", "--edq_rdp", dest="edq_rdp", default="n", help="<Optional> Enable/Disable/Query RDP Status")
-p.add_argument("-r", "--edq_nla", dest="edq_nla", default="n", help="<Optional> Enable/Disable/Query NLA Status")
-p.add_argument("-t", "--edq_trdp", dest="edq_trdp", default="n", help="<Optional> Enable/Disable/Query Tunnel RDP out of port 443")
-p.add_argument("-W", "--edq_wdigest", dest="edq_wdigest", default="n", help="<Optional> Enable/Disable/Query Wdigest UseLogonCredential Registry Setting")
+p.add_argument("-R", "--edq_rdp", dest="edq_rdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP Status")
+p.add_argument("-r", "--edq_nla", dest="edq_nla", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery NLA Status")
+p.add_argument("-t", "--edq_trdp", dest="edq_trdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Tunnel RDP out of port 443")
+p.add_argument("-W", "--edq_wdigest", dest="edq_wdigest", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Wdigest UseLogonCredential Registry Setting")
 
 
 args = p.parse_args()
