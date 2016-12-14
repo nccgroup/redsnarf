@@ -1,3 +1,4 @@
+root@kali:~/redsnarf# ./redsnarf.py -h
 
    ______           .____________                     _____
 \______   \ ____   __| _/   _____/ ____ _____ ________/ ____\
@@ -16,6 +17,7 @@ usage: %(prog)s -H ip=192.168.0.1 -u administrator -p Password01 [-h] [-v] [-H H
                                                                  [-P POLICIESSCRIPTS_DUMP] [-D DOMAIN_NAME] [-g C_PASSWORD] [-n NTDS_UTIL]
                                                                  [-i DRSUAPI] [-M MASSMIMI_DUMP] [-a SERVICE_ACCOUNTS] [-F FIND_USER] [-f OFIND_USER]
                                                                  [-L LAT] [-x XCOMMAND] [-R EDQ_RDP] [-r EDQ_NLA] [-t EDQ_TRDP] [-W EDQ_WDIGEST]
+                                                                 [-s STEALTH_MIMI]
 
 optional arguments:
   -h, --help        show this help message and exit
@@ -70,3 +72,5 @@ optional arguments:
                     <Optional> (E)nable/(D)isable/(Q)uery Tunnel RDP out of port 443
   -W EDQ_WDIGEST, --edq_wdigest EDQ_WDIGEST
                     <Optional> (E)nable/(D)isable/(Q)uery Wdigest UseLogonCredential Registry Setting
+  -s STEALTH_MIMI, --stealth_mimi STEALTH_MIMI
+                    <Optional> stealth version of mass-mimikatz
