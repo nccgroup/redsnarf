@@ -15,13 +15,13 @@ except ImportError:
 try:
 	from netaddr import IPNetwork
 except ImportError:
-	print ('Netaddr appears to be missing - try: easy_install netaddr')
+	print ('Netaddr appears to be missing - try: pip install netaddr')
 	exit(1)
 
 try:
 	from termcolor import colored 
 except ImportError:
-	print ('termcolor appears to be missing - try: easy_install termcolor')
+	print ('termcolor appears to be missing - try: pip install termcolor')
 	exit(1)
 
 from Crypto.Cipher import AES
