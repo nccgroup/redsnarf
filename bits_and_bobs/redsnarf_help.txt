@@ -55,7 +55,7 @@ optional arguments:
   -hL LSASS_DUMP, --lsass_dump LSASS_DUMP
                     <Optional> Dump lsass for offline use with mimikatz
   -hM MASSMIMI_DUMP, --massmimi_dump MASSMIMI_DUMP
-                    <Optional> Mimikatz Dump Credentaisl from the remote machine(s)
+                    <Optional> Mimikatz Dump Credentials from the remote machine(s)
   -hR STEALTH_MIMI, --stealth_mimi STEALTH_MIMI
                     <Optional> safe version of mass-mimikatz
   -eA SERVICE_ACCOUNTS, --service_accounts SERVICE_ACCOUNTS
