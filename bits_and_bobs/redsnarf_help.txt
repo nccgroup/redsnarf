@@ -57,7 +57,7 @@ optional arguments:
   -hM MASSMIMI_DUMP, --massmimi_dump MASSMIMI_DUMP
                     <Optional> Mimikatz Dump Credentials from the remote machine(s)
   -hR STEALTH_MIMI, --stealth_mimi STEALTH_MIMI
-                    <Optional> safe version of mass-mimikatz
+                    <Optional> stealth version of mass-mimikatz
   -eA SERVICE_ACCOUNTS, --service_accounts SERVICE_ACCOUNTS
                     <Optional> Enum service accounts, if any
   -eL FIND_USER, --find_user FIND_USER
