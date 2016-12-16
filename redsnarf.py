@@ -478,8 +478,8 @@ p.add_argument("-hN", "--ntds_util", dest="ntds_util", default="", help="<Option
 p.add_argument("-hI", "--drsuapi", dest="drsuapi", default="", help="<Optional> Extract NTDS.dit hashes using drsuapi method - accepts machine name as username")
 p.add_argument("-hS", "--credsfile", dest="credsfile", default="", help="Spray multiple hashes at a target range")
 p.add_argument("-hL", "--lsass_dump", dest="lsass_dump", default="n", help="<Optional> Dump lsass for offline use with mimikatz")
-p.add_argument("-hM", "--massmimi_dump", dest="massmimi_dump", default="n", help="<Optional> Mimikatz Dump Credentaisl from the remote machine(s)")
-p.add_argument("-hR", "--stealth_mimi", dest="stealth_mimi", default="n", help="<Optional> safe version of mass-mimikatz")
+p.add_argument("-hM", "--massmimi_dump", dest="massmimi_dump", default="n", help="<Optional> Mimikatz Dump Credentials from the remote machine(s)")
+p.add_argument("-hR", "--stealth_mimi", dest="stealth_mimi", default="n", help="<Optional> stealth version of mass-mimikatz")
 # Enumeration related
 p.add_argument("-eA", "--service_accounts", dest="service_accounts", default="n", help="<Optional> Enum service accounts, if any")
 p.add_argument("-eL", "--find_user", dest="find_user", default="n", help="<Optional> Find user - Live")
