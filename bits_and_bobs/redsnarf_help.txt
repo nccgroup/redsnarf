@@ -12,12 +12,12 @@ root@kali:~/redsnarf# ./redsnarf.py -h
 E D Williams - NCCGroup
 R Davy - NCCGroup
 
-usage: %(prog)s -H ip=192.168.0.1 -u administrator -p Password01 [-h] [-v] [-H HOST] [-u USERNAME] [-p PASSWORD] [-C CREDSFILE] [-c CREDPATH]
-                                                                 [-o OUTPUTPATH] [-m MERGEPF] [-S SKIPLSACACHE] [-d DROPSHELL] [-l LSASS_DUMP]
-                                                                 [-P POLICIESSCRIPTS_DUMP] [-D DOMAIN_NAME] [-g C_PASSWORD] [-n NTDS_UTIL]
-                                                                 [-i DRSUAPI] [-M MASSMIMI_DUMP] [-a SERVICE_ACCOUNTS] [-F FIND_USER] [-f OFIND_USER]
-                                                                 [-L LAT] [-x XCOMMAND] [-R EDQ_RDP] [-r EDQ_NLA] [-t EDQ_TRDP] [-W EDQ_WDIGEST]
-                                                                 [-s STEALTH_MIMI]
+usage: ./redsnarf.py -H ip=192.168.0.1 -u administrator -p Password01 [-h] [-v] [-H HOST] [-u USERNAME] [-p PASSWORD] [-d DOMAIN_NAME] [-cC CREDPATH]
+                                                                      [-cO OUTPUTPATH] [-cM MERGEPF] [-cS SKIPLSACACHE] [-uP POLICIESSCRIPTS_DUMP]
+                                                                      [-uG C_PASSWORD] [-uD DROPSHELL] [-uX XCOMMAND] [-hN NTDS_UTIL] [-hI DRSUAPI]
+                                                                      [-hS CREDSFILE] [-hL LSASS_DUMP] [-hM MASSMIMI_DUMP] [-hR STEALTH_MIMI]
+                                                                      [-eA SERVICE_ACCOUNTS] [-eL FIND_USER] [-eO OFIND_USER] [-rL LAT] [-rR EDQ_RDP]
+                                                                      [-rN EDQ_NLA] [-rT EDQ_TRDP] [-rW EDQ_WDIGEST] [-rB EDQ_BACKDOOR] [-rU EDQ_UAC]
 
 optional arguments:
   -h, --help        show this help message and exit
@@ -28,49 +28,53 @@ optional arguments:
                     Enter a username
   -p PASSWORD, --password PASSWORD
                     Enter a password or hash
-  -C CREDSFILE, --credsfile CREDSFILE
-                    Spray multiple hashes at a target range
-  -c CREDPATH, --credpath CREDPATH
-                    <Optional> Enter path to creddump7 default /opt/creddump7/
-  -o OUTPUTPATH, --outputpath OUTPUTPATH
-                    <Optional> Enter output path default /tmp/
-  -m MERGEPF, --mergepf MERGEPF
-                    <Optional> Enter output path and filename to merge multiple pwdump files default /tmp/merged.txt
-  -S SKIPLSACACHE, --skiplsacache SKIPLSACACHE
-                    <Optional> Enter y to skip dumping lsa and cache and go straight to hashes!!
-  -d DROPSHELL, --dropshell DROPSHELL
-                    <Optional> Enter y to Open up a shell on the remote machine
-  -l LSASS_DUMP, --lsass_dump LSASS_DUMP
-                    <Optional> Dump lsass for offline use with mimikatz
-  -P POLICIESSCRIPTS_DUMP, --policiesscripts_dump POLICIESSCRIPTS_DUMP
-                    <Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller
-  -D DOMAIN_NAME, --domain_name DOMAIN_NAME
+  -d DOMAIN_NAME, --domain_name DOMAIN_NAME
                     <Optional> Enter domain name
-  -g C_PASSWORD, --c_password C_PASSWORD
+  -cC CREDPATH, --credpath CREDPATH
+                    <Optional> Enter path to creddump7 default /opt/creddump7/
+  -cO OUTPUTPATH, --outputpath OUTPUTPATH
+                    <Optional> Enter output path default /tmp/
+  -cM MERGEPF, --mergepf MERGEPF
+                    <Optional> Enter output path and filename to merge multiple pwdump files default /tmp/merged.txt
+  -cS SKIPLSACACHE, --skiplsacache SKIPLSACACHE
+                    <Optional> Enter y to skip dumping lsa and cache and go straight to hashes!!
+  -uP POLICIESSCRIPTS_DUMP, --policiesscripts_dump POLICIESSCRIPTS_DUMP
+                    <Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller
+  -uG C_PASSWORD, --c_password C_PASSWORD
                     <Optional> Decrypt GPP Cpassword
-  -n NTDS_UTIL, --ntds_util NTDS_UTIL
-                    <Optional> Extract NTDS.dit using NTDSUtil
-  -i DRSUAPI, --drsuapi DRSUAPI
-                    <Optional> Extract NTDS.dit hashes using drsuapi method - accepts machine name as username
-  -M MASSMIMI_DUMP, --massmimi_dump MASSMIMI_DUMP
-                    <Optional> Mimikatz Dump Credentaisl from the remote machine(s)
-  -a SERVICE_ACCOUNTS, --service_accounts SERVICE_ACCOUNTS
-                    <Optional> Enum service accounts, if any
-  -F FIND_USER, --find_user FIND_USER
-                    <Optional> Find user - Live
-  -f OFIND_USER, --ofind_user OFIND_USER
-                    <Optional> Find user - Offline
-  -L LAT, --lat LAT
-                    <Optional> Write batch file for turning on/off Local Account Token Filter Policy
-  -x XCOMMAND, --xcommand XCOMMAND
+  -uD DROPSHELL, --dropshell DROPSHELL
+                    <Optional> Enter y to Open up a shell on the remote machine
+  -uX XCOMMAND, --xcommand XCOMMAND
                     <Optional> Run custom command
-  -R EDQ_RDP, --edq_rdp EDQ_RDP
+  -hN NTDS_UTIL, --ntds_util NTDS_UTIL
+                    <Optional> Extract NTDS.dit using NTDSUtil
+  -hI DRSUAPI, --drsuapi DRSUAPI
+                    <Optional> Extract NTDS.dit hashes using drsuapi method - accepts machine name as username
+  -hS CREDSFILE, --credsfile CREDSFILE
+                    Spray multiple hashes at a target range
+  -hL LSASS_DUMP, --lsass_dump LSASS_DUMP
+                    <Optional> Dump lsass for offline use with mimikatz
+  -hM MASSMIMI_DUMP, --massmimi_dump MASSMIMI_DUMP
+                    <Optional> Mimikatz Dump Credentaisl from the remote machine(s)
+  -hR STEALTH_MIMI, --stealth_mimi STEALTH_MIMI
+                    <Optional> safe version of mass-mimikatz
+  -eA SERVICE_ACCOUNTS, --service_accounts SERVICE_ACCOUNTS
+                    <Optional> Enum service accounts, if any
+  -eL FIND_USER, --find_user FIND_USER
+                    <Optional> Find user - Live
+  -eO OFIND_USER, --ofind_user OFIND_USER
+                    <Optional> Find user - Offline
+  -rL LAT, --lat LAT
+                    <Optional> Write batch file for turning on/off Local Account Token Filter Policy
+  -rR EDQ_RDP, --edq_rdp EDQ_RDP
                     <Optional> (E)nable/(D)isable/(Q)uery RDP Status
-  -r EDQ_NLA, --edq_nla EDQ_NLA
+  -rN EDQ_NLA, --edq_nla EDQ_NLA
                     <Optional> (E)nable/(D)isable/(Q)uery NLA Status
-  -t EDQ_TRDP, --edq_trdp EDQ_TRDP
+  -rT EDQ_TRDP, --edq_trdp EDQ_TRDP
                     <Optional> (E)nable/(D)isable/(Q)uery Tunnel RDP out of port 443
-  -W EDQ_WDIGEST, --edq_wdigest EDQ_WDIGEST
+  -rW EDQ_WDIGEST, --edq_wdigest EDQ_WDIGEST
                     <Optional> (E)nable/(D)isable/(Q)uery Wdigest UseLogonCredential Registry Setting
-  -s STEALTH_MIMI, --stealth_mimi STEALTH_MIMI
-                    <Optional> stealth version of mass-mimikatz
+  -rB EDQ_BACKDOOR, --edq_backdoor EDQ_BACKDOOR
+                    <Optional> (E)nable/(D)isable/(Q)uery Backdoor Registry Setting - Left Alt + Left Shift + Print Screen at Logon Screen
+  -rU EDQ_UAC, --edq_uac EDQ_UAC
+                    <Optional> (E)nable/(D)isable/(Q)uery UAC Registry Setting
