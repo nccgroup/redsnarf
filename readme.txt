@@ -83,6 +83,11 @@ Spray Hashes across a network range
 Retrieve Hashes across a network range domain login
 ./redsnarf.py -H range=10.0.0.1/24 -hS credsfile -d yourdomain.com
 
+Quickly Check Credentials
+./redsnarf.py -H ip=10.0.0.1 -u administrator -p Password1 -d . -cQ y
+
+Quickly Check File containing usernames (-hS) and a generic password (-hP)
+./redsnarf.py -H ip=10.0.0.1 -hS /path/to/usernames.txt -hP PasswordToTry -cQ y
 
 Retrieve Domain Hashes
 =======================
