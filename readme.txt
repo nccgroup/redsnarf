@@ -43,7 +43,7 @@ Impacket v0.9.16-dev - https://github.com/CoreSecurity/impacket.git
 CredDump7 - https://github.com/Neohapsis/creddump7
 Lsass Retrieval using procdump - https://technet.microsoft.com/en-us/sysinternals/dd996900.aspx
 Netaddr (0.7.12) - pip install netaddr
-Termcolor (1.1.0) - pip install netaddr 
+Termcolor (1.1.0) - pip install termcolor
 iconv - used with parsing Mimikatz info locally 
 
 Show Help
