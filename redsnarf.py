@@ -489,7 +489,7 @@ def datadump(user, passw, host, path, os_version):
                                                 stdout_value = proc.communicate()[0]
                                                 if len(stdout_value)>0:
                                                         print colored("[-]Port is used: "+str(PORT)+" exiting....",'red')
-                                                        exit(1)
+                                                        break
 					
 					my_ip=get_ip_address('eth0')
 					print colored("[+]Attempting to Run Stealth Mimikatz",'green')
