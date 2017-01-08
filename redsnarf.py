@@ -4,7 +4,7 @@
 # Released under Apache V2 see LICENCE for more information
 
 import os, argparse, signal, sys, re, binascii, subprocess, string, SimpleHTTPServer, multiprocessing, SocketServer
-import socket, fcntl, struct
+import socket, fcntl, struct, time
 
 import ldap # run 'pip install python-ldap' to install ldap module.
 
@@ -774,9 +774,13 @@ def run():
 		if nthash=='':
 			passwd=passw	
 
+		now = time.strftime("%c")
+		## date and time representation
+		
 		print 'User '+user
 		print 'Password '+passw
 		print 'Domain Name '+domain_name
+		print "Current date & time " + time.strftime("%c")
 		
 		try: 
 
