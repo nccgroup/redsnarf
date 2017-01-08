@@ -780,17 +780,17 @@ def run():
 		print 'User '+user
 		print 'Password '+passw
 		print 'Domain Name '+domain_name
-		print "Current date & time " + time.strftime("%c")
+		print colored("[+]Scan Start " + time.strftime("%c"),'blue')
 		
 		try: 
 
 			smbClient = SMBConnection(host, host, sess_port=int('445'),timeout=10) 
 
 			x=smbClient.login(user, passwd, domain_name, lmhash, nthash)
-						
+					
 			if x==None or x==True:
 				if smbClient.getServerOS().find('Windows')!=-1 and smbClient.isGuestSession() ==0:
-					print colored("[+]"+host+" responding to 445",'green')
+					print colored("[+]"+host+" Creds OK, User Session Granted",'green')
 					
 					if args.quick_validate in noanswers:
 						#Display Shares					
@@ -804,9 +804,9 @@ def run():
 						t.start()
 						t.join()
 				else:
-					print colored("[-]"+host+" not responding on port 445",'red')
+					print colored("[-]"+host+" Creds Failed, No User Session Granted",'red')
 		except:
-			print colored("[-]"+host+" not responding on port 445",'red')
+			print colored("[-]"+host+" Creds Failed, No User Session Granted",'red')
 
 
 def hashparse(hashfolder,hashfile):
@@ -1814,4 +1814,7 @@ syschecks()
 if __name__ == '__main__':
 	signal.signal(signal.SIGINT, signal_handler)
 	main()
+	now = time.strftime("%c")
+	
+	print colored("[+]Scan Stop " + time.strftime("%c"),'blue')
 	print colored("[+]end",'green')
