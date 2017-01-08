@@ -805,8 +805,9 @@ def run():
 						t.join()
 				else:
 					print colored("[-]"+host+" Creds Failed, No User Session Granted",'red')
-		except:
-			print colored("[-]"+host+" Creds Failed, No User Session Granted",'red')
+		except Exception, e:
+			print colored(e,'red')
+
 
 
 def hashparse(hashfolder,hashfile):
