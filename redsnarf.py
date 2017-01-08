@@ -755,6 +755,52 @@ def checkport():
 	else:
 		print colored("[+]Looks like a Domain Controller",'green')
 
+def get_domain_admins(ip,username,password):
+	
+	da_accounts = []
+	parsed_da_accounts = []
+			
+	if username=="":
+		proc = subprocess.Popen('rpcclient '+ip+' -U \"\" -N '+' -c \"querygroupmem 512\"', stdout=subprocess.PIPE,shell=True)
+	else:
+		proc = subprocess.Popen('rpcclient '+ip+' -U '+username+'%'+password +' -c \"querygroupmem 512\"', stdout=subprocess.PIPE,shell=True)
+	
+	stdout_value = proc.communicate()[0]
+
+	for line in stdout_value.split('\n'):
+		tmpline=line.lstrip()
+		tmpline=tmpline.split(' ')
+		da_accounts.append(tmpline[0].replace("rid:[", "").replace("]", ""))
+
+	if len(da_accounts)>0:
+		for sid in da_accounts:
+			
+			if username=="":
+				proc = subprocess.Popen('rpcclient '+ip+' -U \"\" -N '+'  -c \"queryuser '+sid+'\"', stdout=subprocess.PIPE,shell=True)
+			else:
+				proc = subprocess.Popen('rpcclient '+ip+' -U '+username+'%'+password +' -c \"queryuser '+sid+'\"', stdout=subprocess.PIPE,shell=True)
+			
+			stdout_value = proc.communicate()[0]
+			for line in stdout_value.split('\n'):
+				tmpline=line.lstrip()
+				
+				if "User Name   :	" in tmpline:
+					parsed_da_accounts.append(tmpline.replace("User Name   :	", "").rstrip())
+	
+	if len(parsed_da_accounts)>0:
+		for u in parsed_da_accounts:
+			
+			if username==u:
+				parsed_da_accounts=True
+				break
+			else:				
+				parsed_da_accounts=False
+	else:
+		parsed_da_accounts=False			
+
+	return parsed_da_accounts
+
+
 def run():
 	user=args.username
 	passw=args.password
@@ -789,9 +835,15 @@ def run():
 			x=smbClient.login(user, passwd, domain_name, lmhash, nthash)
 					
 			if x==None or x==True:
-				if smbClient.getServerOS().find('Windows')!=-1 and smbClient.isGuestSession() ==0:
+								
+				if smbClient.getServerOS().find('Windows')!=-1 and smbClient.isGuestSession()==0:
 					print colored("[+]"+host+" Creds OK, User Session Granted",'green')
-					
+					#Check if account is in DA group
+					if get_domain_admins(host,user,passwd):
+						print colored("[+]"+host+" Account is a Domain Admin",'green')
+					else:
+						print colored("[-]"+host+" Account not found in Domain Admin Group",'yellow')
+
 					if args.quick_validate in noanswers:
 						#Display Shares					
 						print colored("[+]"+host+" Enumerating Remote Shares",'green')
@@ -803,9 +855,15 @@ def run():
 						t = Thread(target=datadump, args=(user,passw,host,outputpath,smbClient.getServerOS()))
 						t.start()
 						t.join()
+				elif smbClient.getServerOS().find('Windows')==-1:
+					print colored("[-]"+host+" MS Windows not detected...",'red')
+				elif smbClient.isGuestSession() ==1:
+					print colored("[-]"+host+" Guest Session detected...",'red')
 				else:
-					print colored("[-]"+host+" Creds Failed, No User Session Granted",'red')
+					print colored("[-]"+host+" Something went wrong... ",'red')
+
 		except Exception, e:
+			#Catch the login error and display exception
 			print colored(e,'red')
 
 
