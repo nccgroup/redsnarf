@@ -1165,6 +1165,7 @@ p.add_argument("-rB", "--edq_backdoor", dest="edq_backdoor", default="n", help="
 p.add_argument("-rU", "--edq_uac", dest="edq_uac", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery UAC Registry Setting")
 p.add_argument("-rA", "--edq_autologon", dest="edq_autologon", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery AutoLogon Registry Setting")
 p.add_argument("-rS", "--edq_allowtgtsessionkey", dest="edq_allowtgtsessionkey", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery allowtgtsessionkey Registry Setting")
+p.add_argument("-rM", "--edq_SingleSessionPerUser", dest="edq_SingleSessionPerUser", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP SingleSessionPerUser Registry Setting")
 
 args = p.parse_args()
 
@@ -1207,6 +1208,7 @@ edq_autologon=args.edq_autologon
 edq_allowtgtsessionkey=args.edq_allowtgtsessionkey
 system_tasklist=args.system_tasklist
 multi_rdp=args.multi_rdp
+edq_SingleSessionPerUser=args.edq_SingleSessionPerUser
 
 if lat in yesanswers:
 	WriteLAT()
@@ -1345,6 +1347,51 @@ if password_policy in yesanswers:
 			
 		except OSError:
 			print colored("[-]Something went wrong checking the password policy",'red')
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
+
+#[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server]
+#"fSingleSessionPerUser"=dword:00000000
+
+if edq_SingleSessionPerUser!='n':
+	if len(targets)==1:
+		try:
+			if edq_SingleSessionPerUser=='e':
+				print colored("\n[+]IMPORTANT - Leave SingleSessionPerUser in the state that you found it\n\n",'red')
+
+				print colored("[+]Enabling SingleSessionPerUser:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fSingleSessionPerUser\" /t REG_DWORD /f /D 1' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+
+				print colored("[+]Querying the status of SingleSessionPerUser:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fSingleSessionPerUser\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
+				sys.exit()	
+
+			elif edq_SingleSessionPerUser=='d':
+				print colored("\n[+]IMPORTANT - Leave SingleSessionPerUser in the state that you found it\n\n",'red')
+				
+				print colored("[+]Disabling SingleSessionPerUser:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fSingleSessionPerUser\" /t REG_DWORD /f /D 0' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+
+				print colored("[+]Querying the status of SingleSessionPerUser:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fSingleSessionPerUser\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+
+				sys.exit()	
+	
+			elif edq_SingleSessionPerUser=='q':
+				print colored("[+]Querying the status of SingleSessionPerUser:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fSingleSessionPerUser\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
+				sys.exit()	
+		except OSError:
+				print colored("[-]Something went wrong...",'red')
+				sys.exit()	
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
