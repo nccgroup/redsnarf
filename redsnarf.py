@@ -52,7 +52,7 @@ def banner():
  |    |   \  ___// /_/ |/        \   |  \/ __ \|  | \/|  |    
  |____|_  /\___  >____ /_______  /___|  (____  /__|   |__|    
         \/     \/     \/       \/     \/     \/                      
-
+                                  redsnarf.ff0000@gmail.com
 """
 	print colored("\nE D Williams - NCCGroup",'red')
 	print colored("R Davy - NCCGroup\n",'red')
