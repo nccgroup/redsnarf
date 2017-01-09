@@ -823,9 +823,9 @@ def run():
 		now = time.strftime("%c")
 		## date and time representation
 		
-		print 'User '+user
-		print 'Password '+passw
-		print 'Domain Name '+domain_name
+		print 'User: '+user
+		print 'Password: '+passw
+		print 'Domain Name: '+domain_name
 		print colored("[+]Scan Start " + time.strftime("%c"),'blue')
 		
 		try: 
