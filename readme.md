@@ -1,4 +1,4 @@
-
+```
     ______           .____________                     _____  
 \______   \ ____   __| _/   _____/ ____ _____ ________/ ____\ 
  |       _// __ \ / __ |\_____  \ /    \\__  \\_  __ \   __\  
@@ -6,6 +6,7 @@
  |____|_  /\___  >____ /_______  /___|  (____  /__|   |__|    
         \/     \/     \/       \/     \/     \/         
                                   redsnarf.ff0000@gmail.com
+```
 
 RedSnarf is a pen-testing / red-teaming tool by Ed William and Richard Davy for retrieving hashes and credentials from Windows workstations, servers and domain controllers using OpSec Safe Techniques.
 
