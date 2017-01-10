@@ -8,7 +8,7 @@
                                   redsnarf.ff0000@gmail.com
 ```
 
-**RedSnarf** is a pen-testing / red-teaming tool by Ed William and Richard Davy for retrieving hashes and credentials from Windows 
+**RedSnarf** is a pen-testing / red-teaming tool by **Ed William** and **Richard Davy** for retrieving hashes and credentials from Windows 
 workstations, servers and domain controllers using OpSec Safe Techniques.
 
 RedSnarf functionality includes: 
@@ -88,7 +88,7 @@ Retrieve Local Hashes
 =======================
 
 Retrieve Local Hashes from a single machine using weak local credentials and clearing the Security event log
-./redsnarf.py -H ip=10.0.0.50 -uC security
+**./redsnarf.py -H ip=10.0.0.50 -uC security**
 
 Retrieve Local Hashes from a single machine using weak local credentials and clearing the application event log
 ./redsnarf.py -H ip=10.0.0.50 -uC application
