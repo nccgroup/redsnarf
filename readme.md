@@ -8,18 +8,19 @@
                                   redsnarf.ff0000@gmail.com
 ```
 
-RedSnarf is a pen-testing / red-teaming tool by Ed William and Richard Davy for retrieving hashes and credentials from Windows workstations, servers and domain controllers using OpSec Safe Techniques.
+RedSnarf is a pen-testing / red-teaming tool by Ed William and Richard Davy for retrieving hashes and credentials from Windows 
+workstations, servers and domain controllers using OpSec Safe Techniques.
 
 RedSnarf functionality includes: 
 
-•	Retrieval of local SAM hashes;
-•	Enumeration of user/s running with elevated system privileges and their corresponding lsa secrets password;
-•	Retrieval of MS cached credentials;
-•	Pass-the-hash;
-•	Quickly identify weak and guessable username/password combinations (default of administrator/Password01);
-•	The ability to retrieve hashes across a range;
-•	Hash spraying - 
-o	Credsfile will accept a mix of pwdump, fgdump and plain text username and password separated by a space;
+•Retrieval of local SAM hashes
+•Enumeration of user/s running with elevated system privileges and their corresponding lsa secrets password;
+•Retrieval of MS cached credentials;
+•Pass-the-hash;
+•Quickly identify weak and guessable username/password combinations (default of administrator/Password01);
+•The ability to retrieve hashes across a range;
+•Hash spraying - 
+oCredsfile will accept a mix of pwdump, fgdump and plain text username and password separated by a space;
 •	Lsass dump for offline analysis with Mimikatz;
 •	Dumping of Domain controller hashes using NTDSUtil and retrieval of NTDS.dit for local parsing;
 •	Dumping of Domain controller hashes using the drsuapi method;
