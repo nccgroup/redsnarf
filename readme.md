@@ -13,31 +13,55 @@ workstations, servers and domain controllers using OpSec Safe Techniques.
 
 RedSnarf functionality includes: 
 
-•Retrieval of local SAM hashes
-•Enumeration of user/s running with elevated system privileges and their corresponding lsa secrets password;
-•Retrieval of MS cached credentials;
-•Pass-the-hash;
-•Quickly identify weak and guessable username/password combinations (default of administrator/Password01);
-•The ability to retrieve hashes across a range;
-•Hash spraying - 
-oCredsfile will accept a mix of pwdump, fgdump and plain text username and password separated by a space;
+•   Retrieval of local SAM hashes
+
+•   Enumeration of user/s running with elevated system privileges and their corresponding lsa secrets password;
+
+•   Retrieval of MS cached credentials;
+
+•   Pass-the-hash;
+
+•   Quickly identify weak and guessable username/password combinations (default of administrator/Password01);
+
+•   The ability to retrieve hashes across a range;
+
+•   Hash spraying - 
+o   Credsfile will accept a mix of pwdump, fgdump and plain text username and password separated by a space;
+
 •	Lsass dump for offline analysis with Mimikatz;
+
 •	Dumping of Domain controller hashes using NTDSUtil and retrieval of NTDS.dit for local parsing;
+
 •	Dumping of Domain controller hashes using the drsuapi method;
+
 •	Retrieval of Scripts and Policies folder from a Domain controller and parsing for 'password' and 'administrator';
+
 •	Ability to decrypt cpassword hashes;
+
 •	Ability to start a shell on a remote machine;
+
 •	The ability to clear the event logs (application, security, setup or system); (Internal Version only)
+
 •	Results are saved on a per-host basis for analysis.
+
 •	Enable/Disable RDP on a remote machine.
+
 •	Change RDP port from 3389 to 443 on a remote machine.
+
 •	Enable/Disable NLA on a remote machine.
+
 •	Find where users are logged in on remote machines.
+
 •	Backdoor Windows Logon Screen
+
 •	Enable/Disable UAC on a remote machine.
+
 •	Stealth mimikatz added.
+
 •	Parsing of domain hashes
+
 •	Ability to determine which accounts are enabled/disabled
+
 
 RedSnarf Usage
 =======================
