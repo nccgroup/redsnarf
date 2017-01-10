@@ -12,7 +12,8 @@ RedSnarf is a pen-testing / red-teaming tool by Ed William and Richard Davy for 
 RedSnarf functionality includes: 
 
 •	Retrieval of local SAM hashes;
-•	Enumeration of user/s running with elevated system privileges and their corresponding lsa secrets password;
+•	Enumeration of user/s running with elevated system privileges and their corresponding 
+    lsa secrets password;
 •	Retrieval of MS cached credentials;
 •	Pass-the-hash;
 •	Quickly identify weak and guessable username/password combinations (default of administrator/Password01);
