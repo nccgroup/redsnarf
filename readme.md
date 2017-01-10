@@ -9,7 +9,6 @@
                                                   @redsnarf
 ```
 
-
 [![GitHub license](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/nccgroup/redsnarf/blob/master/LICENSE.md)
 
 **RedSnarf** is a pen-testing / red-teaming tool by **Ed William** and **Richard Davy** for retrieving hashes and credentials from Windows 
