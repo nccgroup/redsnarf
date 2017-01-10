@@ -13,8 +13,7 @@ workstations, servers and domain controllers using OpSec Safe Techniques.
 
 RedSnarf functionality includes: 
 
-•   Retrieval of local SAM hashes
-
+•   Retrieval of local SAM hashes  
 •   Enumeration of user/s running with elevated system privileges and their corresponding lsa secrets password;
 
 •   Retrieval of MS cached credentials;
