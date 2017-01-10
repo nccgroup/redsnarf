@@ -148,7 +148,7 @@ Example 2 - Double Quotes need to be escaped with \
 **./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -uX 'dsquery group -name \"domain admins\" | dsget group -members -expand'**
 
 Local Access Token Policy  
-Creates a batch file lat.bat which you can copy and paste to the remote machine to execute which will modify the registry and either enable or disable Local Access Token Policy settings.
+Creates a batch file lat.bat which you can copy and paste to the remote machine to execute which will modify the registry and either enable or disable Local Access Token Policy settings.  
 **./redsnarf.py -rL y**
 
 Wdigest  
