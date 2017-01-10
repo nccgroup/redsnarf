@@ -23,7 +23,7 @@ RedSnarf functionality includes:
 •   Quickly identify weak and guessable username/password combinations (default of administrator/Password01);  
 •   The ability to retrieve hashes across a range;  
 •   Hash spraying -  
-o   Credsfile will accept a mix of pwdump, fgdump and plain text username and password separated by a space;  
+    Credsfile will accept a mix of pwdump, fgdump and plain text username and password separated by a space;  
 •	Lsass dump for offline analysis with Mimikatz;  
 •	Dumping of Domain controller hashes using NTDSUtil and retrieval of NTDS.dit for local parsing;  
 •	Dumping of Domain controller hashes using the drsuapi method;  
@@ -196,8 +196,7 @@ Query Windows AutoLogon registry value on a machine using domain administrator c
 
 RDP
 =======================
-
-RDP  
+ 
 Enable RDP on a machine using domain administrator credentials
 **./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rR e**
 
