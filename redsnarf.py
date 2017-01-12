@@ -1896,9 +1896,10 @@ if policiesscripts_dump=='y' or policiesscripts_dump=='yes':
 									
 									if b>0 and c>0:
 										d=n[int(b):int(c)]
-								
-									print colored("[+]Attemping to decrypt cpassword - "+d,'yellow')
-									gppdecrypt(d) 
+									
+									if len(d)>0:
+										print colored("[+]Attemping to decrypt cpassword - "+d,'yellow')
+										gppdecrypt(d) 
 
 						except IOError as e:
 							print "I/O error({0}): {1}".format(e.errno, e.strerror) 
