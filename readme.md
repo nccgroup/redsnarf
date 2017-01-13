@@ -41,6 +41,7 @@ RedSnarf functionality includes:
 •	Stealth mimikatz added.  
 •	Parsing of domain hashes  
 •	Ability to determine which accounts are enabled/disabled  
+•	Take a screen shot of a Remote logged on Active Users Desktop  
 
 RedSnarf Usage
 =======================
@@ -126,7 +127,10 @@ Find User - Offline (searches pre downloaded information)
 **/redsnarf.py -H range=10.0.0.1/24 -u administrator -p Password01 -d yourdomain.com -eO user.name**
 
 Display NT AUTHORITY\SYSTEM Tasklist  
-**/redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -d yourdomain.com -eT y**
+**/redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -d yourdomain.com -eT y**  
+
+Screenshot the Desktop of a Remote Logged on Active User  
+**/redsnarf.py -H ip=10.0.0.1 -u administrator -p Password01 -d yourdomain.com -eS y**  
 
 Misc
 =======================
