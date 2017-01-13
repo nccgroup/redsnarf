@@ -720,6 +720,7 @@ def datadump(user, passw, host, path, os_version):
 					print colored("[-]Something went wrong here...",'red')
 
 			if screenshot in yesanswers:
+				loggeduser=""
 				try:
 					print colored("[+]Attempting to Screenshot Desktop",'green')
 					
@@ -732,10 +733,15 @@ def datadump(user, passw, host, path, os_version):
 							for n in u:
 								if n:
 									if not "USERNAME" in n:
-										loggeduser=n.lstrip()
-										endofloggeduser=loggeduser.find(" ")
-										loggeduser=loggeduser[:endofloggeduser]
-										break
+										if "Active" in n:
+											loggeduser=n.lstrip()
+											endofloggeduser=loggeduser.find(" ")
+											loggeduser=loggeduser[:endofloggeduser]
+											break
+
+							if loggeduser=="":
+								print colored("[-]No logged on Active Users found: "+host,'red')
+								exit(1)	
 
 						except IOError as e:
 							print "I/O error({0}): {1}".format(e.errno, e.strerror)
