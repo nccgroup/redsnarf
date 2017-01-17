@@ -309,9 +309,9 @@ def get_ip_address(ifname):
 
 def datadump(user, passw, host, path, os_version):
 	
-	#Temporary workaround for Windows XP where Admin User has no password
-	if os_version=="Windows 5.1" and passw=="":
-		print colored("[+]Windows XP Detected with No Password - Be patient this could take a couple of minutes: ",'yellow')
+	#Temporary workaround where User has no password
+	if passw=="":
+		print colored("[+]User Detected with No Password - Be patient this could take a couple of minutes: ",'yellow')
 		
 		if not os.path.exists(path+host):
 			os.makedirs(path+host)
