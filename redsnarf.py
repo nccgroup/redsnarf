@@ -871,7 +871,7 @@ def get_domain_admins(ip,username,password):
 		print colored("[-]Username is missing..",'red')
 		exit(1)
 	else:
-		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+ip+" 'net group \"Domain Admins\" ' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+ip+" 'net group \"Domain Admins\" /domain' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 		stdout_value = proc.communicate()[0]
 		
 		if username in stdout_value:
