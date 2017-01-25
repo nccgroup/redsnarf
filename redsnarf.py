@@ -950,7 +950,15 @@ def run():
 
 		except Exception, e:
 			#Catch the login error and display exception
-			print colored(e,'red')
+			
+			if "STATUS_PASSWORD_EXPIRED" in str(e):
+				print colored(e,'yellow')+colored(" - Could be worth a closer look...",'red')
+				if remotetargets[0:3]=='ip=':
+					response = raw_input("[+]Do you want to try and connect with rdesktop to set a new password? Y/N (N): ")
+					if response in yesanswers:
+						os.system("rdesktop "+host+" 2>/dev/null")
+			else:
+				print colored(e,'red')
 
 
 
