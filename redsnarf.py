@@ -855,7 +855,7 @@ def get_local_admins(ip,username,password):
 		print colored("[-]Username is missing..",'red')
 		exit(1)
 	else:
-		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+ip+" \"net localgroup administrators\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+ip+" 'net localgroup administrators' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 		stdout_value = proc.communicate()[0]
 		if username in stdout_value:
 			LocalAdmin = True
@@ -918,14 +918,15 @@ def run():
 				if smbClient.getServerOS().find('Windows')!=-1 and smbClient.isGuestSession()==0:
 					print colored("[+]"+host+" Creds OK, User Session Granted",'green')
 					
+					#Check if account is a local admin
 					if get_local_admins(host,user,passwd):
 						print colored("[+]"+host+" Account is a Local Admin",'green')
 					else:
 						print colored("[-]"+host+" Account not found in Local Admin Group",'yellow')
 
-					#Check if account is in DA group
+					#Check if account is a Domain Admin
 					if get_domain_admins(host,user,passwd):
-						print colored("[+]"+host+" Account is a Domain Admin",'green')
+						print colored("[+]"+host+" Account is a Domain Admin",'green') + colored(" Game Over!",'red')
 					else:
 						print colored("[-]"+host+" Account not found in Domain Admin Group",'yellow')
 
