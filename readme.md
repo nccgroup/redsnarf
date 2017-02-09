@@ -14,6 +14,9 @@
 **RedSnarf** is a pen-testing / red-teaming tool by **Ed William** and **Richard Davy** for retrieving hashes and credentials from Windows 
 workstations, servers and domain controllers using OpSec Safe Techniques.
 
+See our YouTube Channel for Videos
+https://www.youtube.com/channel/UCDGWRxpHo6d8y6qIeMAXnxQ
+
 RedSnarf functionality includes: 
 
 •   Retrieval of local SAM hashes  
