@@ -1058,7 +1058,7 @@ def checkport():
 def get_local_admins(ip,username,password,domain):
 	
 	LocalAdmin=False
-
+	
 	if username=="":
 		print colored("[-]Username is missing..",'red')
 		exit(1)
@@ -1100,6 +1100,7 @@ def run():
 
 		if passw[len(passw)-3:] ==':::':
 			lmhash, nthash ,s1,s2,s3 = passw.split(':')
+			passwd=lmhash+":"+nthash
 		else:
 			lmhash = ''
 			nthash = ''
@@ -2297,7 +2298,7 @@ if policiesscripts_dump in yesanswers:
 
 						except IOError as e:
 							print "I/O error({0}): {1}".format(e.errno, e.strerror) 
-							
+
 				if os.path.isdir(outputpath+targets[0]+'/scripts/'):
 					print colored("[+]Attempting to to find references to administrator and password in "+outputpath+targets[0]+'/scripts/','green')	
 					os.chdir(outputpath+targets[0]+'/scripts/')
