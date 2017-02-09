@@ -318,15 +318,15 @@ def enumdomusers(ip,username,password,path):
 	stdout_value = proc.communicate()[0]
 	
 	if "Account Name:" in stdout_value:
-		print colored(username+" "+args.password ,'green')+colored(" - SUCCESSFUL LOGON",'green')
+		print colored(username+" "+password ,'green')+colored(" - SUCCESSFUL LOGON",'green')
 	elif "NT_STATUS_LOGON_FAILURE" in stdout_value:
-		print colored(username+" "+args.password,'red') +colored(" - NT_STATUS_LOGON_FAILURE",'red')
+		print colored(username+" "+password,'red') +colored(" - NT_STATUS_LOGON_FAILURE",'red')
 	elif "NT_STATUS_ACCOUNT_LOCKED_OUT" in stdout_value:
-		print colored('*****WARNING***** '+username+" "+args.password,'red') +colored(" - NT_STATUS_ACCOUNT_LOCKED_OUT",'red')
+		print colored('*****WARNING***** '+username+" "+password,'red') +colored(" - NT_STATUS_ACCOUNT_LOCKED_OUT",'red')
 	elif "NT_STATUS_ACCOUNT_DISABLED" in stdout_value:
-		print colored(username+" "+args.password,'blue')+colored(" - NT_STATUS_ACCOUNT_DISABLED",'blue')
+		print colored(username+" "+password,'blue')+colored(" - NT_STATUS_ACCOUNT_DISABLED",'blue')
 	elif "NT_STATUS_PASSWORD_MUST_CHANGE" in stdout_value:
-		print colored(username+" "+args.password,'blue') +colored(" - NT_STATUS_PASSWORD_MUST_CHANGE",'blue')
+		print colored(username+" "+password,'blue') +colored(" - NT_STATUS_PASSWORD_MUST_CHANGE",'blue')
 	else:
 		print colored("[+]Successful Connection...",'yellow')
 
@@ -420,6 +420,13 @@ def getdescfield(ip,username,password,path):
 
 				if len(stdout_value)>0:
 					print colored('[*]A quick check for pass reveals... '+'\n','yellow')
+					print stdout_value+"\n"
+
+				proc = subprocess.Popen('grep -i pwd '+path+str(ip)+"_desc_users.txt", stdout=subprocess.PIPE,shell=True)
+				stdout_value = proc.communicate()[0]
+
+				if len(stdout_value)>0:
+					print colored('[*]A quick check for pwd reveals... '+'\n','yellow')
 					print stdout_value
 		
 	else:
