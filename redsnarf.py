@@ -1612,7 +1612,7 @@ if recorddesktop in yesanswers:
 
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\\windows\\temp\\"+"OUTPUT.zip\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 				print proc.communicate()[0]
-				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\\srecordstop.bat c:\\srecordstop.bat\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\\srecordstart.bat c:\\srecordstop.bat\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 				print proc.communicate()[0]
 			
 				time.sleep(4)
