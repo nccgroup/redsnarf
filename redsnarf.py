@@ -1461,7 +1461,7 @@ p.add_argument("-eL", "--find_user", dest="find_user", default="n", help="<Optio
 p.add_argument("-eO", "--ofind_user", dest="ofind_user", default="n", help="<Optional> Find user - Offline")
 p.add_argument("-eP", "--password_policy", dest="password_policy", default="n", help="<Optional> Display Password Policy")
 p.add_argument('--protocols', nargs='*', help=str(SAMRDump.KNOWN_PROTOCOLS.keys()))
-p.add_argument("-eR", "--recorddesktop", dest="recorddesktop", default="n", help="<Optional> Record the console desktop")
+p.add_argument("-eR", "--recorddesktop", dest="recorddesktop", default="n", help="<Optional> Record a desktop using Windows Problem Steps Recorder")
 p.add_argument("-eS", "--screenshot", dest="screenshot", default="n", help="<Optional> Take a screenshot of remote machine desktop")
 p.add_argument("-eT", "--system_tasklist", dest="system_tasklist", default="n", help="<Optional> Display NT AUTHORITY\SYSTEM Tasklist")
 # Registry related
@@ -1606,6 +1606,7 @@ if recorddesktop in yesanswers:
 					
 				if os.path.isfile(outputpath+targets[0]+"/"+"OUTPUT.zip"):
 					print colored("[+]Recording file saved as "+outputpath+targets[0]+"/"+"OUTPUT.zip",'yellow')
+					print colored("[+]To view generated .mht file in Kali use Mozilla Achieve Format Addon:\n",'green')
 				else:
 					print colored("[-]Recording not found, try again..",'red')
 
