@@ -6,7 +6,14 @@
 import os, argparse, signal, sys, re, binascii, subprocess, string, SimpleHTTPServer, multiprocessing, SocketServer
 import socket, fcntl, struct, time, base64
 
-import ldap # run 'pip install python-ldap' to install ldap module.
+try:
+	import ldap 
+except ImportError:
+	print("Try installing these modules to help with this error")
+	print("run 'pip install python-ldap' to install ldap module.")
+	print("apt-get install libpq-dev python-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libffi-dev")
+	print("apt-get install python2.7-dev")
+	exit(1)
 
 try:
 	from IPy import IP
