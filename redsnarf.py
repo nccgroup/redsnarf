@@ -1489,7 +1489,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3c", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3d", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="Administrator",help="Enter a username")
@@ -1684,7 +1684,6 @@ if mssqlshell=="WIN" or mssqlshell=="DB":
 			
 			if pwdump:
 				passw=passw[0:-3]
-
 
 			print colored("[+]Starting Impacket MSSQL Shell\n",'green')
 			print colored("[+]Info - To manually turn on xp_cmdshell use",'green')
@@ -2653,11 +2652,36 @@ if dropshell in yesanswers:
 		sys.exit()
 
 if ofind_user !='n':
-	print colored ('\n[+]Now looking for where user '+ofind_user+' is logged in','yellow')
-	for ip in targets:
-		if os.path.isfile(outputpath+str(ip)+'/logged_on_users.txt'):
-			if ofind_user in open(outputpath+str(ip)+'/logged_on_users.txt').read():
-				print colored ("[+]Found " + ofind_user + " logged in to "+str(ip),'green')
+	if "file=" in ofind_user:
+		print colored("[+]Search cached logged_on_users.txt files for users",'yellow')
+		userfilename = ofind_user[5:]
+		if len(userfilename)==0:
+			print colored("[-]I think you forgot the filename...",'red')
+			sys.exit()
+		else:
+						
+			if os.path.isfile(userfilename):
+				print colored("[+]Confirmed that "+userfilename+ " exists...",'green')
+			else:
+				print colored("[-]Unable to confirm that "+userfilename+" exists",'red')
+				sys.exit()
+
+			print colored("[+]Searching for users in file "+userfilename,'yellow')
+
+		for ip in targets:
+			if os.path.isfile(outputpath+str(ip)+'/logged_on_users.txt'):
+				usernamesfile = open(userfilename, 'r')
+				for usern in usernamesfile:
+					if usern.rstrip() in open(outputpath+str(ip)+'/logged_on_users.txt').read():
+						print colored ("[+]Found " + usern.rstrip() + " logged in to "+str(ip),'green')
+
+	else:
+		print colored ('\n[+]Now looking for where user '+ofind_user+' is logged in','yellow')
+		for ip in targets:
+			if os.path.isfile(outputpath+str(ip)+'/logged_on_users.txt'):
+				if ofind_user in open(outputpath+str(ip)+'/logged_on_users.txt').read():
+					print colored ("[+]Found " + ofind_user + " logged in to "+str(ip),'green')
+	
 	sys.exit()
 
 if user_desc in yesanswers:
