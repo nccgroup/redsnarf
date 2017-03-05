@@ -267,10 +267,35 @@ def gppdecrypt(cpassword_pass):
 def quickjtr(filename):
 	
 	if os.path.isfile("/usr/share/wordlists/rockyou.txt"):		
-		print colored("[+]Found /usr/share/wordlists/rockyou.txt",'green')
-		print colored("[+]Starting John The Ripper - "+"john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules",'yellow')
-		os.system("john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules")
+		print colored("[+]Detected /usr/share/wordlists/rockyou.txt",'green')
+		
+		#John The Ripper Configuration Location
+		#/etc/john/john.conf
+		if 'KoreLogicRules' in open("/etc/john/john.conf").read():
+			print colored("[+]Detected that KoreLogicRules in installed in john.conf",'green')	
+			UseKoreLogic = raw_input("Would you like to use KoreLogicRules?: Y/(N) ")
+		
+			if UseKoreLogic in yesanswers:	
+				print colored("[+]Some common rules are:",'green')
+				print colored("[+]KoreLogicRulesAppendNumbers_and_Specials_Simple",'blue')
+				print colored("[+]KoreLogicRulesL33t",'blue')
+				print colored("[+]KoreLogicRulesAppendYears",'blue')
+				print colored("[+]KoreLogicRulesAppendSeason",'blue')
+				KoreLogicRule = raw_input("Please enter the rule you wish to use: ")
+				print colored("[+]Starting John The Ripper",'yellow')
+				print colored("[+]john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules:"+KoreLogicRule,'yellow')
+				os.system("john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules:"+KoreLogicRule)
+			else:
+				print colored("[+]Starting John The Ripper",'yellow')
+				print colored("[+]john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules",'yellow')
+				os.system("john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules")
+		else:
+			print colored("[+]Starting John The Ripper",'yellow')
+			print colored("[+]john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules",'yellow')
+			os.system("john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules")
 	else:
+		print colored("[+]Starting John The Ripper",'yellow')
+		print colored("[+]john --format=nt "+str(filename)+ " --rules",'yellow')
 		os.system("john --format=nt "+str(filename)+" --rules")
 	
 
