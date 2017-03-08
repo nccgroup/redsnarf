@@ -1,0 +1,12 @@
+python-ldap
+libpq-dev 
+python-dev 
+libxml2-dev 
+libxslt1-dev 
+libldap2-dev 
+libsasl2-dev 
+libffi-dev
+python2.7-dev
+python-ipy
+netaddr
+termcolor
