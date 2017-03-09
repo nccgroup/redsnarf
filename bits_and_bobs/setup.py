@@ -32,7 +32,8 @@ def main(argv):
 		
 		os.system("chmod 777 /tmp/impacket/setup.py")
 		
-		print "[+]All that's left to do is run python /tmp/impacket/setup.py install"
+		print "[+]All that's left to do is run navigate to /tmp/impacket/ and run python setup.py install"
+		print "[+]Bye"
 
 if __name__ == "__main__":
    main(sys.argv[1:])
