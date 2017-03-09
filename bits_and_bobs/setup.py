@@ -1,5 +1,5 @@
 #! /usr/bin/python
-import os,sys
+import os,sys,subprocess
 
 def main(argv):
 
@@ -17,7 +17,8 @@ def main(argv):
 
 	print "[+]RedSnarf Quick and Dirty Installer"
 	print "[+]Starting Install"
-	os.system("apt-get install python-ipy python2.7-dev libpq-dev python-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libffi-dev")
+	os.system("apt-get update")
+	os.system("apt-get install python-ipy python2.7-dev libpq-dev python-dev libxml2-dev libxslt1-dev libldap2-dev libsasl2-dev libffi-dev --fix-missing")
 	os.system("pip install netaddr")
 	os.system("pip install termcolor")
 	os.system("pip install python-ldap")
@@ -26,8 +27,14 @@ def main(argv):
 		os.system("git clone https://github.com/Neohapsis/creddump7 /opt/creddump7")
 
 	if not os.path.isfile('/usr/local/bin/secretsdump.py'):
-		os.system("git clone https://github.com/CoreSecurity/impacket.git /tmp/impacket")
-		os.system("python /tmp/impacket/setup.py install")
+		if not os.path.isfile('/tmp/impacket/setup.py')
+			os.system("git clone https://github.com/CoreSecurity/impacket.git /tmp/impacket")
+		
+		os.system("chmod 777 /tmp/impacket/setup.py")
+		
+		proc = subprocess.Popen("python /tmp/impacket/setup.py install" , stdout=subprocess.PIPE,shell=True).wait()
+		stdout_value = proc.communicate()[0]
+		print stdout_value
 
 if __name__ == "__main__":
    main(sys.argv[1:])
