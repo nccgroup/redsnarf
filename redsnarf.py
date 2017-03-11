@@ -74,6 +74,9 @@ def banner():
 	print colored("\nE D Williams - NCCGroup",'red')
 	print colored("R Davy - NCCGroup\n",'red')
 
+#WinSCP Decryption Routines 
+#Source: https://www.jonaslieb.com/blog/2015/02/20/winscp-session-password-decryption-part-2/
+
 class Decrypter:
 	SIMPLE_STRING = "0123456789ABCDEF"
 	SIMPLE_MAGIC = 0xA3
