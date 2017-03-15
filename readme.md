@@ -45,6 +45,9 @@ RedSnarf functionality includes:
 •	Parsing of domain hashes  
 •	Ability to determine which accounts are enabled/disabled  
 •	Take a screen shot of a Remote logged on Active Users Desktop  
+•	Record Remote logged on Active Users Desktop  
+•	Decrypt Windows CPassword  
+•	Decrypt WinSCP Password  
 
 RedSnarf Usage
 =======================
