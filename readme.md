@@ -48,6 +48,8 @@ RedSnarf functionality includes:
 •	Record Remote logged on Active Users Desktop  
 •	Decrypt Windows CPassword  
 •	Decrypt WinSCP Password  
+•	Get User SPN's  
+•	Retrieve WIFI passwords from remote machines  
 
 RedSnarf Usage
 =======================
@@ -203,6 +205,9 @@ Disable Windows AutoLogon registry value on a machine using domain administrator
 
 Query Windows AutoLogon registry value on a machine using domain administrator credentials  
 **./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -rA q**
+
+Lock a remote machine user session using domain administrator credentials  
+**./redsnarf.py -H ip=10.0.0.50 -u administrator -p Password01 -d yourdomain.com -uL y**
 
 RDP
 =======================
