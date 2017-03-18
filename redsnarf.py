@@ -317,7 +317,7 @@ def gppdecrypt(cpassword_pass):
 
 #Routine helps start John the Ripper
 def quickjtr(filename):
-	
+	#Set our variables/etc up
 	LogicRule = []
 	LogicRule.append("KoreLogicRulesAppendNumbers_and_Specials_Simple")
 	LogicRule.append("KoreLogicRulesL33t")
@@ -332,6 +332,7 @@ def quickjtr(filename):
 	WordList=""
 	KoreRuleToUse=""
 
+	#Setup if we're going to use a wordlist or not
 	if os.path.isfile("/usr/share/wordlists/rockyou.txt"):		
 		print colored("[+]Detected /usr/share/wordlists/rockyou.txt",'green')
 		UseRockYou = raw_input("Would you like to use rockyou.txt as your wordlist?: Y/(N) ")
@@ -342,16 +343,23 @@ def quickjtr(filename):
 			Alternative = raw_input("Would you like to use an alternative wordlist?: Y/(N) ")
 			if Alternative in yesanswers:	
 				WordList = raw_input("Enter path to wordlist: ")
-				print colored("[+]Selected as wordlist - "+WordList,'green')
+				if os.path.isfile(WordList):	
+					print colored("[+]Selected as wordlist - "+WordList,'green')
+				else:
+					print colored("[-]Selected wordlist - "+WordList+" doesn't exist...",'red')
+					sys.exit()
 			else:	
 				WordList = ""
 		else:
 			WordList=""
 
+	#If we're using a wordlist check to see if KoreLogicRules are installed and
+	#see if we want to use them
 	if WordList!="" and 'KoreLogicRules' in open("/etc/john/john.conf").read():
 		print colored("[+]Detected that KoreLogicRules in installed in john.conf",'green')	
 		UseKoreLogic = raw_input("Would you like to use KoreLogicRules?: Y/(N) ")
-	
+		
+		#If KoreLogic is installed and we want to use it
 		if UseKoreLogic in yesanswers:	
 			print colored("[+]Some common rules are:",'green')
 			print colored("[0]KoreLogicRulesAppendNumbers_and_Specials_Simple",'blue')
@@ -378,14 +386,17 @@ def quickjtr(filename):
 				print colored("[+]Selected KoreLogicRule - "+ str(LogicRule[int(KoreLogicRule)]),'green')
 				KoreRuleToUse = str(LogicRule[int(KoreLogicRule)])
 
+	#If no wordlist and no korelogic is selected
 	if WordList=="" and KoreRuleToUse=="":
 		print colored("[+]Starting John The Ripper with No Wordlist or KoreLogicRules",'yellow')
 		print colored("[+]john --format=nt "+str(filename)+ " --rules",'yellow')
 		os.system("john --format=nt "+str(filename)+" --rules")
+	#If a wordlist is selected and we're not using korelogic
 	elif WordList!="" and KoreRuleToUse=="":
 		print colored("[+]Starting John The Ripper with Wordlist and No KoreLogicRules",'yellow')
 		print colored("[+]john --format=nt "+str(filename)+ " --wordlist="+WordList+" --rules",'yellow')
 		os.system("john --format=nt "+str(filename)+ " --wordlist=" +WordList+" --rules")
+	#If we're using a wordlist and we're using korelogic
 	elif WordList!="" and KoreRuleToUse!="":
 		print colored("[+]Starting John The Ripper with Wordlist and KoreLogicRules",'yellow')
 		print colored("[+]john --format=nt "+str(filename)+ " --wordlist="+WordList+" --rules:"+KoreRuleToUse,'yellow')
@@ -1794,6 +1805,7 @@ lockdesktop=args.lockdesktop
 meterpreter_revhttps=args.meterpreter_revhttps
 sendtojohn=args.sendtojohn
 
+#Call routine to send hashes to JtR
 if sendtojohn!='':
 	print colored("[+]Sending Hashes from "+sendtojohn+" to JtR:",'yellow')
 	quickjtr(sendtojohn)
