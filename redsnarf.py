@@ -317,13 +317,18 @@ def gppdecrypt(cpassword_pass):
 
 #Routine helps start John the Ripper
 def quickjtr(filename):
-		
+	
 	LogicRule = []
 	LogicRule.append("KoreLogicRulesAppendNumbers_and_Specials_Simple")
 	LogicRule.append("KoreLogicRulesL33t")
 	LogicRule.append("KoreLogicRulesAppendYears")
 	LogicRule.append("KoreLogicRulesAppendSeason")
-	
+	LogicRule.append("KoreLogicRulesPrependAppend1-4")
+	LogicRule.append("KoreLogicRulesReplaceNumbers")
+	LogicRule.append("KoreLogicRulesAddJustNumbersLimit8")
+	LogicRule.append("KoreLogicRulesReplaceLetters")
+	LogicRule.append("KoreLogicRulesReplaceLettersCaps")
+
 	WordList=""
 	KoreRuleToUse=""
 
@@ -353,9 +358,16 @@ def quickjtr(filename):
 			print colored("[1]KoreLogicRulesL33t",'blue')
 			print colored("[2]KoreLogicRulesAppendYears",'blue')
 			print colored("[3]KoreLogicRulesAppendSeason",'blue')
-			print colored("[4]Other",'blue')
+			print colored("[4]KoreLogicRulesPrependAppend1-4",'blue')
+			print colored("[5]KoreLogicRulesReplaceNumbers",'blue')
+			print colored("[6]KoreLogicRulesAddJustNumbersLimit8",'blue')
+			print colored("[7]KoreLogicRulesReplaceLetters",'blue')
+			print colored("[8]KoreLogicRulesReplaceLettersCaps",'blue')
+			print colored("[9]Other",'blue')
+			
 			KoreLogicRule = raw_input("Please enter the number of the rule you wish to use: ")	
-			if KoreLogicRule=="4":
+			
+			if KoreLogicRule=="9":
 				KoreRuleToUse=raw_input("Please enter the rule you wish to use: ")
 				if KoreRuleToUse=="":
 					print colored("[-]No rule entered...",'red')
@@ -1677,6 +1689,7 @@ ugroup.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<
 ugroup.add_argument("-uE", "--empire_launcher", dest="empire_launcher", default="n", help="<Optional> Start Empire Launcher")
 ugroup.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
 ugroup.add_argument("-uJ", "--john_to_pipal", dest="john_to_pipal", default="", help="<Optional> Send passwords cracked with JtR to Pipal for Auditing")
+ugroup.add_argument("-uJW", "--sendtojohn", dest="sendtojohn", default="", help="<Optional> Enter path to NT Hash file to send to JtR")
 ugroup.add_argument("-uL", "--lockdesktop", dest="lockdesktop", default="", help="<Optional> Lock remote users Desktop")
 ugroup.add_argument("-uM", "--mssqlshell", dest="mssqlshell", default="", help="<Optional> Start MSSQL Shell use WIN for Windows Auth, DB for MSSQL Auth")
 ugroup.add_argument("-uMT", "--meterpreter_revhttps", dest="meterpreter_revhttps", default="", help="<Optional> Launch Reverse Meterpreter HTTPS")
@@ -1779,6 +1792,12 @@ get_spn=args.get_spn
 win_scp=args.win_scp
 lockdesktop=args.lockdesktop
 meterpreter_revhttps=args.meterpreter_revhttps
+sendtojohn=args.sendtojohn
+
+if sendtojohn!='':
+	print colored("[+]Sending Hashes from "+sendtojohn+" to JtR:",'yellow')
+	quickjtr(sendtojohn)
+	sys.exit()
 
 #Code takes a hash file which has previously been seen by Jtr, cuts out the cracked passwords, gets rid of any blank lines, gets rid of the last line, outputs to a tmp file
 #in the tmp directory. Runs pipal against the tmp file and then pipes out the pipal data to file.
