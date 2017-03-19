@@ -1945,6 +1945,10 @@ if rdp_connect in yesanswers:
 					rdpdest=line.find('rdp')
 					rdp_sessions.append(line[int(rdpdest):35].rstrip())
 			
+			if len(rdp_sessions)==0:
+				print colored("[-]You first need to establish an RDP connection to the remote host",'red')
+				sys.exit()
+
 			print colored("[+]Session Destination",'yellow')		
 			for x in xrange(0,len(rdp_sessions)):
 				print colored("["+str(x)+"]"+rdp_sessions[x],'green')	
