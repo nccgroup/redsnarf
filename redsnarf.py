@@ -445,6 +445,48 @@ def WriteLAT():
 	except:
 		print colored("[-]Something went wrong...",'red')
 
+#Routine Write out a batch file which can be used to turn on/off LocalAccountTokenFilterPolicy
+def WriteFAT():
+	try:
+		print colored("[+]Attempting to write Filter Administrator Token Policy Helper",'green')
+		logging.info("[+]Attempting to write Filter Administrator Token Policy Helper")
+		fout=open('/tmp/fat.bat','w')
+		fout.write('@echo off\n\n')
+		fout.write('cls\n')
+		fout.write('echo .\n')
+		fout.write('echo .\n')
+		fout.write('echo FilterAdministratorToken Enable/Disable Script\n')
+		fout.write('echo R Davy - NCCGroup	\n')
+		fout.write('echo .\n')
+		fout.write('echo .\n')
+		fout.write('echo [+] Searching Registry......\n')
+		fout.write('echo .\n')
+		fout.write('reg.exe query "HKLM\Software\Microsoft\windows\CurrentVersion\Policies\system" /v "FilterAdministratorToken" | Find "0x1"\n')
+		fout.write('IF %ERRORLEVEL% == 1 goto turnon\n')
+		fout.write('If %ERRORLEVEL% == 0 goto remove\n\n')
+		fout.write('goto end\n')
+		fout.write(':remove\n\n')
+		fout.write('reg.exe delete "HKLM\Software\Microsoft\windows\CurrentVersion\Policies\system" /v FilterAdministratorToken /f \n')
+		fout.write('echo .\n')
+		fout.write('echo [+] Registry Key Removed \n')
+		fout.write('echo .\n')
+		fout.write('echo HKLM\Software\Microsoft\windows\CurrentVersion\Policies\system\FilterAdministratorToken\n')
+		fout.write('echo .\n')
+		fout.write('goto end\n\n')
+		fout.write(':turnon\n\n')
+		fout.write('reg.exe add "HKLM\Software\Microsoft\windows\CurrentVersion\Policies\system" /v FilterAdministratorToken /t REG_DWORD /f /D 1 \n')
+		fout.write('echo .\n')
+		fout.write('echo [+] Added Registry Key\n')
+		fout.write('echo .\n')
+		fout.write('echo HKLM\Software\Microsoft\windows\CurrentVersion\Policies\system\FilterAdministratorToken with value of 1\n')
+		fout.write('echo .\n')
+		fout.write('goto end\n\n')
+		fout.write(':end\n')
+		fout.close() 
+		print colored("[+]Written to /tmp/fat.bat ",'yellow')
+	except:
+		print colored("[-]Something went wrong...",'red')
+
 #Routine gets current ip address
 def get_ip_address(ifname):
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -1403,11 +1445,13 @@ def run():
 				elif smbClient.isGuestSession() ==1:
 					print colored("[-]"+host+" Guest Session detected...",'red')
 				else:
-					print colored("[-]"+host+" Something went wrong... ",'red')
+					print colored("[-]"+host+" Something went wrong...\n",'red')
+					print colored("[-]"+host+" Can you ping the remote device?... ",'yellow')
+					print colored("[-]"+host+" Have you checked the LocalAccessToken Registry Setting?... (-rL y will create a .bat dropper file)",'yellow')
+					print colored("[-]"+host+" Have you checked the FilterAdministratorToken Registry Setting?... (-rF y will create a .bat dropper file)",'yellow')
 
 		except Exception, e:
-			#Catch the login error and display exception
-			
+			#Catch the login error and display exception			
 			if "STATUS_PASSWORD_EXPIRED" in str(e):
 				print colored(e,'yellow')+colored(" - Could be worth a closer look...",'red')
 				if remotetargets[0:3]=='ip=':
@@ -1679,7 +1723,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3r", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3t", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1740,6 +1784,7 @@ rgroup = p.add_argument_group('Registry related')
 rgroup.add_argument("-rA", "--edq_autologon", dest="edq_autologon", default="n", help="<Optional> (e)nable/(d)isable/(q)uery AutoLogon Registry Setting")
 rgroup.add_argument("-rB", "--edq_backdoor", dest="edq_backdoor", default="n", help="<Optional> (e)nable/(d)isable/(q)uery Backdoor Registry Setting")
 rgroup.add_argument("-rC", "--edq_scforceoption", dest="edq_scforceoption", default="n", help="<Optional> (e)nable/(d)isable/(q)uery Smart Card scforceoption Registry Setting")
+rgroup.add_argument("-rF", "--fat", dest="fat", default="n", help="<Optional> Write batch file for turning on/off FilterAdministratorToken Policy")
 rgroup.add_argument("-rL", "--lat", dest="lat", default="n", help="<Optional> Write batch file for turning on/off Local Account Token Filter Policy")
 rgroup.add_argument("-rM", "--edq_SingleSessionPerUser", dest="edq_SingleSessionPerUser", default="n", help="<Optional> (E)nable/(D)isable/(Q)uery RDP SingleSessionPerUser Registry Setting")
 rgroup.add_argument("-rN", "--edq_nla", dest="edq_nla", default="n", help="<Optional> (e)nable/(d)isable/(q)uery NLA Status")
@@ -1775,6 +1820,7 @@ find_user=args.find_user
 ofind_user=args.ofind_user
 clear_event=args.clear_event
 lat=args.lat
+fat=args.fat
 xcommand=args.xcommand
 edq_rdp=args.edq_rdp
 edq_nla=args.edq_nla
@@ -1827,6 +1873,11 @@ if john_to_pipal!='':
 #Call routine to write out LAT file
 if lat in yesanswers:
 	WriteLAT()
+	sys.exit()
+
+#Call routine to write out FAT file
+if fat in yesanswers:
+	WriteFAT()
 	sys.exit()
 
 #Decrypt a passed cpassword
@@ -1930,6 +1981,11 @@ elif remotetargets[0:6]=='range=':
 if rdp_connect in yesanswers or "ID" in rdp_connect:
 	
 	rdp_sessions = []
+
+	#Todo
+	#add check for NLA
+	#os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"UserAuthentication\"' 2>/dev/null")
+
 
 	if "ID" in rdp_connect:
 		if len(targets)==1:
