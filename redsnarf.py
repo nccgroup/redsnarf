@@ -1358,7 +1358,7 @@ def get_local_admins(ip,username,password,domain):
 
 #Routine checks for domain admins
 def get_domain_admins(ip,username,password,domain):
-	
+	#Account active               Yes
 	DomainAdmin=False
 
 	if username=="":
@@ -1371,6 +1371,11 @@ def get_domain_admins(ip,username,password,domain):
 		
 		if username.upper() in stdout_value.upper():
 			DomainAdmin = True
+			#If account is domain admin try and get status.
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain+"\\"+username+"%"+password+"\" --uninstall --system \/\/"+ip+" 'net user '"+username+"' /domain' 2>/dev/null", stdout=subprocess.PIPE,shell=True)	
+			stdout_value = proc.communicate()[0]
+			if not "Account active               Yes" in stdout_value:
+				print colored("[-]Account is either disabled or locked...",'red')
 		
 	return DomainAdmin	
 
