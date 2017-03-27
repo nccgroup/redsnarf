@@ -1728,7 +1728,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3u", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3v", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1745,6 +1745,7 @@ cgroup.add_argument("-cS", "--skiplsacache", dest="skiplsacache", default="n", h
 # Utilities
 ugroup = p.add_argument_group('Utilities')
 ugroup.add_argument("-uC", "--clear_event", dest="clear_event", default="n", help="<Optional> Clear event log - application, security, setup or system")
+ugroup.add_argument("-uCIDR", "--cidr", dest="cidr", default="n", help="<Optional> Convert CIDR representation to ip, hostmask, broadcast")
 ugroup.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
 ugroup.add_argument("-uE", "--empire_launcher", dest="empire_launcher", default="n", help="<Optional> Start Empire Launcher")
 ugroup.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
@@ -1857,7 +1858,20 @@ lockdesktop=args.lockdesktop
 meterpreter_revhttps=args.meterpreter_revhttps
 sendtojohn=args.sendtojohn
 rdp_connect=args.rdp_connect
+cidr=args.cidr
 
+#Converts IPV4 CIDR notation
+if cidr!='':
+
+	print colored("[+]Converting from CIDR...",'yellow')
+	ip = IPNetwork(cidr)
+	print "IP Address "+str(ip.ip)
+	print "Network Address "+str(ip.network)
+	print "Broadcast Address "+str(ip.broadcast)
+	print "Total IP's " +str(ip.size)
+	print "Useable IP's " +str(ip.size-2)
+	sys.exit()
+	
 #Call routine to send hashes to JtR
 if sendtojohn!='':
 	print colored("[+]Sending Hashes from "+sendtojohn+" to JtR:",'yellow')
