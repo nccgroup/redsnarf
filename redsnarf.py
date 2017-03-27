@@ -6,6 +6,8 @@
 import os, argparse, signal, sys, re, binascii, subprocess, string, SimpleHTTPServer, multiprocessing, SocketServer
 import socket, fcntl, struct, time, base64, logging
 
+from random import shuffle
+
 # Logging definitions 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', filename='redsnarf.log', filemode='w')
 logging.debug("Command parameters run: %s", sys.argv[1:])
@@ -1728,7 +1730,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3w", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3x", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1862,14 +1864,59 @@ rdp_connect=args.rdp_connect
 cidr=args.cidr
 liveips=args.liveips
 
+#sed -f <( printf %dd\;  $(shuf -i1-90 -n10) ) input > output
+#shuf -i1-90 -n10 | sed 's/$/d/' | sed -f- input > output
+#$(wc -l <input)
+
 #Wrap and cut an nmap scan to get output of just live ip's in a subnet
 if liveips!='':
+	liveips1 = []
+	
 	print colored("[+]Live IP to File...",'yellow')
 	usr_response = raw_input("\nEnter a filename to output to: ")
 	if usr_response !='':
-		#print "nmap -n -sn -vv "+liveips+" |grep 'Host is up' -B 1 |grep Nmap |cut -d \" \" -f 5 > "+usr_response
 		os.system("nmap -n -sn -vv "+liveips+" |grep 'Host is up' -B 1 |grep Nmap |cut -d \" \" -f 5 > "+usr_response +" 2>/dev/null")
 		print colored("Scan complete",'yellow')
+		sample_response = raw_input("\nDo you want to generate a random 10 percent sample? (y/n): ")
+		if sample_response in noanswers:
+			sys.exit()
+		elif sample_response in yesanswers:
+			#Read in IP addresses
+			fo=open(usr_response,"r")
+			line = fo.readlines()
+			fo.close()
+
+			#Add lines to array
+			for newline in line:
+				newline=newline.strip('\n')
+				liveips1.append (newline);
+			
+			#Shuffle array			
+			shuffle(liveips1)
+		
+			#Get number of lines in array
+			no_of_lines=len(liveips1)
+			print colored(str(no_of_lines)+" IP addresses were detected...",'yellow')
+
+			#Check no less than 10
+			if no_of_lines<10:
+				print colored("[+]Can't calculate ten percent as less than 10 IP addresses are available",'yellow')
+				sys.exit()
+
+			#Calculate 10 percent
+			ten_percent=no_of_lines/10
+
+			ten_sample_response = raw_input("Please enter filename for 10 percent sample: ")
+			if ten_sample_response!='':
+				#print ten_percent
+				fout=open(ten_sample_response,'w')
+				for x in xrange(0,ten_percent):
+					fout.write(liveips1[x]+"\n")
+					
+				print colored("10 Percent Written to File...",'yellow')
+				fout.close() 
+
+			sys.exit()
 
 	sys.exit()
 
