@@ -1728,7 +1728,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3v", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3w", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1752,6 +1752,7 @@ ugroup.add_argument("-uG", "--c_password", dest="c_password", default="", help="
 ugroup.add_argument("-uJ", "--john_to_pipal", dest="john_to_pipal", default="", help="<Optional> Send passwords cracked with JtR to Pipal for Auditing")
 ugroup.add_argument("-uJW", "--sendtojohn", dest="sendtojohn", default="", help="<Optional> Enter path to NT Hash file to send to JtR")
 ugroup.add_argument("-uL", "--lockdesktop", dest="lockdesktop", default="", help="<Optional> Lock remote users Desktop")
+ugroup.add_argument("-uLP", "--liveips", dest="liveips", default="", help="<Optional> Ping scan to generate a list of live IP's")
 ugroup.add_argument("-uM", "--mssqlshell", dest="mssqlshell", default="", help="<Optional> Start MSSQL Shell use WIN for Windows Auth, DB for MSSQL Auth")
 ugroup.add_argument("-uMT", "--meterpreter_revhttps", dest="meterpreter_revhttps", default="", help="<Optional> Launch Reverse Meterpreter HTTPS")
 ugroup.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
@@ -1859,10 +1860,21 @@ meterpreter_revhttps=args.meterpreter_revhttps
 sendtojohn=args.sendtojohn
 rdp_connect=args.rdp_connect
 cidr=args.cidr
+liveips=args.liveips
+
+#Wrap and cut an nmap scan to get output of just live ip's in a subnet
+if liveips!='':
+	print colored("[+]Live IP to File...",'yellow')
+	usr_response = raw_input("\nEnter a filename to output to: ")
+	if usr_response !='':
+		#print "nmap -n -sn -vv "+liveips+" |grep 'Host is up' -B 1 |grep Nmap |cut -d \" \" -f 5 > "+usr_response
+		os.system("nmap -n -sn -vv "+liveips+" |grep 'Host is up' -B 1 |grep Nmap |cut -d \" \" -f 5 > "+usr_response +" 2>/dev/null")
+		print colored("Scan complete",'yellow')
+
+	sys.exit()
 
 #Converts IPV4 CIDR notation
 if cidr!='':
-
 	print colored("[+]Converting from CIDR...",'yellow')
 	ip = IPNetwork(cidr)
 	print "IP Address "+str(ip.ip)
