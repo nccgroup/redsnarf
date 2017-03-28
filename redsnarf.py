@@ -1730,7 +1730,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3x", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3y", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1864,22 +1864,46 @@ rdp_connect=args.rdp_connect
 cidr=args.cidr
 liveips=args.liveips
 
-#sed -f <( printf %dd\;  $(shuf -i1-90 -n10) ) input > output
-#shuf -i1-90 -n10 | sed 's/$/d/' | sed -f- input > output
-#$(wc -l <input)
-
 #Wrap and cut an nmap scan to get output of just live ip's in a subnet
 if liveips!='':
-	liveips1 = []
 	
-	print colored("[+]Live IP to File...",'yellow')
+	#Setup list
+	lstliveips = []
+	
+	#Print function title
+	print colored("[+]Live IP to File...",'green')
+	#Get filename to write to
 	usr_response = raw_input("\nEnter a filename to output to: ")
+	#If response is not empty
 	if usr_response !='':
+		
+		#Check to see whether file with that name exists
+		if os.path.isfile(usr_response):
+			#Print warning msg
+			print colored("\n[+]WARNING",'red')
+			#Confirm if we should overwrite
+			response = raw_input("Looks like you have an existing file "+usr_response+", do you want to overwrite?: Y/(N) ")
+			#If no exit else continue
+			if response in noanswers:	
+				sys.exit()
+
+		#Wrap nmap to get ips
 		os.system("nmap -n -sn -vv "+liveips+" |grep 'Host is up' -B 1 |grep Nmap |cut -d \" \" -f 5 > "+usr_response +" 2>/dev/null")
-		print colored("Scan complete",'yellow')
+		
+		#Read in IP addresses
+		fo=open(usr_response,"r")
+		fline = fo.readlines()
+		fo.close()
+
+		#Print complete message
+		print colored("[+]Scan complete "+str(len(fline))+" IP(s) detected",'yellow')
+		
+		#See if we want to generate a random 10 per cent sample
 		sample_response = raw_input("\nDo you want to generate a random 10 percent sample? (y/n): ")
+		#If answer is no, exit
 		if sample_response in noanswers:
 			sys.exit()
+		#If answer is yes continue
 		elif sample_response in yesanswers:
 			#Read in IP addresses
 			fo=open(usr_response,"r")
@@ -1889,31 +1913,33 @@ if liveips!='':
 			#Add lines to array
 			for newline in line:
 				newline=newline.strip('\n')
-				liveips1.append (newline);
+				lstliveips.append (newline);
 			
 			#Shuffle array			
-			shuffle(liveips1)
+			shuffle(lstliveips)
 		
 			#Get number of lines in array
-			no_of_lines=len(liveips1)
-			print colored(str(no_of_lines)+" IP addresses were detected...",'yellow')
+			no_of_lines=len(lstliveips)
+			print colored("[+]"+str(no_of_lines)+" IP addresse(s) were detected...",'yellow')
 
-			#Check no less than 10
+			#Check number of lines less than 10
 			if no_of_lines<10:
-				print colored("[+]Can't calculate ten percent as less than 10 IP addresses are available",'yellow')
+				#If less print error message and exit
+				print colored("[-]Can't calculate ten percent as less than 10 IP addresses are available",'red')
 				sys.exit()
 
 			#Calculate 10 percent
 			ten_percent=no_of_lines/10
 
+			#Get filename to write 10 percent to
 			ten_sample_response = raw_input("Please enter filename for 10 percent sample: ")
 			if ten_sample_response!='':
-				#print ten_percent
+				#Write top 10% of lines to file
 				fout=open(ten_sample_response,'w')
 				for x in xrange(0,ten_percent):
-					fout.write(liveips1[x]+"\n")
-					
-				print colored("10 Percent Written to File...",'yellow')
+					fout.write(lstliveips[x]+"\n")
+				#Print complete status	
+				print colored("[+]"+ten_percent+" (10 Percent) written to file "+ten_sample_response,'yellow')
 				fout.close() 
 
 			sys.exit()
