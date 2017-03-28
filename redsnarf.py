@@ -1939,7 +1939,7 @@ if liveips!='':
 				for x in xrange(0,ten_percent):
 					fout.write(lstliveips[x]+"\n")
 				#Print complete status	
-				print colored("[+]"+ten_percent+" (10 Percent) written to file "+ten_sample_response,'yellow')
+				print colored("[+]"+str(ten_percent)+" (10 Percent) written to file "+ten_sample_response,'yellow')
 				fout.close() 
 
 			sys.exit()
