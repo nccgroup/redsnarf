@@ -1730,7 +1730,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3y", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3z", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1807,6 +1807,7 @@ args = p.parse_args()
 
 user = args.username
 passw = args.password
+
 files = ['sam', 'system', 'security']
 progs = ['cachedump','lsadump']
 
@@ -1863,6 +1864,13 @@ sendtojohn=args.sendtojohn
 rdp_connect=args.rdp_connect
 cidr=args.cidr
 liveips=args.liveips
+
+#Work around for if a password has !! as the command line will bork
+if args.password=='epass':
+	print colored("[+]Command line password workaround...",'green')
+	usr_response = raw_input("Enter the password here: ")
+	args.password=usr_response
+	passw=args.password
 
 #Wrap and cut an nmap scan to get output of just live ip's in a subnet
 if liveips!='':
