@@ -1747,7 +1747,7 @@ cgroup.add_argument("-cS", "--skiplsacache", dest="skiplsacache", default="n", h
 # Utilities
 ugroup = p.add_argument_group('Utilities')
 ugroup.add_argument("-uC", "--clear_event", dest="clear_event", default="n", help="<Optional> Clear event log - application, security, setup or system")
-ugroup.add_argument("-uCIDR", "--cidr", dest="cidr", default="n", help="<Optional> Convert CIDR representation to ip, hostmask, broadcast")
+ugroup.add_argument("-uCIDR", "--cidr", dest="cidr", default="", help="<Optional> Convert CIDR representation to ip, hostmask, broadcast")
 ugroup.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
 ugroup.add_argument("-uE", "--empire_launcher", dest="empire_launcher", default="n", help="<Optional> Start Empire Launcher")
 ugroup.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
@@ -1890,6 +1890,8 @@ if liveips!='':
 		#Wrap nmap to get ips
 		os.system("nmap -n -sn -vv "+liveips+" |grep 'Host is up' -B 1 |grep Nmap |cut -d \" \" -f 5 > "+usr_response +" 2>/dev/null")
 		
+		#usr_response="ip.txt"
+
 		#Read in IP addresses
 		fo=open(usr_response,"r")
 		fline = fo.readlines()
