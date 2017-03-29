@@ -1730,7 +1730,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.3z", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4a", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1908,6 +1908,10 @@ if liveips!='':
 		#Print complete message
 		print colored("[+]Scan complete "+str(len(fline))+" IP(s) detected",'yellow')
 		
+		#Exit if no ips were found or no of ips is less than 10
+		if len(fline)==0 or len(fline)<10:
+			sys.exit()
+
 		#See if we want to generate a random 10 per cent sample
 		sample_response = raw_input("\nDo you want to generate a random 10 percent sample? (y/n): ")
 		#If answer is no, exit
@@ -1961,8 +1965,9 @@ if cidr!='':
 	print colored("[+]Converting from CIDR...",'yellow')
 	ip = IPNetwork(cidr)
 	print "IP Address "+str(ip.ip)
-	print "Network Address "+str(ip.network)
+	print "Network Mask "+str(ip.netmask)
 	print "Broadcast Address "+str(ip.broadcast)
+	print "Network Address "+str(ip.network)
 	print "Total IP's " +str(ip.size)
 	print "Useable IP's " +str(ip.size-2)
 	sys.exit()
