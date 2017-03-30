@@ -2359,9 +2359,14 @@ if get_spn in yesanswers or get_spn=="l":
 				print colored("[+]Found pyasn1-0.1.8 installed",'green')			
 
 			print colored("[+]Configuration OK...",'yellow')
-			print colored("[+]Note - to crack the extracted hashes with JtR, JtR Jumbo Patch is needed",'blue')
-			print colored("[+]which can be cloned from https://github.com/magnumripper/JohnTheRipper.git",'blue')
-			
+			print colored("\n[+]Note",'yellow')
+			print colored("[+]To crack the extracted hashes with JtR,",'blue')
+			print colored("[+]JtR Jumbo Patch is needed which can be cloned from ",'blue')
+			print colored("[+]https://github.com/magnumripper/JohnTheRipper.git",'yellow')
+			print colored("\n[+]If building in VMWare the following will probably be needed",'blue')
+			print colored("[+]./configure && make",'yellow')
+			print colored("[+]./configure CFLAGS=\"-g -O2 -mno-avx2\n",'yellow')
+
 			#Check that a domain name has been entered
 			if domain_name==".":
 				print colored("[-]You must enter a domain - e.g. ecorp.local",'red')
