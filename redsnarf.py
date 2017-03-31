@@ -1730,7 +1730,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4e", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4f", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1875,29 +1875,76 @@ if args.password=='epass':
 	passw=args.password
 
 if split_spn!='n':
-	listspn = []
+	#Print function message
 	print colored("[+]SPN file splitter...",'green')
 
 	usr_response = raw_input("\nPlease enter path to SPN file: ")
 	#If response is not empty
 	if usr_response !='':
-		#Read in IP addresses
+		#Check file exists and exit if not found
+		if not os.path.isfile(usr_response):
+			print colored("\n[+]WARNING - File doesn't exist",'red')
+			sys.exit()
+
+		#Read in hashes 
 		fo=open(usr_response,"r").read()
+
+		#Detect : in hashes, if it is found those hashes won't be detected properly
+		if ":" in fo:
+			print colored("[-]We've got some corrupted hashes, replacing : for . which should fix them",'red')
+			#Replace all occurances of : with .
+			fo=fo.replace(":",".")
+			#Write to initial path appending .fix as not to overwrite the initial file
+			file = open(usr_response+".fix","w") 
+			file.write (fo)
+			file.close()
+
+			#Print status message
+			print colored("[+]Fixed hashes and written them to "+usr_response+".fix, try again using this file",'yellow')
+
+			#Exit, so function can be run again
+			sys.exit()
+
+		#Split on the marker $krb5tgs$23$*
 		value=fo.split('$krb5tgs$23$*')
 		
+		#Get an output path from the user
 		output_path = raw_input("\nPlease enter output path: ")
 		if output_path !='':
-			
+			#Check to see if we already have a usernames.txt file
+			if os.path.isfile(outputpath+"usernames.txt"):
+				#Print warning msg
+				print colored("\n[+]WARNING",'red')
+				#Confirm if we should overwrite
+				response = raw_input("Looks like you have an existing file "+outputpath+"usernames.txt"+", do you want to overwrite?: Y/(N) ")
+				#If no exit else continue and delete existing file
+				if response in noanswers:	
+					sys.exit()
+				if response in yesanswers:
+					os.system("rm "+outputpath+"usernames.txt"+" 2>/dev/null")
+
+			#Cycle through our hashes 
 			for x in xrange(1,len(value)):
+				#Get hash
 				userhash = "$krb5tgs$23$*"+fo.split('$krb5tgs$23$*')[x]
+				#Get username
 				username=userhash.split('$')[3][1:]
 				
+				#Create a file for each username and write the hash to file
 				file = open(output_path+username+".txt","w") 
 				file.write (userhash)
-				file.close() 
+				file.close()
 
+				#Create/Open a file with append to add usernames
+				file = open(output_path+"usernames.txt","a") 
+				file.write (username+"\n")
+				file.close()  
+
+				#Print status that hash has been written to file and path
 				print colored("[+]Written hash for "+username+" to "+outputpath+username+".txt",'yellow')
 
+			#Print status that usernames have been written to file and path
+			print colored("[+]Written usernames to "+outputpath+"usernames.txt",'yellow')
 		
 	sys.exit()
 
