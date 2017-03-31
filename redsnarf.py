@@ -1730,7 +1730,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4b", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4c", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2374,7 +2374,7 @@ if get_spn in yesanswers or get_spn=="l":
 				print colored("[-]No GetUserSPNs.py",'red')
 				print colored("[-]Clone from https://github.com/CoreSecurity/impacket.git",'yellow')
 				print colored("[-]and run: python setup.py install",'yellow')
-				exit(1)				
+				exit(1)	
 			else:
 				print colored("[+]Found GetUserSPNs.py installed",'green')			
 			
@@ -2383,7 +2383,9 @@ if get_spn in yesanswers or get_spn=="l":
 				print colored("[-]No pyasn1-0.1.8",'red')
 				print colored("[-]Download and install from https://pypi.python.org/pypi/pyasn1/0.1.8#downloads",'yellow')
 				print colored("[-]and run: python setup.py install",'yellow')
-				exit(1)				
+				usr_response = raw_input("\nDo you want to carry on regardless? (y/n) : ")
+				if usr_response in noanswers:
+					exit(1)				
 			else:
 				print colored("[+]Found pyasn1-0.1.8 installed",'green')			
 
