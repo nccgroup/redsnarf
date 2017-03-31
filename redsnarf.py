@@ -1730,7 +1730,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4a", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4b", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1761,6 +1761,7 @@ ugroup.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump"
 ugroup.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
 ugroup.add_argument("-uRP", "--rdp_connect", dest="rdp_connect", default="n", help="<Optional> Connect to existing RDP sessions without password")
 ugroup.add_argument("-uS", "--get_spn", dest="get_spn", default="n", help="<Optional> Get SPN's from DC")
+ugroup.add_argument("-uSS", "--split_spn", dest="split_spn", default="n", help="<Optional> Split SPN File")
 ugroup.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grap unattended installation files")
 ugroup.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
 ugroup.add_argument("-uW", "--wifi_credentials", dest="wifi_credentials", default="n", help="<Optional> Grab Wifi Credentials")
@@ -1864,6 +1865,7 @@ sendtojohn=args.sendtojohn
 rdp_connect=args.rdp_connect
 cidr=args.cidr
 liveips=args.liveips
+split_spn=args.split_spn
 
 #Work around for if a password has !! as the command line will bork
 if args.password=='epass':
@@ -1871,6 +1873,33 @@ if args.password=='epass':
 	usr_response = raw_input("Enter the password here: ")
 	args.password=usr_response
 	passw=args.password
+
+if split_spn!='n':
+	listspn = []
+	print colored("[+]SPN file splitter...",'green')
+
+	usr_response = raw_input("\nPlease enter path to SPN file: ")
+	#If response is not empty
+	if usr_response !='':
+		#Read in IP addresses
+		fo=open(usr_response,"r").read()
+		value=fo.split('$krb5tgs$23$*')
+		
+		output_path = raw_input("\nPlease enter output path: ")
+		if output_path !='':
+			
+			for x in xrange(1,len(value)):
+				userhash = "$krb5tgs$23$*"+fo.split('$krb5tgs$23$*')[x]
+				username=userhash.split('$')[3][1:]
+				
+				file = open(output_path+username+".txt","w") 
+				file.write (userhash)
+				file.close() 
+
+				print colored("[+]Written hash for "+username+" to "+outputpath+username+".txt",'yellow')
+
+		
+	sys.exit()
 
 #Wrap and cut an nmap scan to get output of just live ip's in a subnet
 if liveips!='':
