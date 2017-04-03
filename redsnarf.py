@@ -1835,7 +1835,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4h", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4i", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2166,7 +2166,7 @@ if sendtojohn!='':
 #Function sends SPN file to Jtr Jumbo
 if sendspntojohn!='':
 	#Check to see if Jtr Jumbo is installed
-	if jtr_jumbo_installed()!="None":
+	if jtr_jumbo_installed()!=None:
 		if os.path.isfile(sendspntojohn):
 			print colored("[+]SPN's to Jtr Jumbo",'green')
 			print colored("[+]Sending SPN(s) in "+sendspntojohn+" to Jtr Jumbo",'yellow')
@@ -2569,8 +2569,9 @@ if get_spn in yesanswers or get_spn=="l":
 			stdout_value = proc.communicate()[0]
 		
 			#Check to see if Jtr Jumbo is installed
-			if jtr_jumbo_installed()!="None":
-				print colored("\n[+]JrR Jumbo Patch must be used to crack SPNS's",'yellow')
+			
+			if jtr_jumbo_installed()!=None:
+				print colored("\n[+]JrR Jumbo Patch must be used to crack SPNS's and not Jtr standard",'yellow')
 				print colored("[+]JrR Jumbo Patch installed "+jtr_jumbo_installed()+"\n",'green')
 			else:		
 				print colored("\n[+]To crack the extracted hashes with JtR,",'blue')
@@ -2645,7 +2646,7 @@ if get_spn in yesanswers or get_spn=="l":
 					logging.info("[+]Fixed hashe(s) and written them to "+outputpath+targets[0]+"/spns.txt"+".fix")
 			
 				#Check to see if Jtr Jumbo is installed
-				if jtr_jumbo_installed()!="None":
+				if jtr_jumbo_installed()!=None:
 					usr_response = raw_input("\nDo you want to start cracking with Jtr Jumbo? (y/n) : ")
 					if usr_response in noanswers:
 						exit(1)
