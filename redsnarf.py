@@ -2578,7 +2578,7 @@ if get_spn in yesanswers or get_spn=="l":
 				print colored("[+]JtR Jumbo Patch is needed which can be cloned from ",'blue')
 				print colored("[+]https://github.com/magnumripper/JohnTheRipper.git",'yellow')
 				print colored("\n[+]If building in VMWare the following will probably be needed",'blue')
-				print colored("[+]./configure CFLAGS=\"-g -O2 -mno-avx2",'yellow')
+				print colored("[+]./configure CFLAGS=\"-g -O2 -mno-avx2\"",'yellow')
 				print colored("[+]make\n",'yellow')
 		
 			#Check that a domain name has been entered
