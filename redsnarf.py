@@ -6,6 +6,28 @@
 import os, argparse, signal, sys, re, binascii, subprocess, string, SimpleHTTPServer, multiprocessing, SocketServer
 import socket, fcntl, struct, time, base64, logging
 
+try:
+	from libnmap.process import NmapProcess
+except ImportError:
+	print("You need to install python-libnmap")
+	print(" git clone https://github.com/savon-noir/python-libnmap.git")
+	print(" cd python-libnmap")
+	print(" python setup.py install")
+	logging.error("NmapProcess missing")
+	exit(1)
+
+try:
+	from libnmap.parser import NmapParser
+except ImportError:
+	print("You need to install python-libnmap")
+	print(" git clone https://github.com/savon-noir/python-libnmap.git")
+	print(" cd python-libnmap")
+	print(" python setup.py install")	
+	logging.error("NmapProcess missing")
+	exit(1)
+
+
+
 from random import shuffle
 
 # Logging definitions 
@@ -1835,7 +1857,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4i", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4j", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2298,6 +2320,26 @@ elif remotetargets[0:6]=='range=':
 	for remotetarget in IPNetwork(remotetargets[6:len(remotetargets)]):
 		targets.append (remotetarget);
 
+elif remotetargets[0:8]=='nmapxml=':
+	if not os.path.isfile(remotetargets[8:len(remotetargets)]):
+		print colored("[-]File not found "+remotetargets[8:len(remotetargets)],'red')
+		exit(1)	
+
+	nmap_report = NmapParser.parse_fromfile(remotetargets[8:len(remotetargets)])
+				
+	for host in nmap_report.hosts:
+		if host.is_up():
+			host_ports =  host.get_open_ports()
+			for port in host_ports:
+				if 445 in port:
+					targets.append(host.address)
+
+	if len(targets)==0:
+		print colored("[-]No suitable targets found in xml file",'red')
+		sys.exit()	
+
+	print colored("[+]Parsed Nmap output and found "+str(len(targets))+" target(s) in xml file\n",'yellow')
+
 #Function enables connecting to remote RDP sessions without authenticating as the user who the session belongs to.
 if rdp_connect in yesanswers or "ID" in rdp_connect:
 	
@@ -2578,7 +2620,7 @@ if get_spn in yesanswers or get_spn=="l":
 				print colored("[+]JtR Jumbo Patch is needed which can be cloned from ",'blue')
 				print colored("[+]https://github.com/magnumripper/JohnTheRipper.git",'yellow')
 				print colored("\n[+]If building in VMWare the following will probably be needed",'blue')
-				print colored("[+]./configure CFLAGS=\"-g -O2 -mno-avx2\"",'yellow')
+				print colored("[+]./configure CFLAGS=\"-g -O2 -mno-avx2",'yellow')
 				print colored("[+]make\n",'yellow')
 		
 			#Check that a domain name has been entered
