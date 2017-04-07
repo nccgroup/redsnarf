@@ -1,0 +1,620 @@
+# this should be placed in your bash profile or rc file.
+
+# Create function that will run when a certain phrase is typed in terminal
+# and tab key is pressed twice
+# complete sendevent
+_sendevent()
+{
+	local cur=${COMP_WORDS[COMP_CWORD]}
+	local prev=${COMP_WORDS[COMP_CWORD-1]}
+ 
+	case "$prev" in
+	
+	-u)
+		COMPREPLY=( $( compgen -W "UsernameGoesHere" -- $cur ) )
+		return 0
+		;;
+
+	--username)
+		COMPREPLY=( $( compgen -W "UsernameGoesHere" -- $cur ) )
+		return 0
+		;;
+
+	-p)
+		COMPREPLY=( $( compgen -W "PasswordGoesHere" -- $cur ) )
+		return 0
+		;;
+
+	--password)
+		COMPREPLY=( $( compgen -W "PasswordGoesHere" -- $cur ) )
+		return 0
+		;;
+   
+	-d)
+		COMPREPLY=( $( compgen -W "DomainGoesHere" -- $cur ) )
+		return 0
+		;;
+
+	--domain)
+		COMPREPLY=( $( compgen -W "DomainGoesHere" -- $cur ) )
+		return 0
+		;;
+
+	-H)
+		COMPREPLY=( $( compgen -W "ip= range= file= nmapxml=" -- $cur ) )
+		return 0
+		;;
+
+	--host)
+		COMPREPLY=( $( compgen -W "ip= range= file= nmapxml=" -- $cur ) )
+		return 0
+		;;
+
+	-cC)
+		COMPREPLY=( $( compgen -W "PathToCredDump7" -- $cur ) )
+		return 0
+		;;
+
+	--credpath)
+		COMPREPLY=( $( compgen -W "PathToCredDump7" -- $cur ) )
+		return 0
+		;;
+
+	-cM)
+		COMPREPLY=( $( compgen -W "PWDumpMergePath" -- $cur ) )
+		return 0
+		;;
+
+	--mergepf)
+		COMPREPLY=( $( compgen -W "PWDumpMergePath" -- $cur ) )
+		return 0
+		;;
+
+	-cO)
+		COMPREPLY=( $( compgen -W "DumpOutputPath" -- $cur ) )
+		return 0
+		;;
+
+	--outputpath)
+		COMPREPLY=( $( compgen -W "DumpOutputPath" -- $cur ) )
+		return 0
+		;;
+
+	-cQ)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	--quick_validate)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-cS)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	--skiplsacache)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-uC)
+		COMPREPLY=( $( compgen -W "application security setup system" -- $cur ) )
+		return 0
+		;;
+
+	--clear_event)
+		COMPREPLY=( $( compgen -W "application security setup system" -- $cur ) )
+		return 0
+		;;
+
+	-uCIDR)
+		COMPREPLY=( $( compgen -W "CIDRNotationHere" -- $cur ) )
+		return 0
+		;;
+
+	--cidr)
+		COMPREPLY=( $( compgen -W "CIDRNotationHere" -- $cur ) )
+		return 0
+		;;
+
+	-uD)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--dropshell)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	
+	-uE)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--empire_launcher)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-uG)
+		COMPREPLY=( $( compgen -W "cpasswordhere" -- $cur ) )
+		return 0
+		;;
+	 
+	--c_password)
+		COMPREPLY=( $( compgen -W "cpasswordhere" -- $cur ) )
+		return 0
+		;;
+
+	-uJ)
+		COMPREPLY=( $( compgen -W "HashFileHere" -- $cur ) )
+		return 0
+		;;
+	 
+	--john_to_pipal)
+		COMPREPLY=( $( compgen -W "HashFileHere" -- $cur ) )
+		return 0
+		;;
+
+	-uJW)
+		COMPREPLY=( $( compgen -W "HashFileHere" -- $cur ) )
+		return 0
+		;;
+	 
+	--sendtojohn)
+		COMPREPLY=( $( compgen -W "HashFileHere" -- $cur ) )
+		return 0
+		;;
+
+	-uJS)
+		COMPREPLY=( $( compgen -W "HashFileHere" -- $cur ) )
+		return 0
+		;;
+	 
+	--sendspntojohn)
+		COMPREPLY=( $( compgen -W "HashFileHere" -- $cur ) )
+		return 0
+		;;
+
+	-uL)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--lockdesktop)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-uLP)
+		COMPREPLY=( $( compgen -W "SubnetHere" -- $cur ) )
+		return 0
+		;;
+	 
+	--liveips)
+		COMPREPLY=( $( compgen -W "SubnetHere" -- $cur ) )
+		return 0
+		;;
+
+	-uM)
+		COMPREPLY=( $( compgen -W "WIN DB" -- $cur ) )
+		return 0
+		;;
+	 
+	--mssqlshell)
+		COMPREPLY=( $( compgen -W "WIN DB" -- $cur ) )
+		return 0
+		;;
+
+	-uMT)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--meterpreter_revhttps)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-uP)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--policiesscripts_dump)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-uR)
+		COMPREPLY=( $( compgen -W "yes AV" -- $cur ) )
+		return 0
+		;;
+	 
+	--multi_rdp)
+		COMPREPLY=( $( compgen -W "yes AV" -- $cur ) )
+		return 0
+		;;
+
+	-uRP)
+		COMPREPLY=( $( compgen -W "yes ID" -- $cur ) )
+		return 0
+		;;
+	 
+	--rdp_connect)
+		COMPREPLY=( $( compgen -W "yes ID" -- $cur ) )
+		return 0
+		;;
+
+	-uS)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--get_spn)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-uSS)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--split_spn)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-uU)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--unattend)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-uX)
+		COMPREPLY=( $( compgen -W "CustomCommandHere" -- $cur ) )
+		return 0
+		;;
+	 
+	--xcommand)
+		COMPREPLY=( $( compgen -W "CustomCommandHere" -- $cur ) )
+		return 0
+		;;
+
+	-uW)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--wifi_credentials)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-rA)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+	 
+	--edq_autologon)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+
+	-rB)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+	 
+	--edq_backdoor)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+
+	-rC)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+	 
+	--edq_scforceoption)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+
+	-rF)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--fat)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-rL)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--lat)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-rM)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+	 
+	--edq_SingleSessionPerUser)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+
+	-rN)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+	 
+	--edq_nla)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+
+	-rR)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+	 
+	--edq_rdp)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+
+	-rS)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+	 
+	--edq_allowtgtsessionkey)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+
+	-rT)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+	 
+	--edq_trdp)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+
+	-rU)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+	 
+	--edq_uac)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+
+	-rW)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+	 
+	--edq_wdigest)
+		COMPREPLY=( $( compgen -W "e d q" -- $cur ) )
+		return 0
+		;;
+
+	-eA)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--service_accounts)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-eD)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--user_desc)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-eL)
+		COMPREPLY=( $( compgen -W "UsernameToFind" -- $cur ) )
+		return 0
+		;;
+	 
+	--find_user)
+		COMPREPLY=( $( compgen -W "UsernameToFind" -- $cur ) )
+		return 0
+		;;
+
+	-eO)
+		COMPREPLY=( $( compgen -W "UsernameToFind" -- $cur ) )
+		return 0
+		;;
+	 
+	--ofind_user)
+		COMPREPLY=( $( compgen -W "UsernameToFind" -- $cur ) )
+		return 0
+		;;
+
+	-eP)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--password_policy)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-eR)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--recorddesktop)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-eS)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--screenshot)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-eT)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--system_tasklist)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-hI)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--drsuapi)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-hN)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--ntds_util)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-hQ)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--qldap)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-hS)
+		COMPREPLY=( $( compgen -W "PathToCredsFile" -- $cur ) )
+		return 0
+		;;
+	 
+	--credsfile)
+		COMPREPLY=( $( compgen -W "PathToCredsFile" -- $cur ) )
+		return 0
+		;;
+
+	-hP)
+		COMPREPLY=( $( compgen -W "PassToUseOnBlank" -- $cur ) )
+		return 0
+		;;
+	 
+	--pass_on_blank)
+		COMPREPLY=( $( compgen -W "PassToUseOnBlank" -- $cur ) )
+		return 0
+		;;
+
+	-hK)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--mimikittenz)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-hL)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--lsass_dump)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-hM)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--massmimi_dump)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-hR)
+		COMPREPLY=( $( compgen -W "yes AV" -- $cur ) )
+		return 0
+		;;
+	 
+	--stealth_mimi)
+		COMPREPLY=( $( compgen -W "yes AV" -- $cur ) )
+		return 0
+		;;
+
+	-hT)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--golden_ticket)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	-hW)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+	 
+	--win_scp)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	esac
+ 
+	# completing an option
+	if [[ "$cur" == -* ]]; then
+		COMPREPLY=( $( compgen -W "-H --host -u --username -p --password -d --domain -cC --credpath -cM --mergepf -cO --outputpath -cQ --quick_validate -cS --skiplsacache -uC --clear_event -uCIDR --cidr -uD --dropshell -uE --empire_launcher -uG --c_password -uJ --john_to_pipal -uJW --sendtojohn -uJS --sendspntojohn -uL --lockdesktop -uLP --liveips -uM --mssqlshell -uMT --meterpreter_revhttps -uP --policiesscripts_dump -uR --multi_rdp -uRP --rdp_connect -uS --get_spn -uU --unattend -uX --xcommand -uW --wifi_credentials -rA --edq_autologon -rB --edq_backdoor -rC --edq_scforceoption -rF --fat -rL --lat -rM --edq_SingleSessionPerUser -rN --edq_nla -rR --edq_rdp -rS --edq_allowtgtsessionkey -rT --edq_trdp -rU --edq_uac -rW --edq_wdigest -eA --service_accounts -eD --user_desc -eL --find_user -eO --ofind_user -eP --password_policy -eR --recorddesktop -eS --screenshot -eT --system_tasklist -hI --drsuapi -hN --ntds_util -hQ --qldap -hS --credsfile -hP --pass_on_blank -hK --mimikittenz -hL --lsass_dump -hM --massmimi_dump -hR --stealth_mimi -hT --golden_ticket -hW --win_scp -uSS --split_spn" -- $cur ) )
+	fi
+}
+complete -F _sendevent redsnarf.py
