@@ -350,6 +350,39 @@ def gppdecrypt(cpassword_pass):
 	o = AES.new(key, AES.MODE_CBC, "\x00" * 16).decrypt(password)
 	print colored('Your cpassword is '+o[:-ord(o[-1])].decode('utf16'),'green')
 
+def bashversion():
+
+	installedversion = bashcompleteversioncheck("/etc/bash_completion.d/redsnarf.rc")
+	bundleversion = bashcompleteversioncheck("redsnarf.rc")
+
+	if installedversion=="NoExist" or installedversion=="Unknown":
+		return "Bash Tab Completion Not Configured"
+	elif installedversion<bundleversion:
+		return "You need to update your Bash Tab Completion file, Version "+bundleversion+" is available."
+	elif installedversion==bundleversion:
+		return "Bash Tab Completion Installed & Up-to-date"
+
+def bashcompleteversioncheck(FilePath):
+	#/etc/bash_completion.d/redsnarf.rc
+	if not os.path.isfile(FilePath):
+		return "NoExist"
+	elif os.path.isfile(FilePath):
+		bashlines = []
+	
+		with open(FilePath,'r') as inifile:
+			data=inifile.read()
+			bashlines=data.splitlines()
+		
+		#Make sure that the list of bashlines is greater than 0
+		if len(bashlines)>0:
+			if 'Version' in bashlines[0]:
+				versionnum=bashlines[0].split(",", 1)[1]
+		else:
+			versionnum="Unknown"	
+
+		return versionnum
+
+
 #Routine helps start John the Ripper Jumbo
 def quickjtrjumbo(filename, jtrjumbopath):
 	#Set our variables/etc up
@@ -1860,7 +1893,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4l", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4m", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2000,6 +2033,10 @@ liveips=args.liveips
 split_spn=args.split_spn
 sendspntojohn=args.sendspntojohn
 auto_complete=args.auto_complete
+
+#Check Bash Tab Complete Status and Display to Screen
+print colored("[+]Checking Bash Tab Completion Status",'yellow')
+print colored("[+]"+bashversion()+"\n",'green')
 
 #Routine Installs/Copies the Bash Auto Complete File to /etc/bash_completion.d
 if args.auto_complete!='n':
