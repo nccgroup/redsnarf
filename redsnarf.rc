@@ -1,4 +1,10 @@
-# this should be placed in your bash profile or rc file.
+#Version,1
+# RedSnarf Bash AutoComplete File
+# By Ed Williams & Richard Davy
+# NCC Group
+#
+# This should be placed in your bash profile or rc file.
+# Install with RedSnarf using ./redsnarf --auto_complete install
 
 # Create function that will run when a certain phrase is typed in terminal
 # and tab key is pressed twice
