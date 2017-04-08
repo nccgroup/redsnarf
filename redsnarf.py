@@ -615,12 +615,15 @@ def WriteFAT():
 
 #Routine gets current ip address
 def get_ip_address(ifname):
-	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	return socket.inet_ntoa(fcntl.ioctl(
-		s.fileno(),
-		0x8915,  # SIOCGIFADDR
-		struct.pack('256s', ifname[:15])
-	)[20:24])
+	try:
+		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		return socket.inet_ntoa(fcntl.ioctl(
+			s.fileno(),
+			0x8915,  # SIOCGIFADDR
+			struct.pack('256s', ifname[:15])
+		)[20:24])
+	except:
+		return ""
 
 #Routine gets domain usernames
 def enumdomusers(ip,username,password,path):
@@ -1857,7 +1860,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4k", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4l", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1998,6 +2001,7 @@ split_spn=args.split_spn
 sendspntojohn=args.sendspntojohn
 auto_complete=args.auto_complete
 
+#Routine Installs/Copies the Bash Auto Complete File to /etc/bash_completion.d
 if args.auto_complete!='n':
 	print colored("[+]Copying redsnarf.rc to /etc/bash_completion.d",'green')
 	os.system("cp redsnarf.rc /etc/bash_completion.d/redsnarf.rc")
