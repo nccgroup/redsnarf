@@ -1696,6 +1696,7 @@ def hashparse(hashfolder,hashfile):
 			with open(hashfolder+'/lm_usernames.txt') as f:
 				print colored('[+]'+str(sum(1 for _ in f))+' LM usernames written to '+hashfolder+'/lm_usernames.txt\n','red') 
 
+
 #Routine gets the enabled/disabled status of a user
 def userstatus(targetpath,dcip,inputfile):
 	e=''
@@ -1869,7 +1870,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4p", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4q", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1899,6 +1900,7 @@ ugroup.add_argument("-uL", "--lockdesktop", dest="lockdesktop", default="", help
 ugroup.add_argument("-uLP", "--liveips", dest="liveips", default="", help="<Optional> Ping scan to generate a list of live IP's")
 ugroup.add_argument("-uM", "--mssqlshell", dest="mssqlshell", default="", help="<Optional> Start MSSQL Shell use WIN for Windows Auth, DB for MSSQL Auth")
 ugroup.add_argument("-uMT", "--meterpreter_revhttps", dest="meterpreter_revhttps", default="", help="<Optional> Launch Reverse Meterpreter HTTPS")
+ugroup.add_argument("-uO", "--delegated_privs", dest="delegated_privs", default="n", help="<Optional> Very Basic Delegated Privilege Checker ")
 ugroup.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
 ugroup.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
 ugroup.add_argument("-uRP", "--rdp_connect", dest="rdp_connect", default="n", help="<Optional> Connect to existing RDP sessions without password")
@@ -2013,6 +2015,7 @@ sendspntojohn=args.sendspntojohn
 auto_complete=args.auto_complete
 session_gopher=args.session_gopher
 custom_powershell=args.custom_powershell
+delegated_privs=args.delegated_privs
 
 #Check Bash Tab Complete Status and Display to Screen
 print colored("[+]Checking Bash Tab Completion Status",'yellow')
@@ -2373,6 +2376,47 @@ elif remotetargets[0:8]=='nmapxml=':
 
 	print colored("[+]Parsed Nmap output and found "+str(len(targets))+" target(s) in xml file\n",'yellow')
 
+
+if delegated_privs in yesanswers:
+	
+	dirty = "False"
+
+	print colored("[+]Getting OU List & Checking for possible Delegated Privileges",'green')
+
+	proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C dsquery ou domainroot' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+	tmpoulist = proc.communicate()[0]			
+	
+	for ou in tmpoulist.splitlines():
+		print ou
+
+		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C dsacls "+ou+"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+		ouprivs = proc.communicate()[0]	
+
+		for line in ouprivs.splitlines():
+			if "SPECIAL ACCESS for user" in line and "Allow BUILTIN" not in line:
+				print colored(line,'yellow')
+				dirty="True"
+			
+			if "FULL CONTROL" in line and "Enterprise Admins" not in line and "NT AUTHORITY\SYSTEM" not in line and "Domain Admins" not in line:
+				print colored(line,'yellow')
+				dirty="True"
+			
+	if dirty=="True":
+		print colored("\n[+]Looks like you have user(s) with delegated privs",'green')
+		response=raw_input("Do you want to view a users privs? (y/n) ")
+		if response=="n":
+			sys.exit()
+		elif response in yesanswers:
+			response1=raw_input("Please enter their username - ")
+			response2=raw_input("Please enter their OU - ")
+
+			print colored("\n[+]Gathering details for ",'green')+colored(response1,'yellow')
+
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C dsacls "+"CN="+response1+","+response2+"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+			userprivs = proc.communicate()[0]	
+			print userprivs
+
+	sys.exit()
 
 #Routine starts Custom Powershell Script
 if custom_powershell in yesanswers or custom_powershell=="AV":
