@@ -1870,7 +1870,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4r", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4s", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2399,17 +2399,25 @@ if delegated_privs in yesanswers:
 
 		#Flag things we're interested in here
 		for line in ouprivs.splitlines():
-			if "SPECIAL ACCESS for user" in line and "Allow BUILTIN" not in line:
+						
+			if "Reset Password" in line:
 				print colored(line,'yellow')
 				dirty="True"
 				#print line.split(" ")[1]
 				username.append(line.split(" ")[1]+":"+ou[1:(len(ou)-1)])
-			
+
 			if "FULL CONTROL" in line and "Enterprise Admins" not in line and "NT AUTHORITY\SYSTEM" not in line and "Domain Admins" not in line:
 				print colored(line,'yellow')
 				dirty="True"
 				#print line.split(" ")[1]
 				username.append(line.split(" ")[1]+":"+ou[1:(len(ou)-1)])
+
+			if "SPECIAL ACCESS for user" in line and "Enterprise Admins" not in line and "NT AUTHORITY\SYSTEM" not in line and "Domain Admins" not in line and "Allow BUILTIN" not in line:
+				print colored(line,'yellow')
+				dirty="True"
+				#print line.split(" ")[1]
+				username.append(line.split(" ")[1]+":"+ou[1:(len(ou)-1)])
+
 
 	if dirty=="True":
 		print colored("\n[+]Users with interesting privileges...",'yellow')
@@ -2419,7 +2427,7 @@ if delegated_privs in yesanswers:
 			uname= (name.split(":")[0])
 			#print uname
 			uname= (uname.split("\\")[1])
-			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C net user "+uname+" /domain' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C net user \""+uname+"\" /domain' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 			fullname = proc.communicate()[0]
 			
 			for info in fullname.splitlines():
@@ -2433,15 +2441,22 @@ if delegated_privs in yesanswers:
 						oulist.append((name.split(":")[1]))
 		
 		for x in xrange(0,len(fullnames)):
-			print "["+str(x)+"] "+fullnames[x]
+			print "["+str(x)+"] "+fullnames[x]+" "+oulist[x]
 
 	#If dirty flag is true we potentially have users with delegated privs we can investigate
 	if dirty=="True":
-		print colored("\n[+]Looks like you have user(s) with delegated privs",'green')
-		response=raw_input("Do you want to view a users privs? (y/n) ")
-		if response=="n":
+		print colored("\n[+]Looks like there are some delegated privileges...",'yellow')
+		
+		print colored("[1]View all privileges for a single user?",'white')
+		print colored("[2]Search all users for Change Password and Reset Password privilege?",'white')
+		print colored("[3]Exit\n",'white')
+
+		response=raw_input("Enter selection? (1,2,3) ")
+		
+		if response=="3":
+			print colored("[-]Fair Enough...",'yellow')
 			sys.exit()
-		elif response in yesanswers:
+		elif response =="1":
 			response1=raw_input("Please enter number in [] for user - ")
 			#response2=raw_input("Please enter their OU - ")
 
@@ -2452,9 +2467,27 @@ if delegated_privs in yesanswers:
 			for privs in userprivs.splitlines():
 				if "Change Password" in privs:
 					print colored(privs,'red')
+				elif "Reset Password" in privs:
+					print colored(privs,'red')
 				else:
 					print privs
 
+			sys.exit()
+		
+		elif response =="2":
+			for x in xrange(0,len(fullnames)):
+				
+				print colored("\n[+]Gathering details for ",'green')+colored(fullnames[int(x)],'yellow')
+				print colored("[+]Users OU ",'green')+colored(oulist[int(x)],'yellow')
+
+				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C dsacls \""+"CN="+fullnames[int(x)]+","+oulist[int(x)]+"\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+				userprivs = proc.communicate()[0]	
+				for privs in userprivs.splitlines():
+					if "Change Password" in privs:
+						print "[+]"+fullnames[int(x)]+" "+colored(privs,'red')
+					if "Reset Password" in privs:
+						print "[+]"+fullnames[int(x)]+" "+colored(privs,'red')
+					
 	if dirty=="False":
 		print colored("\n[+]No users found with interesting privileges...",'yellow')
 
