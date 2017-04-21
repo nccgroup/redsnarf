@@ -2381,8 +2381,11 @@ if delegated_privs in yesanswers:
 	#Setup
 	dirty = "False"
 	username=[]
+	
+
 	fullnames=[]
 	oulist=[]
+	namelist=[]
 
 	print colored("[+]Getting OU List & Checking for possible Delegated Privileges",'green')
 
@@ -2410,13 +2413,15 @@ if delegated_privs in yesanswers:
 				print colored(line,'yellow')
 				dirty="True"
 				#print line.split(" ")[1]
+				#print line.split(" ")[1]+":"+ou[1:(len(ou)-1)]
 				username.append(line.split(" ")[1]+":"+ou[1:(len(ou)-1)])
 
-			if "SPECIAL ACCESS for user" in line and "Enterprise Admins" not in line and "NT AUTHORITY\SYSTEM" not in line and "Domain Admins" not in line and "Allow BUILTIN" not in line:
+			if "SPECIAL ACCESS for Users" in line and "Enterprise Admins" not in line and "NT AUTHORITY\SYSTEM" not in line and "Domain Admins" not in line and "Allow BUILTIN" not in line:
 				print colored(line,'yellow')
 				dirty="True"
 				#print line.split(" ")[1]
 				username.append(line.split(" ")[1]+":"+ou[1:(len(ou)-1)])
+
 
 
 	if dirty=="True":
@@ -2436,19 +2441,21 @@ if delegated_privs in yesanswers:
 						userfullname=info[29:len(info)]
 						fullnames.append(userfullname)
 						oulist.append((name.split(":")[1]))
+						namelist.append(uname)
 					else:
 						fullnames.append(uname)
 						oulist.append((name.split(":")[1]))
+						namelist.append(uname)
 		
 		for x in xrange(0,len(fullnames)):
-			print "["+str(x)+"] "+fullnames[x]+" "+oulist[x]
+			print "["+str(x)+"]"+fullnames[x]+" "+oulist[x]
 
 	#If dirty flag is true we potentially have users with delegated privs we can investigate
 	if dirty=="True":
 		print colored("\n[+]Looks like there are some delegated privileges...",'yellow')
 		
 		print colored("[1]View all privileges for a single user?",'white')
-		print colored("[2]Search all users for Change Password and Reset Password privilege?",'white')
+		print colored("[2]Search all users for Reset Password and Send As privilege?",'white')
 		print colored("[3]Exit\n",'white')
 
 		response=raw_input("Enter selection? (1,2,3) ")
@@ -2465,10 +2472,12 @@ if delegated_privs in yesanswers:
 			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C dsacls \""+"CN="+fullnames[int(response1)]+","+oulist[int(response1)]+"\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 			userprivs = proc.communicate()[0]	
 			for privs in userprivs.splitlines():
-				if "Change Password" in privs:
+				if "Reset Password" in privs:
 					print colored(privs,'red')
-				elif "Reset Password" in privs:
+				elif "Send As" in privs:
 					print colored(privs,'red')
+				#elif namelist[int(response1)] in privs:
+				#	print colored(privs,'red')
 				else:
 					print privs
 
@@ -2483,9 +2492,11 @@ if delegated_privs in yesanswers:
 				proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'cmd /C dsacls \""+"CN="+fullnames[int(x)]+","+oulist[int(x)]+"\"' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 				userprivs = proc.communicate()[0]	
 				for privs in userprivs.splitlines():
-					if "Change Password" in privs:
+					if "Send As" in privs:
 						print "[+]"+fullnames[int(x)]+" "+colored(privs,'red')
 					if "Reset Password" in privs:
+						print "[+]"+fullnames[int(x)]+" "+colored(privs,'red')
+					if namelist[int(x)] in privs:
 						print "[+]"+fullnames[int(x)]+" "+colored(privs,'red')
 					
 	if dirty=="False":
