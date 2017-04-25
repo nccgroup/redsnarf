@@ -4,7 +4,7 @@
 # Released under Apache V2 see LICENCE for more information
 
 import os, argparse, signal, sys, re, binascii, subprocess, string, SimpleHTTPServer, multiprocessing, SocketServer
-import socket, fcntl, struct, time, base64, logging
+import socket, fcntl, struct, time, base64, logging, urllib
 
 try:
 	from libnmap.process import NmapProcess
@@ -1870,7 +1870,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4s", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4t", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -1910,6 +1910,7 @@ ugroup.add_argument("-uSG", "--session_gopher", dest="session_gopher", default="
 ugroup.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grep unattended installation files")
 ugroup.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
 ugroup.add_argument("-uW", "--wifi_credentials", dest="wifi_credentials", default="n", help="<Optional> Grab Wifi Credentials")
+ugroup.add_argument("-uWU", "--windows_updates", dest="windows_updates", default="n", help="<Optional> Get Windows Update Status")
 # Hash related
 hgroup = p.add_argument_group('Hash related')
 hgroup.add_argument("-hI", "--drsuapi", dest="drsuapi", default="", help="<Optional> Extract NTDS.dit hashes using drsuapi method - accepts machine name as username")
@@ -2016,6 +2017,7 @@ auto_complete=args.auto_complete
 session_gopher=args.session_gopher
 custom_powershell=args.custom_powershell
 delegated_privs=args.delegated_privs
+windows_updates=args.windows_updates
 
 #Check Bash Tab Complete Status and Display to Screen
 print colored("[+]Checking Bash Tab Completion Status",'yellow')
@@ -2375,6 +2377,77 @@ elif remotetargets[0:8]=='nmapxml=':
 		sys.exit()	
 
 	print colored("[+]Parsed Nmap output and found "+str(len(targets))+" target(s) in xml file\n",'yellow')
+
+#Function runs windows Base Line Analyser on a remote machine to get patch status.
+if windows_updates in yesanswers:
+	
+	#pip install wget
+	import wget
+	
+	output="./wupdate/wsusscn2.cab"
+	if not os.path.exists(output):
+		print colored("\n[+]Checking Dependancies",'yellow')
+		print colored("[-]wsusscn2.cab is missing...",'red')
+		print colored("[+]Downloading wsusscn2.cab",'green')
+		file_url = 'http://go.microsoft.com/fwlink/?LinkId=76054'
+		file_name = wget.download(file_url, out="./wupdate/wsusscn2.cab")
+	
+	if os.path.exists(output):
+		print colored("\n[+]Checking Dependancies",'yellow')
+
+		print colored("[+]The file stamp on wsusscn2.cab is ",'green')+colored("created: %s" % time.ctime(os.path.getctime(output)),'white')
+		print colored("[+]For best results wsusscn2.cab needs to be as up to date as possible\n",'yellow')
+		
+		response=raw_input("Do you want to download a new copy now? (y/n) " )
+		
+		if response in yesanswers:
+			os.unlink("./wupdate/wsusscn2.cab")
+			print colored("[+]Downloading wsusscn2.cab",'green')
+			file_url = 'http://go.microsoft.com/fwlink/?LinkId=76054'
+			file_name = wget.download(file_url, out="./wupdate/wsusscn2.cab")
+
+	if not os.path.exists(outputpath+targets[0]):
+		os.makedirs(outputpath+targets[0])
+		print colored("\n[+]Creating directory for host: "+targets[0],'green')
+
+	print colored("\n[+]Uploading Files",'yellow')
+	proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"/wupdate/"+"; put mbsacli.exe\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
+	proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"/wupdate/"+"; put wusscan.dll\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
+	proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"/wupdate/"+"; put wsusscn2.cab\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
+	
+	print colored("[+]Checking Updates, be patient this can take a while....\n",'yellow')
+
+	print colored("[+]Good time to grab a Coffee, \n",'green')
+	print colored("	   {",'red')
+	print colored("        {   }",'red')
+	print colored("       }_{ __{",'red')
+	print colored("    .-{   }   }-.",'red')
+	print colored("   (   }     {   )",'red')
+	print colored("   |`-.._____..-'|",'red')
+	print colored("   |             ;--.",'red')
+	print colored("   |            (__  \\",'red')
+	print colored("   |     NCC     | )  )",'red')
+	print colored("   |    Group    |/  /",'red')
+	print colored("   |             /  /    ",'red')
+	print colored("   |    2017    (  /",'red')
+	print colored("   \             y'",'red')
+	print colored("    `-.._____..-'\n\n",'red')
+
+	proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+targets[0]+" \"cmd.exe /C c:\\mbsacli.exe /xmlout /catalog c:\\wsusscn2.cab /nvc > c:\\results.xml \" 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()		
+
+	print colored("[+]Getting Results",'yellow')
+	proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets[0]+"; get results.xml"+"\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
+	
+	if os.path.exists(outputpath+targets[0]+"/results.xml"):
+		print colored("[+]Results saved to ",'yellow')+colored(outputpath+targets[0]+"/results.xml",'green')
+	else:
+		print colored("[+]Failed to get updates...",'red')
+
+	print colored("[+]Cleaning Up\n",'yellow')
+	proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\\results.xml c:\\wsusscn2.cab.dat c:\\wsusscn2.cab c:\\mbsacli.exe c:\\wusscan.dll\" 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
+
+	sys.exit()
+
 
 #Function looks for accounts which have delegated privs
 if delegated_privs in yesanswers:
