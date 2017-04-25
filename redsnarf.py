@@ -6,6 +6,8 @@
 import os, argparse, signal, sys, re, binascii, subprocess, string, SimpleHTTPServer, multiprocessing, SocketServer
 import socket, fcntl, struct, time, base64, logging, urllib
 
+import xml.etree.ElementTree as ET
+
 try:
 	import wget
 except ImportError:
@@ -1878,7 +1880,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4t", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4u", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2389,7 +2391,12 @@ elif remotetargets[0:8]=='nmapxml=':
 #Function runs windows Base Line Analyser on a remote machine to get patch status.
 if windows_updates in yesanswers:
 	
+	#Parse XML for Missing Patches
+	privesc=["MS17-010","MS16-135","MS16-032","MS16-016","MS15-051","MS14-058","MS14-040","MS14-002","MS13-005","MS10-092","MS10-015","MS14-002","MS15-061","MS11-080","MS11-062","MS15-076","MS16-075","MS15-010","MS11-046","MS10-015","MS10-092","MS13-053","MS13-081","MS14-058","MS15-051","MS15-078","MS16-016","MS16-032"];
+	missingpatches = []
+	dirty = "false"
 	output="./wupdate/wsusscn2.cab"
+	
 	if not os.path.exists(output):
 		print colored("\n[+]Checking Dependancies",'yellow')
 		print colored("[-]wsusscn2.cab is missing...",'red')
@@ -2420,6 +2427,12 @@ if windows_updates in yesanswers:
 	proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"/wupdate/"+"; put wusscan.dll\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
 	proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"/wupdate/"+"; put wsusscn2.cab\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
 	
+	proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+targets[0]+" \'cmd.exe /C dir c:\\ \' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+	result=proc.communicate()[0]		
+	if "mbsacli.exe" not in result or "wusscan.dll" not in result or "wsusscn2.cab" not in result:
+		print colored("[-]Something has gone wrong uploading files..\n",'red')
+		sys.exit()
+
 	print colored("[+]Checking Updates, be patient this can take a while....\n",'yellow')
 
 	print colored("[+]Good time to grab a Coffee, \n",'green')
@@ -2451,6 +2464,43 @@ if windows_updates in yesanswers:
 	print colored("[+]Cleaning Up\n",'yellow')
 	proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\\results.xml c:\\wsusscn2.cab.dat c:\\wsusscn2.cab c:\\mbsacli.exe c:\\wusscan.dll\" 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
 
+	#Parse the xml
+	if os.path.exists(outputpath+targets[0]+"/results.xml"):
+		tree = ET.parse(outputpath+targets[0]+"/results.xml")
+		root = tree.getroot()
+		
+		for child in root:
+			if child.tag == "Check":
+				for step_child in child:
+					if step_child.tag == "Detail":
+						for step_step_child in step_child:
+							if step_step_child.tag == "UpdateData":
+								if step_step_child.get('IsInstalled')=="false":
+									for step_step_step_child in step_step_child:
+										if step_step_step_child.tag== "Title":
+											missingpatches.append(step_step_step_child.text+","+" BulletinID "+step_step_child.get('BulletinID') + ", KBID " + step_step_child.get('KBID')+ ", Severity " + step_step_child.get('Severity'))
+		
+		missingpatches=list(set(missingpatches))											
+		
+		if len(missingpatches)>0:
+			print colored("[+]Found some missing patches",'yellow')
+			print colored("[+]Any displayed below in red are priv esc vulnerabilities\n",'green')
+
+		for patches in missingpatches:
+			
+			for pesc in privesc:
+				if str(pesc) in patches:
+					dirty = "true"
+
+			if dirty == "false":
+				print patches
+			else:
+				print colored(patches,'red')			
+
+			dirty = "false"
+
+		print "\n\n"
+	
 	sys.exit()
 
 
