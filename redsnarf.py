@@ -7,6 +7,14 @@ import os, argparse, signal, sys, re, binascii, subprocess, string, SimpleHTTPSe
 import socket, fcntl, struct, time, base64, logging, urllib
 
 try:
+	import wget
+except ImportError:
+	print("You need to install wget")
+	print("pip install wget")
+	logging.error("wget missing")
+	exit(1)
+
+try:
 	from libnmap.process import NmapProcess
 except ImportError:
 	print("You need to install python-libnmap")
@@ -2380,9 +2388,6 @@ elif remotetargets[0:8]=='nmapxml=':
 
 #Function runs windows Base Line Analyser on a remote machine to get patch status.
 if windows_updates in yesanswers:
-	
-	#pip install wget
-	import wget
 	
 	output="./wupdate/wsusscn2.cab"
 	if not os.path.exists(output):
