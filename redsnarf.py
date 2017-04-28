@@ -4183,6 +4183,18 @@ if ntds_util in yesanswers or ntds_util=="d":
 						hashparse(outputpath+targets[0],'/hashdump.txt.ntds')
 						#See if we want some extra information about users.
 						if qldap in yesanswers:
+							#Make sure the domain name entered on the command line matches the dns server domain name
+							#if not the ldap lookup will fail.
+							detecteddnsservername=dns_server_name(user, passw, targets[0], domain_name)
+															
+							if detecteddnsservername!='error':
+								
+								if detecteddnsservername!=domain_name:
+									print colored("[!]"+targets[0]+" Command line Domain name ",'red')+domain_name+colored(" does not match detected Domain Name ",'red')+detecteddnsservername
+									response=raw_input("[-]Do you want to replace it? (y/n) ")
+									if response in yesanswers:
+										domain_name=detecteddnsservername
+
 							print colored("[+]Checking LM User Account Status",'yellow')
 							userstatus(outputpath,targets[0],'lm_usernames.txt',domain_name)
 							print colored("[+]Checking NT User Account Status",'yellow')
