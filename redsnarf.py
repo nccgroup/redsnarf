@@ -1596,8 +1596,10 @@ def run():
 							proc = subprocess.Popen("mkdir "+outputpath+targets[0], stdout=subprocess.PIPE,shell=True)
 							stdout_value = proc.communicate()[0]
 
+						#Open file handler
 						thefile = open(outputpath+targets[0]+'/shares.txt', 'a')
 						
+						#Add to file when we started enumerating shares and using which account
 						thefile.write("Shares Enumerated at "+time.strftime("%c")+'\n')
 						thefile.write("User Account used to Enumerate Shares "+user+'\n')
 
@@ -1605,43 +1607,74 @@ def run():
 							canWrite = False
 														
 							try:	
+								#Get share name from list
 								share=resp[i]['shi1_netname'][:-1]
 																
 								try:
+									#NOTE - SYSVOL IS OFTEN READ/WRITE BUT REQUIRES RAISED PRIVS FOR DELETE
+									#FOR THIS REASON AN EXCEPTION IS RAISED MAKING SYSVOL READ ONLY
+									#COMMENT OUT NEXT TO LINES TO REMOVE EXCEPTIOIN
+									if share=="SYSVOL":
+										raise Exception('SYSVOL')
+
+									#Try and create test_dir in share
 									smbClient.createDirectory(share, "test_dir")
 									
-									
-									smbClient.deleteDirectory(share, "test_dir")
-									
+									#Try and delete directory created in share
+									try:
+										smbClient.deleteDirectory(share, "test_dir")
+									except:
+										print colored('[!]Unable to remove test directory at \\\\%s\\%s\\%s, please remove manually' % (host, share, "test_dir"),'red')
+										
+									#Set canWrite flag to true
+									#Print write status to screen and file
 									canWrite = True
-									print "[+]"+share+",READ WRITE"
-									thefile.write(share+",READ WRITE"+'\n')
+									print "["+colored("+",'green')+"]"+share+",READ/WRITE"
+									thefile.write(share+",READ/WRITE"+'\n')
 
+								#Catch any exceptions which mean we probably don't have write privs
 								except Exception as e:
 									sys.stdout.flush()
 									canWrite = False
 									
+								#If we can't write check to see if we can read
 								if canWrite==False:
 									readable = smbClient.listPath(resp[i]['shi1_netname'][:-1], "*")
 									
 									if readable:
-										print "[+]"+share+",READ ONLY"
-										thefile.write(share+",READ ONLY"+'\n')
+										#NOTE TO REMOVE SYSVOL EXCEPTION
+										#UNCOMMENT BELOW AND COMMENT OUT IF/ELSE
 
-							except Exception as e:
-								
-								print "[+]"+share+",NO ACCESS"
+										#print "[+]"+share+",READ ONLY"
+										#thefile.write(share+",READ ONLY"+'\n')
+
+										if share=="SYSVOL":
+											#Print SYSVOL share exception message to screen and file if we can read
+											print "["+colored("+",'blue')+"]"+share+",READ/WRITE SKIPPED"
+											thefile.write(share+",READ/WRITE SKIPPED"+'\n')
+										else:
+											#Print Read Only permissions message to screen and file
+											print "["+colored("+",'yellow')+"]"+share+",READ ONLY"
+											thefile.write(share+",READ ONLY"+'\n')
+
+							#If we can't read or write assume we have no access
+							#Print No Access to screen and file
+							except Exception as e:								
+								print "["+colored("+",'red')+"]"+share+",NO ACCESS"
 								thefile.write(share+",NO ACCESS"+'\n')
 					
-
+						#Close file handler
 						thefile.close()
 
+						#Check to see if share file exists, if so print status to screen
 						if os.path.isfile(outputpath+targets[0]+'/shares.txt'):
 							print colored("[+]"+host+" Shares written to "+outputpath+targets[0]+'/shares.txt','yellow')
 
+						#Start dump thread
 						t = Thread(target=datadump, args=(user,passw,host,outputpath,smbClient.getServerOS()))
 						t.start()
 						t.join()
+
 				elif smbClient.getServerOS().find('Windows')==-1:
 					print colored("[-]"+host+" MS Windows not detected...",'red')
 				elif smbClient.isGuestSession() ==1:
@@ -1926,7 +1959,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4w", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4x", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
