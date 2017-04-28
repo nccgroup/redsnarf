@@ -36,8 +36,6 @@ except ImportError:
 	logging.error("NmapProcess missing")
 	exit(1)
 
-
-
 from random import shuffle
 
 # Logging definitions 
@@ -108,8 +106,36 @@ def banner():
 	print colored("\nE D Williams - NCCGroup",'red')
 	print colored("R Davy - NCCGroup\n",'red')
 
-#WinSCP Decryption Routines 
-#Source: https://www.jonaslieb.com/blog/2015/02/20/winscp-session-password-decryption-part-2/
+
+def dns_server_name(username,password,host,domain_name):
+	user=args.username.strip()
+	passw=args.password.strip()
+			
+	passwd=''
+
+	if passw[len(passw)-3:] ==':::':
+		lmhash, nthash ,s1,s2,s3 = passw.split(':')
+		passwd=lmhash+":"+nthash
+	else:
+		lmhash = ''
+		nthash = ''
+
+	if nthash=='':
+		passwd=passw	
+
+	try: 
+
+		smbClient = SMBConnection(host, host, sess_port=int('445'),timeout=10) 
+
+		x=smbClient.login(user, passwd, domain_name, lmhash, nthash)
+				
+		if x==None or x==True:
+
+			return smbClient.getServerDNSDomainName()
+	
+	except:
+		return "error"
+
 
 #Finds if JTR Jumbo is installed and returns path
 def jtr_jumbo_installed():
@@ -122,7 +148,8 @@ def jtr_jumbo_installed():
 		if os.path.isfile(jumbojohnpath):
 			return jumbojohnpath
 
-
+#WinSCP Decryption Routines 
+#Source: https://www.jonaslieb.com/blog/2015/02/20/winscp-session-password-decryption-part-2/
 class Decrypter:
 	SIMPLE_STRING = "0123456789ABCDEF"
 	SIMPLE_MAGIC = 0xA3
@@ -162,6 +189,10 @@ def decrypt(hostname, username, password):
 		return result[len(key):]
 
 	return result
+
+from nmb.NetBIOS import NetBIOS
+
+
 
 #Code for Password Policy Retrievel
 #source: https://github.com/Wh1t3Fox/polenum
@@ -1565,7 +1596,10 @@ def run():
 			x=smbClient.login(user, passwd, domain_name, lmhash, nthash)
 					
 			if x==None or x==True:
-			
+
+				if smbClient.getServerDNSDomainName()!=domain_name:
+					print colored("[!]"+host+" Command line Domain name ",'red')+domain_name+colored(" does not match detected Domain Name ",'red')	+smbClient.getServerDNSDomainName() 
+
 				if smbClient.getServerOS().find('Windows')!=-1 and smbClient.isGuestSession()==0:
 					print colored("[+]"+host+" Creds OK, User Session Granted",'green')
 					logging.info("[+]"+host+" Creds OK, User Session Granted")
@@ -1787,14 +1821,14 @@ def hashparse(hashfolder,hashfile):
 
 
 #Routine gets the enabled/disabled status of a user
-def userstatus(targetpath,dcip,inputfile):
+def userstatus(targetpath,dcip,inputfile,dom_name):
 	e=''
 
 	try:
 		conn = ldap.initialize('ldap://' + dcip) 
 		conn.protocol_version = 3
 		conn.set_option(ldap.OPT_REFERRALS, 0)
-		conn.simple_bind_s(user+'@'+domain_name, passw) 
+		conn.simple_bind_s(user+'@'+dom_name, passw) 
 	except ldap.LDAPError, e: 
 		if 'desc' in e.message:
 			print colored("[-]LDAP error: %s" % e.message['desc'],'red')
@@ -1802,7 +1836,7 @@ def userstatus(targetpath,dcip,inputfile):
 	else: 
 		print e
   
-	domain = domain_name
+	domain = dom_name
 	
 	splitter = domain.split(".")
 	base=''
@@ -1815,8 +1849,8 @@ def userstatus(targetpath,dcip,inputfile):
 			lm_usernames_list=data.splitlines()
 			for lmnames in lm_usernames_list:
 				
-				if lmnames.find(domain_name)!=-1:
-					mark=str(lmnames[(len(domain_name)+1):len(lmnames)])
+				if lmnames.find(dom_name)!=-1:
+					mark=str(lmnames[(len(dom_name)+1):len(lmnames)])
 				else:
 					mark=lmnames
 								
@@ -1959,7 +1993,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4x", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4y", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -3982,10 +4016,23 @@ if drsuapi in yesanswers:
 							hashparse(outputpath+targets[0],'/drsuapi_gethashes.txt')
 					
 							if qldap in yesanswers:
+								
+								#Make sure the domain name entered on the command line matches the dns server domain name
+								#if not the ldap lookup will fail.
+								detecteddnsservername=dns_server_name(user, passw, targets[0], domain_name)
+																
+								if detecteddnsservername!='error':
+									
+									if detecteddnsservername!=domain_name:
+										print colored("[!]"+targets[0]+" Command line Domain name ",'red')+domain_name+colored(" does not match detected Domain Name ",'red')+detecteddnsservername
+										response=raw_input("[-]Do you want to replace it? (y/n) ")
+										if response in yesanswers:
+											domain_name=detecteddnsservername
+
 								print colored("[+]Checking LM User Account Status",'yellow')
-								userstatus(outputpath,targets[0],'lm_usernames.txt')
+								userstatus(outputpath,targets[0],'lm_usernames.txt',domain_name)
 								print colored("[+]Checking NT User Account Status",'yellow')
-								userstatus(outputpath,targets[0],'nt_usernames.txt')
+								userstatus(outputpath,targets[0],'nt_usernames.txt',domain_name)
 					
 							if os.path.isfile(outputpath+targets[0]+"/nt.txt"):
 								response = raw_input("Do you want to starting cracking the NT hashes with John The Ripper?: Y/(N) ")
@@ -4026,10 +4073,23 @@ if drsuapi in yesanswers:
 						hashparse(outputpath+targets[0],'/drsuapi_gethashes.txt')
 				
 						if qldap in yesanswers:
+								
+							#Make sure the domain name entered on the command line matches the dns server domain name
+							#if not the ldap lookup will fail.
+							detecteddnsservername=dns_server_name(user, passw, targets[0], domain_name)
+															
+							if detecteddnsservername!='error':
+								
+								if detecteddnsservername!=domain_name:
+									print colored("[!]"+targets[0]+" Command line Domain name ",'red')+domain_name+colored(" does not match detected Domain Name ",'red')+detecteddnsservername
+									response=raw_input("[-]Do you want to replace it? (y/n)")
+									if response in yesanswers:
+										domain_name=detecteddnsservername
+
 							print colored("[+]Checking LM User Account Status",'yellow')
-							userstatus(outputpath,targets[0],'lm_usernames.txt')
+							userstatus(outputpath,targets[0],'lm_usernames.txt',domain_name)
 							print colored("[+]Checking NT User Account Status",'yellow')
-							userstatus(outputpath,targets[0],'nt_usernames.txt')
+							userstatus(outputpath,targets[0],'nt_usernames.txt',domain_name)
 				
 						if os.path.isfile(outputpath+targets[0]+"/nt.txt"):
 							response = raw_input("Do you want to starting cracking the NT hashes with John The Ripper?: Y/(N) ")
@@ -4124,9 +4184,9 @@ if ntds_util in yesanswers or ntds_util=="d":
 						#See if we want some extra information about users.
 						if qldap in yesanswers:
 							print colored("[+]Checking LM User Account Status",'yellow')
-							userstatus(outputpath,targets[0],'lm_usernames.txt')
+							userstatus(outputpath,targets[0],'lm_usernames.txt',domain_name)
 							print colored("[+]Checking NT User Account Status",'yellow')
-							userstatus(outputpath,targets[0],'nt_usernames.txt')
+							userstatus(outputpath,targets[0],'nt_usernames.txt',domain_name)
 
 						if os.path.isfile(outputpath+targets[0]+"/nt.txt"):
 							response = raw_input("Do you want to starting cracking the NT hashes with John The Ripper?: Y/(N) ")
@@ -4148,6 +4208,17 @@ if policiesscripts_dump in yesanswers:
 		if user!='' and passw!='' and targets[0]!='':
 			
 			checkport()
+
+			#Make sure the domain name is correct
+			detecteddnsservername=dns_server_name(user, passw, targets[0], domain_name)
+																
+			if detecteddnsservername!='error':
+				
+				if detecteddnsservername!=domain_name:
+					print colored("[!]"+targets[0]+" Command line Domain name ",'red')+domain_name+colored(" does not match detected Domain Name ",'red')+detecteddnsservername
+					response=raw_input("[-]Do you want to replace it? (y/n) ")
+					if response in yesanswers:
+						domain_name=detecteddnsservername
 
 			print colored("[+]Attempting to download contents of Policies and Scripts from sysvol and search for administrator and password:",'yellow')
 
