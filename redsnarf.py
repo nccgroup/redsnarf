@@ -1597,11 +1597,42 @@ def run():
 							stdout_value = proc.communicate()[0]
 
 						thefile = open(outputpath+targets[0]+'/shares.txt', 'a')
-						thefile.write(time.strftime("%c")+'\n')
+						
+						thefile.write("Shares Enumerated at "+time.strftime("%c")+'\n')
+						thefile.write("User Account used to Enumerate Shares "+user+'\n')
 
 						for i in range(len(resp)):                        
-							print resp[i]['shi1_netname'][:-1]
-							thefile.write(resp[i]['shi1_netname'][:-1]+'\n')
+							canWrite = False
+														
+							try:	
+								share=resp[i]['shi1_netname'][:-1]
+																
+								try:
+									smbClient.createDirectory(share, "test_dir")
+									
+									
+									smbClient.deleteDirectory(share, "test_dir")
+									
+									canWrite = True
+									print "[+]"+share+",READ WRITE"
+									thefile.write(share+",READ WRITE"+'\n')
+
+								except Exception as e:
+									sys.stdout.flush()
+									canWrite = False
+									
+								if canWrite==False:
+									readable = smbClient.listPath(resp[i]['shi1_netname'][:-1], "*")
+									
+									if readable:
+										print "[+]"+share+",READ ONLY"
+										thefile.write(share+",READ ONLY"+'\n')
+
+							except Exception as e:
+								
+								print "[+]"+share+",NO ACCESS"
+								thefile.write(share+",NO ACCESS"+'\n')
+					
 
 						thefile.close()
 
@@ -1895,7 +1926,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4v", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4w", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
