@@ -2147,7 +2147,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5h", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5i", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -4635,7 +4635,21 @@ if dropshell in yesanswers:
 						if outputpath+targets[0]+"/mnt" in l:
 							print colored("[+]Share mounted to ",'green')+outputpath+targets[0]+"/mnt"
 							print colored("[?]To unmount ",'blue')+"umount "+outputpath+targets[0]+"/mnt\n"
-					
+							
+							response=raw_input("[+]Enter "+colored("1",'yellow')+ " to open mount point in a new terminal window or Enter "+colored("2",'yellow')+ " to open mount point in File Manager (q to quit):")
+							print "\n\n"
+
+							if response=="1":
+								#Change current working directory
+								os.chdir(outputpath+targets[0]+"/mnt")
+								#Open a new command prompt window in cwdir
+								os.system("x-terminal-emulator ")
+							elif response=="2":
+								#Open file manager in the path of the newly mounted dir
+								os.system("xdg-open "+outputpath+targets[0]+"/mnt")
+							elif response=="q":
+								sys.exit()
+
 					sys.exit()
 				elif response.upper()=="Q":
 					sys.exit()
