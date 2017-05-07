@@ -1136,6 +1136,11 @@ def datadump(user, passw, host, path, os_version):
 					#[chkdir]dir=
 
 					fo=open(xscript,"r").read()
+					
+					#Display warning message is escaped quotes are found in script file.
+					if "\\\"" in fo:
+						print colored("[!]WARNING - Check script file, you should no longer need to escape quotes i.e. \\\" in the script file",'red')
+
 					for line in fo.splitlines():
 						
 						if line[0:9]=="[execute]":
