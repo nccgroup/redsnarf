@@ -1,4 +1,4 @@
-#Version,5
+#Version,6
 # RedSnarf Bash AutoComplete File
 # By Ed Williams & Richard Davy
 # NCC Group
@@ -352,7 +352,7 @@ _sendevent()
 		;;
 	 
 	--windows_updates)
-		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		COMPREPLY=( $( compgen -W "yes update" -- $cur ) )
 		return 0
 		;;
 
