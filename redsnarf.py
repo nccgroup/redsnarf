@@ -2426,7 +2426,7 @@ if mcafee_sites!='n':
 	try:
 		#Decryption Code Source:
 		#https://github.com/funoverip/mcafee-sitelist-pwd-decryption/blob/master/mcafee_sitelist_pwd_decrypt.py
-		print colored("[+]McAfee SiteList Password Decryptor",'green')
+		print colored("[+]McAfee SiteList Password Decrypter",'green')
 		print colored("[+]Sitelist.xml can normally be found in - C:\Users\All Users\McAfee\Common Framework\Sitelist.xml",'yellow')
 		response=raw_input("[+]Enter encrypted string: ")
 		# read arg
