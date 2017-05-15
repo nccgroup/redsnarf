@@ -1832,7 +1832,25 @@ def run():
 		print colored("[+]Scan Start " + time.strftime("%c"),'blue')
 		try: 
 
+			#Check to see whether server accepts SMBV1
+			smbClient = SMBConnection(host, host, sess_port=int('445'),timeout=10,preferredDialect=SMB_DIALECT)
+			dialect = smbClient.getDialect()
+			if dialect == SMB_DIALECT:
+				print colored("[!]WARNING - SMBV1 Accepted",'red')
+				smbClient.logoff()
+
+			#Initiate Proper Connection here
 			smbClient = SMBConnection(host, host, sess_port=int('445'),timeout=10) 
+			
+			dialect = smbClient.getDialect()
+			if dialect == SMB_DIALECT:
+				print colored("[!]WARNING - SMBv1 dialect used",'red')
+			elif dialect == SMB2_DIALECT_002:
+				print "[+]SMBv2.0 dialect used"
+			elif dialect == SMB2_DIALECT_21:
+				print "[+]SMBv2.1 dialect used"
+			else:
+				print "[+]SMBv3.0 dialect used"
 
 			x=smbClient.login(user, passwd, domain_name, lmhash, nthash)
 					
@@ -2545,7 +2563,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5l", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5m", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
