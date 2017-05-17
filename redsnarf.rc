@@ -1,4 +1,4 @@
-#Version,8
+#Version,9
 # RedSnarf Bash AutoComplete File
 # By Ed Williams & Richard Davy
 # NCC Group
@@ -156,6 +156,16 @@ _sendevent()
 		return 0
 		;;
 
+	-uFT)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	--file_transcribe)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
 	-uG)
 		COMPREPLY=( $( compgen -W "cpasswordhere" -- $cur ) )
 		return 0
@@ -300,6 +310,16 @@ _sendevent()
 		return 0
 		;;
 	 
+	-uSCF)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
+	--scf_creator)
+		COMPREPLY=( $( compgen -W "yes" -- $cur ) )
+		return 0
+		;;
+
 	--session_gopher)
 		COMPREPLY=( $( compgen -W "yes AV" -- $cur ) )
 		return 0
@@ -689,7 +709,7 @@ _sendevent()
  
 	# completing an option
 	if [[ "$cur" == -* ]]; then
-		COMPREPLY=( $( compgen -W "-H --host -u --username -p --password -d --domain -cC --credpath -cM --mergepf -cO --outputpath -cQ --quick_validate -cS --skiplsacache -uC --clear_event -uCIDR --cidr -uD --dropshell -uE --empire_launcher -uG --c_password -uJ --john_to_pipal -uJW --sendtojohn -uJS --sendspntojohn -uL --lockdesktop -uLP --liveips -uM --mssqlshell -uMT --meterpreter_revhttps -uP --policiesscripts_dump -uR --multi_rdp -uRP --rdp_connect -uS --get_spn -uU --unattend -uX --xcommand -uW --wifi_credentials -rA --edq_autologon -rB --edq_backdoor -rC --edq_scforceoption -rF --fat -rL --lat -rM --edq_SingleSessionPerUser -rN --edq_nla -rR --edq_rdp -rS --edq_allowtgtsessionkey -rT --edq_trdp -rU --edq_uac -rW --edq_wdigest -eA --service_accounts -eD --user_desc -eL --find_user -eO --ofind_user -eP --password_policy -eR --recorddesktop -eS --screenshot -eT --system_tasklist -hI --drsuapi -hN --ntds_util -hQ --qldap -hS --credsfile -hP --pass_on_blank -hK --mimikittenz -hL --lsass_dump -hM --massmimi_dump -hR --stealth_mimi -hT --golden_ticket -hW --win_scp -uSS --split_spn -uA --auto_complete -uSG --session_gopher -uCP --custom_powershell -uO --delegated_privs -uWU --windows_updates -uMC --mcafee_sites -uRS --snarf_shell" -- $cur ) )
+		COMPREPLY=( $( compgen -W "-H --host -u --username -p --password -d --domain -cC --credpath -cM --mergepf -cO --outputpath -cQ --quick_validate -cS --skiplsacache -uC --clear_event -uCIDR --cidr -uD --dropshell -uE --empire_launcher -uG --c_password -uJ --john_to_pipal -uJW --sendtojohn -uJS --sendspntojohn -uL --lockdesktop -uLP --liveips -uM --mssqlshell -uMT --meterpreter_revhttps -uP --policiesscripts_dump -uR --multi_rdp -uRP --rdp_connect -uS --get_spn -uU --unattend -uX --xcommand -uW --wifi_credentials -rA --edq_autologon -rB --edq_backdoor -rC --edq_scforceoption -rF --fat -rL --lat -rM --edq_SingleSessionPerUser -rN --edq_nla -rR --edq_rdp -rS --edq_allowtgtsessionkey -rT --edq_trdp -rU --edq_uac -rW --edq_wdigest -eA --service_accounts -eD --user_desc -eL --find_user -eO --ofind_user -eP --password_policy -eR --recorddesktop -eS --screenshot -eT --system_tasklist -hI --drsuapi -hN --ntds_util -hQ --qldap -hS --credsfile -hP --pass_on_blank -hK --mimikittenz -hL --lsass_dump -hM --massmimi_dump -hR --stealth_mimi -hT --golden_ticket -hW --win_scp -uSS --split_spn -uA --auto_complete -uSG --session_gopher -uCP --custom_powershell -uO --delegated_privs -uWU --windows_updates -uMC --mcafee_sites -uRS --snarf_shell -uSCF --scf_creator -uFT --file_transcribe )" -- $cur ) )
 	fi
 }
 complete -F _sendevent redsnarf.py
