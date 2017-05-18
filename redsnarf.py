@@ -10,6 +10,14 @@ import time
 import xml.etree.ElementTree as ET
 
 try:
+	from nmb.NetBIOS import NetBIOS
+except ImportError:
+	print("You need to install pysmb")
+	print("pip install pysmb")
+	logging.error("pysmb missing")
+	exit(1)
+
+try:
 	from docopt import docopt
 except ImportError:
 	print("You need to install docopt")
@@ -235,9 +243,6 @@ def decrypt(hostname, username, password):
 		return result[len(key):]
 
 	return result
-
-from nmb.NetBIOS import NetBIOS
-
 
 
 #Code for Password Policy Retrievel
@@ -2602,7 +2607,7 @@ def main():
 
 #Display the user menu.
 banner()
-p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5o", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
+p = argparse.ArgumentParser("./redsnarf -H ip=192.168.0.1 -u administrator -p Password1", version="RedSnarf Version 0.5p", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=20,width=150),description = "Offers a rich set of features to help Pentest Servers and Workstations")
 
 # Creds
 p.add_argument("-H", "--host", dest="host", help="Specify a hostname -H ip= / range -H range= / targets file -H file= to grab hashes from")
@@ -2816,7 +2821,7 @@ if file_transcribe!='n':
 		print colored(('\n[!]Typing will begin in {0} seconds...'.format(pause)),'red')
 		print colored("[!]Give focus to the open text editor in your RDP Window Now!!",'red')
 		time.sleep(pause)
-
+		print colored("[+]Started typing at " + time.strftime("%c"),'blue')
 		mouse.start()
 		with open(b64filename, 'r') as readfile:
 			for line in readfile:
@@ -2826,6 +2831,8 @@ if file_transcribe!='n':
 				keyboard.type_string(line, interval)
 
 		print colored("\n[+]Done!\n",'green')
+		print colored("[+]Stopped typing at " + time.strftime("%c"),'blue')
+		
 		print colored("[+]On the remote machine save file e.g. filename.b64 then decode using",'yellow')
 		print colored("[+]certutil -decode filename.b64 filename.exe",'yellow')
 	
