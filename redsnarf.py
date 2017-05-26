@@ -139,7 +139,7 @@ def banner():
                                                   @redsnarf
 """
 	print colored("\nE D Williams - NCCGroup",'red')
-	print colored("R Davy - NCCGroup\n",'red')
+
 
 class AbortMouse(PyMouseEvent):
 	def click(self, x, y, button, press):
