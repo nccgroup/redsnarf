@@ -23,7 +23,7 @@ def banner():
                                                   @redsnarf
 """
     print "\nE D Williams - NCCGroup"
-    print "R Davy - NCCGroup\n"
+
 
 def upload(conn,command,filename):
     
