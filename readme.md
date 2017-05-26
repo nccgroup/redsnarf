@@ -11,7 +11,7 @@
 
 [![GitHub license](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/nccgroup/redsnarf/blob/master/LICENSE.md)
 
-**RedSnarf** is a pen-testing / red-teaming tool by **Ed William** and **Richard Davy** for retrieving hashes and credentials from Windows 
+**RedSnarf** is a pen-testing / red-teaming tool by **Ed William** for retrieving hashes and credentials from Windows 
 workstations, servers and domain controllers using OpSec Safe Techniques.
 
 See our YouTube Channel for Videos
