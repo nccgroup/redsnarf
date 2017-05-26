@@ -746,7 +746,7 @@ def WriteLAT():
 		fout.write('echo .\n')
 		fout.write('echo .\n')
 		fout.write('echo LocalAccountTokenFilterPolicy Enable/Disable Script\n')
-		fout.write('echo R Davy - NCCGroup	\n')
+		fout.write('echo NCCGroup	\n')
 		fout.write('echo .\n')
 		fout.write('echo .\n')
 		fout.write('echo [+] Searching Registry......\n')
