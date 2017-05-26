@@ -10,7 +10,7 @@ root@kali:~/redsnarf# ./redsnarf.py -h
 
 
 E D Williams - NCCGroup
-R Davy - NCCGroup
+
 
 usage: ./redsnarf.py -H ip=192.168.0.1 -u administrator -p Password01 [-h] [-v] [-H HOST] [-u USERNAME] [-p PASSWORD] [-d DOMAIN_NAME] [-cC CREDPATH]
                                                                       [-cO OUTPUTPATH] [-cM MERGEPF] [-cS SKIPLSACACHE] [-uP POLICIESSCRIPTS_DUMP]
