@@ -709,7 +709,7 @@ def quickjtr(filename):
 			print(colored("[6]KoreLogicRulesAddJustNumbersLimit8",'blue'))
 			print(colored("[7]KoreLogicRulesReplaceLetters",'blue'))
 			print(colored("[8]KoreLogicRulesReplaceLettersCaps",'blue'))
-			print(colored("[9]Other",'blue')
+			print(colored("[9]Other",'blue'))
 
 			KoreLogicRule = raw_input("Please enter the number of the rule you wish to use: ")
 
